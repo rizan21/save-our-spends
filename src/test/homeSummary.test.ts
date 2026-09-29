@@ -89,4 +89,27 @@ describe('Home Page Active Settlements & Balances aggregation', () => {
     // Bob's balance in the group is now exactly 0
     expect(summary.balances['bob.traveler@gmail.com'].netBalance).toBe(0);
   });
+
+  test('Member spending and consumption sums conserve total group spending', async () => {
+    const userEmail = 'alice.dev@gmail.com';
+    const groups = await groupService.listGroups(userEmail);
+    const data = await groupService.loadGroup(groups[0].id);
+
+    const activeExpenses = data.expenses.filter((e) => e.status === 'ACTIVE');
+    const totalExpenses = activeExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+    const totalPaid = activeExpenses.reduce((sum, e) => {
+      const expPaid = Object.values(e.paidBy || {}).reduce((s, a) => s + a, 0);
+      return sum + expPaid;
+    }, 0);
+
+    const totalConsumed = activeExpenses.reduce((sum, e) => {
+      const expConsumed = Object.values(e.splits || {}).reduce((s, a) => s + a, 0);
+      return sum + expConsumed;
+    }, 0);
+
+    expect(totalPaid).toBe(totalExpenses);
+    expect(totalConsumed).toBe(totalExpenses);
+    expect(totalPaid).toBe(totalConsumed);
+  });
 });

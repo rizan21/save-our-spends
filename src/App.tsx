@@ -9,6 +9,7 @@ import { OpenGroupModal } from './components/groups/OpenGroupModal';
 import { TransactionList } from './components/transactions/TransactionList';
 import { AddExpenseModal } from './components/transactions/AddExpenseModal';
 import { BalancesSummary } from './components/settlements/BalancesSummary';
+import { MemberSpendings } from './components/settlements/MemberSpendings';
 import { SimplifiedDebtsList } from './components/settlements/SimplifiedDebtsList';
 import { SettleUpModal } from './components/settlements/SettleUpModal';
 import { MemberList } from './components/members/MemberList';
@@ -245,19 +246,10 @@ function SpreadSpendsInner() {
               {activeTab === 'overview' && (
                 <GroupOverview
                   group={group}
-                  currentUserEmail={user?.email || ''}
                   expenses={expenses}
-                  settlements={settlements}
                   financialSummary={financialSummary}
                   onNavigateToExpenses={() => setActiveTab('expenses')}
-                  onNavigateToBalances={() => setActiveTab('balances')}
-                  onNavigateToMembers={() => setActiveTab('members')}
                   onOpenAddExpense={() => setIsAddExpenseOpen(true)}
-                  onOpenSettleUp={() => {
-                    setSelectedDebtToSettle(null);
-                    setIsSettleUpOpen(true);
-                  }}
-                  onOpenInvite={() => setIsInviteModalOpen(true)}
                   onUpdateDescription={async (desc) => {
                     await updateDescription(desc);
                   }}
@@ -283,6 +275,12 @@ function SpreadSpendsInner() {
                 <div className="space-y-6">
                   <BalancesSummary
                     summary={financialSummary}
+                    currentUserEmail={user?.email || ''}
+                    currency={financialSummary?.currency || group.currency}
+                  />
+                  <MemberSpendings
+                    members={group.members}
+                    expenses={expenses}
                     currentUserEmail={user?.email || ''}
                     currency={financialSummary?.currency || group.currency}
                   />
