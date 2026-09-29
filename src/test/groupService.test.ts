@@ -159,4 +159,24 @@ describe('groupService - Unified Facade Lifecycle', () => {
     expect(OAUTH_SCOPES).not.toContain('https://www.googleapis.com/auth/spreadsheets');
     expect(OAUTH_SCOPES).not.toContain('https://www.googleapis.com/auth/drive ');
   });
+
+  test('createGroup with description initializes and loads description', async () => {
+    const groupId = await groupService.createGroup(
+      'Tokyo Trip',
+      'JPY',
+      ['friend@gmail.com'],
+      'Exploring Tokyo sushi places, Akihabara, and shrines.'
+    );
+    const data = await groupService.loadGroup(groupId);
+    expect(data.group.description).toBe('Exploring Tokyo sushi places, Akihabara, and shrines.');
+  });
+
+  test('updateGroupDescription updates group description and persists', async () => {
+    const groups = await groupService.listGroups('alice.dev@gmail.com');
+    const groupId = groups[0].id;
+
+    await groupService.updateGroupDescription(groupId, 'Updated Goa trip notes with beach club reservations.');
+    const data = await groupService.loadGroup(groupId);
+    expect(data.group.description).toBe('Updated Goa trip notes with beach club reservations.');
+  });
 });

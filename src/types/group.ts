@@ -27,6 +27,7 @@ export interface GroupConfig {
   schemaVersion: string;
   groupId: string;
   groupName: string;
+  description?: string;
   defaultCurrency: string;
   ownerEmail: string;
   createdAt: string;
@@ -35,6 +36,7 @@ export interface GroupConfig {
 export interface Group {
   id: string; // Google Spreadsheet ID
   name: string;
+  description?: string;
   currency: string;
   ownerEmail: string;
   createdAt: string;

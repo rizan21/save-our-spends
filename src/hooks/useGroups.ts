@@ -35,12 +35,14 @@ export function useGroups(currentUser: GoogleUser | null) {
       name,
       currency,
       initialMembers,
+      description,
     }: {
       name: string;
       currency: string;
       initialMembers: string[];
+      description?: string;
     }) => {
-      return await groupService.createGroup(name, currency, initialMembers);
+      return await groupService.createGroup(name, currency, initialMembers, description);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey });

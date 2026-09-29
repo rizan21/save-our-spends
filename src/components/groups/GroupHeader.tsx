@@ -8,6 +8,7 @@ import {
   Scale,
   Users,
   ShieldAlert,
+  LayoutDashboard,
 } from 'lucide-react';
 import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
@@ -15,7 +16,7 @@ import { formatCurrency } from '../../core/splitCalculator';
 import type { Group } from '../../types/group';
 import type { GroupFinancialSummary } from '../../types/balance';
 
-export type GroupTab = 'expenses' | 'balances' | 'members';
+export type GroupTab = 'overview' | 'expenses' | 'balances' | 'members';
 
 export interface GroupHeaderProps {
   group: Group;
@@ -104,34 +105,48 @@ export function GroupHeader({
         </div>
       </div>
 
-      {/* Financial Summary Highlight Card */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-white border border-slate-200/80 rounded-2xl shadow-xs">
-        <div>
-          <span className="text-xs font-medium text-slate-500">Total Group Spending</span>
-          <div className="text-xl font-bold text-slate-900 mt-0.5">
-            {formatCurrency(financialSummary?.totalSpending || 0, currency)}
+      {/* Financial Summary Highlight Card (shown on Expenses, Balances, and Members tabs) */}
+      {activeTab !== 'overview' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 bg-white border border-slate-200/80 rounded-2xl shadow-xs">
+          <div>
+            <span className="text-xs font-medium text-slate-500">Total Group Spending</span>
+            <div className="text-xl font-bold text-slate-900 mt-0.5">
+              {formatCurrency(financialSummary?.totalSpending || 0, currency)}
+            </div>
+          </div>
+          <div className="sm:text-right">
+            <span className="text-xs font-medium text-slate-500">Your Net Balance</span>
+            <div className="mt-0.5">
+              {userBalance > 0.005 ? (
+                <span className="text-xl font-bold text-emerald-600">
+                  You are owed {formatCurrency(userBalance, currency)}
+                </span>
+              ) : userBalance < -0.005 ? (
+                <span className="text-xl font-bold text-rose-600">
+                  You owe {formatCurrency(Math.abs(userBalance), currency)}
+                </span>
+              ) : (
+                <span className="text-xl font-bold text-slate-500">All settled up!</span>
+              )}
+            </div>
           </div>
         </div>
-        <div className="sm:text-right">
-          <span className="text-xs font-medium text-slate-500">Your Net Balance</span>
-          <div className="mt-0.5">
-            {userBalance > 0.005 ? (
-              <span className="text-xl font-bold text-emerald-600">
-                You are owed {formatCurrency(userBalance, currency)}
-              </span>
-            ) : userBalance < -0.005 ? (
-              <span className="text-xl font-bold text-rose-600">
-                You owe {formatCurrency(Math.abs(userBalance), currency)}
-              </span>
-            ) : (
-              <span className="text-xl font-bold text-slate-500">All settled up!</span>
-            )}
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Navigation Tabs */}
       <div className="flex border-b border-slate-200 gap-6 text-sm font-medium">
+        <button
+          onClick={() => onTabChange('overview')}
+          className={`pb-3 flex items-center gap-1.5 border-b-2 transition-all cursor-pointer ${
+            activeTab === 'overview'
+              ? 'border-emerald-600 text-emerald-700 font-semibold'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <LayoutDashboard className="w-4 h-4" />
+          <span>Overview</span>
+        </button>
+
         <button
           onClick={() => onTabChange('expenses')}
           className={`pb-3 flex items-center gap-1.5 border-b-2 transition-all cursor-pointer ${

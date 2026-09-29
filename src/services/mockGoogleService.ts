@@ -41,6 +41,7 @@ function getInitialMockSpreadsheets(): Record<string, MockSpreadsheet> {
     schemaVersion: '1.0.0',
     groupId: goaId,
     groupName: 'Goa Vacation 2026',
+    description: 'Trip to Goa with friends! Exploring beaches, seafood shacks, and bike rides across North & South Goa.',
     defaultCurrency: 'INR',
     ownerEmail,
     createdAt: '2026-09-20T10:00:00.000Z',
@@ -254,7 +255,8 @@ class MockGoogleService {
     groupName: string,
     currency: string,
     owner: GoogleUser,
-    initialMemberEmails: string[] = []
+    initialMemberEmails: string[] = [],
+    description?: string
   ): Promise<string> {
     const sheetId = `sheet_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const config: GroupConfig = {
@@ -262,6 +264,7 @@ class MockGoogleService {
       schemaVersion: '1.0.0',
       groupId: sheetId,
       groupName,
+      description,
       defaultCurrency: currency,
       ownerEmail: owner.email,
       createdAt: new Date().toISOString(),
@@ -322,6 +325,21 @@ class MockGoogleService {
   }
 
   /**
+   * Updates group description in mock storage.
+   */
+  public async updateGroupDescription(sheetId: string, description: string): Promise<void> {
+    const sheet = this.sheets[sheetId];
+    if (!sheet) {
+      throw new Error(`Spreadsheet with ID ${sheetId} not found in mock store`);
+    }
+
+    const config = deserializeGroupConfig(sheet.tabs[SHEET_TABS.CONFIG] || []);
+    config.description = description;
+    sheet.tabs[SHEET_TABS.CONFIG] = serializeGroupConfig(config);
+    this.saveToStorage();
+  }
+
+  /**
    * Loads full group data across all member tabs.
    */
   public async loadGroupData(sheetId: string): Promise<{
@@ -357,6 +375,7 @@ class MockGoogleService {
     const group: Group = {
       id: sheetId,
       name: config.groupName,
+      description: config.description,
       currency: config.defaultCurrency,
       ownerEmail: config.ownerEmail,
       createdAt: config.createdAt,

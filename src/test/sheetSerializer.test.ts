@@ -37,6 +37,24 @@ describe('sheetSerializer - Roundtrip conversions', () => {
     expect(restored).toEqual(config);
   });
 
+  test('GroupConfig serialization and deserialization with description', () => {
+    const configWithDesc: GroupConfig = {
+      appSignature: 'Spread-Spends',
+      schemaVersion: '1.0.0',
+      groupId: 'grp-test-456',
+      groupName: 'Goa Trip 2026',
+      description: 'Annual beach retreat and food exploration with friends.',
+      defaultCurrency: 'INR',
+      ownerEmail: 'owner@test.com',
+      createdAt: '2026-06-01T12:00:00.000Z',
+    };
+
+    const rows = serializeGroupConfig(configWithDesc);
+    const restored = deserializeGroupConfig(rows);
+    expect(restored).toEqual(configWithDesc);
+    expect(restored.description).toBe('Annual beach retreat and food exploration with friends.');
+  });
+
   test('Members serialization and deserialization', () => {
     const members: Member[] = [
       {

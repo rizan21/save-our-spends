@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Navbar } from './components/common/Navbar';
 import { GroupList } from './components/groups/GroupList';
 import { GroupHeader, type GroupTab } from './components/groups/GroupHeader';
+import { GroupOverview } from './components/groups/GroupOverview';
 import { CreateGroupModal } from './components/groups/CreateGroupModal';
 import { OpenGroupModal } from './components/groups/OpenGroupModal';
 import { TransactionList } from './components/transactions/TransactionList';
@@ -51,7 +52,7 @@ function SpreadSpendsInner() {
     return match ? decodeURIComponent(match[1]) : null;
   });
 
-  const [activeTab, setActiveTab] = useState<GroupTab>('expenses');
+  const [activeTab, setActiveTab] = useState<GroupTab>('overview');
 
   // Modal visibility states
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
@@ -74,6 +75,7 @@ function SpreadSpendsInner() {
 
   const handleSelectGroup = (groupId: string) => {
     setSelectedGroupId(groupId);
+    setActiveTab('overview');
     window.location.hash = `#group=${encodeURIComponent(groupId)}`;
   };
 
@@ -115,6 +117,8 @@ function SpreadSpendsInner() {
     proposeInvite,
     approveInvite,
     isApprovingInvite,
+    updateDescription,
+    isUpdatingDescription,
   } = useGroupDetail(selectedGroupId);
 
   const isOwner = !!(group && user && group.ownerEmail === user.email);
@@ -237,6 +241,30 @@ function SpreadSpendsInner() {
                 onOpenInvite={() => setIsInviteModalOpen(true)}
               />
 
+              {/* TAB: Overview */}
+              {activeTab === 'overview' && (
+                <GroupOverview
+                  group={group}
+                  currentUserEmail={user?.email || ''}
+                  expenses={expenses}
+                  settlements={settlements}
+                  financialSummary={financialSummary}
+                  onNavigateToExpenses={() => setActiveTab('expenses')}
+                  onNavigateToBalances={() => setActiveTab('balances')}
+                  onNavigateToMembers={() => setActiveTab('members')}
+                  onOpenAddExpense={() => setIsAddExpenseOpen(true)}
+                  onOpenSettleUp={() => {
+                    setSelectedDebtToSettle(null);
+                    setIsSettleUpOpen(true);
+                  }}
+                  onOpenInvite={() => setIsInviteModalOpen(true)}
+                  onUpdateDescription={async (desc) => {
+                    await updateDescription(desc);
+                  }}
+                  isUpdatingDescription={isUpdatingDescription}
+                />
+              )}
+
               {/* TAB: Expenses */}
               {activeTab === 'expenses' && (
                 <TransactionList
@@ -296,8 +324,8 @@ function SpreadSpendsInner() {
       <CreateGroupModal
         isOpen={isCreateGroupOpen}
         onClose={() => setIsCreateGroupOpen(false)}
-        onCreateGroup={async (name, currency, initialMembers) => {
-          const newSheetId = await createGroup({ name, currency, initialMembers });
+        onCreateGroup={async (name, currency, initialMembers, description) => {
+          const newSheetId = await createGroup({ name, currency, initialMembers, description });
           handleSelectGroup(newSheetId);
         }}
       />

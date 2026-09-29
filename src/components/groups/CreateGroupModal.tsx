@@ -6,7 +6,7 @@ import { Plus, X, Users, DollarSign } from 'lucide-react';
 export interface CreateGroupModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreateGroup: (name: string, currency: string, initialMembers: string[]) => Promise<unknown>;
+  onCreateGroup: (name: string, currency: string, initialMembers: string[], description?: string) => Promise<unknown>;
 }
 
 const COMMON_CURRENCIES = [
@@ -26,6 +26,7 @@ export function CreateGroupModal({
   onCreateGroup,
 }: CreateGroupModalProps) {
   const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [currency, setCurrency] = useState('USD');
   const [memberEmailInput, setMemberEmailInput] = useState('');
   const [memberEmails, setMemberEmails] = useState<string[]>([]);
@@ -63,8 +64,9 @@ export function CreateGroupModal({
     setIsSubmitting(true);
     setError(null);
     try {
-      await onCreateGroup(name.trim(), currency, memberEmails);
+      await onCreateGroup(name.trim(), currency, memberEmails, description.trim() || undefined);
       setName('');
+      setDescription('');
       setMemberEmails([]);
       onClose();
     } catch (err: unknown) {
@@ -101,6 +103,20 @@ export function CreateGroupModal({
             className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
             required
             autoFocus
+          />
+        </div>
+
+        {/* Group Description */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
+            Description <span className="text-slate-400 font-normal">(Optional)</span>
+          </label>
+          <textarea
+            rows={2}
+            placeholder="What is this group for? e.g. Trip to Goa with friends, Apartment expenses..."
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none"
           />
         </div>
 

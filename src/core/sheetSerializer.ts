@@ -49,16 +49,25 @@ export const HEADERS = {
 /* ==================== Group Config ==================== */
 
 export function serializeGroupConfig(config: GroupConfig): string[][] {
-  return [
+  const rows: string[][] = [
     HEADERS.CONFIG,
     ['app_signature', config.appSignature],
     ['schema_version', config.schemaVersion],
     ['group_id', config.groupId],
     ['group_name', config.groupName],
+  ];
+
+  if (config.description !== undefined) {
+    rows.push(['group_description', config.description]);
+  }
+
+  rows.push(
     ['default_currency', config.defaultCurrency],
     ['owner_email', config.ownerEmail],
-    ['created_at', config.createdAt],
-  ];
+    ['created_at', config.createdAt]
+  );
+
+  return rows;
 }
 
 export function deserializeGroupConfig(rows: string[][]): GroupConfig {
@@ -70,7 +79,7 @@ export function deserializeGroupConfig(rows: string[][]): GroupConfig {
     }
   }
 
-  return {
+  const result: GroupConfig = {
     appSignature: map['app_signature'] || 'Spread-Spends',
     schemaVersion: map['schema_version'] || '1.0.0',
     groupId: map['group_id'] || '',
@@ -79,6 +88,12 @@ export function deserializeGroupConfig(rows: string[][]): GroupConfig {
     ownerEmail: map['owner_email'] || '',
     createdAt: map['created_at'] || new Date().toISOString(),
   };
+
+  if ('group_description' in map) {
+    result.description = map['group_description'];
+  }
+
+  return result;
 }
 
 /* ==================== Members ==================== */

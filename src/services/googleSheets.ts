@@ -4,6 +4,7 @@ import {
   getMemberTabName,
   generateAllExpensesFormula,
   serializeGroupConfig,
+  deserializeGroupConfig,
   serializeMembers,
   serializePendingInvites,
   serializeSettlements,
@@ -21,7 +22,8 @@ export class GoogleSheetsService {
     groupName: string,
     currency: string,
     owner: GoogleUser,
-    initialMemberEmails: string[] = []
+    initialMemberEmails: string[] = [],
+    description?: string
   ): Promise<string> {
     const title = `[SpreadSpends] ${groupName}`;
 
@@ -30,6 +32,7 @@ export class GoogleSheetsService {
       schemaVersion: '2.0.0', // updated for per-member tab schema
       groupId: '', // will be set once sheet is created
       groupName,
+      description,
       defaultCurrency: currency,
       ownerEmail: owner.email,
       createdAt: new Date().toISOString(),
@@ -221,6 +224,26 @@ export class GoogleSheetsService {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.error?.message || `Failed to update range ${range}: ${res.statusText}`);
     }
+  }
+
+  /**
+   * Updates group description in the Group_Config tab of the Google Sheet.
+   */
+  public async updateGroupDescription(
+    token: string,
+    spreadsheetId: string,
+    description: string
+  ): Promise<void> {
+    const configRows = await this.readTab(token, spreadsheetId, SHEET_TABS.CONFIG);
+    const config = deserializeGroupConfig(configRows);
+    config.description = description;
+    const serialized = serializeGroupConfig(config);
+    await this.updateSheetRange(
+      token,
+      spreadsheetId,
+      `${SHEET_TABS.CONFIG}!A1:B${serialized.length}`,
+      serialized
+    );
   }
 
   /**

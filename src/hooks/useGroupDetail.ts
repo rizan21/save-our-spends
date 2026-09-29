@@ -189,6 +189,39 @@ export function useGroupDetail(groupId: string | null) {
     },
   });
 
+  // 5. Optimistic Update Description
+  const updateDescriptionMutation = useMutation({
+    mutationFn: async (description: string) => {
+      if (!groupId) throw new Error('No group selected');
+      await groupService.updateGroupDescription(groupId, description);
+      return description;
+    },
+    onMutate: async (newDescription: string) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<GroupDataPayload>(queryKey);
+
+      if (previous) {
+        queryClient.setQueryData<GroupDataPayload>(queryKey, {
+          ...previous,
+          group: {
+            ...previous.group,
+            description: newDescription,
+          },
+        });
+      }
+
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData<GroupDataPayload>(queryKey, context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
   return {
     group: groupQuery.data?.group || null,
     expenses: groupQuery.data?.expenses || [],
@@ -207,5 +240,7 @@ export function useGroupDetail(groupId: string | null) {
     isProposingInvite: proposeInviteMutation.isPending,
     approveInvite: approveInviteMutation.mutateAsync,
     isApprovingInvite: approveInviteMutation.isPending,
+    updateDescription: updateDescriptionMutation.mutateAsync,
+    isUpdatingDescription: updateDescriptionMutation.isPending,
   };
 }

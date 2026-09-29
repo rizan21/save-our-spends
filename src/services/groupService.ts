@@ -45,7 +45,8 @@ export class GroupService {
   public async createGroup(
     name: string,
     currency: string,
-    initialMembers: string[] = []
+    initialMembers: string[] = [],
+    description?: string
   ): Promise<string> {
     const user = googleAuthService.getCurrentUser();
     if (!user) {
@@ -53,7 +54,7 @@ export class GroupService {
     }
 
     if (googleAuthService.getIsDemoMode()) {
-      return await mockGoogleService.createGroupSpreadsheet(name, currency, user, initialMembers);
+      return await mockGoogleService.createGroupSpreadsheet(name, currency, user, initialMembers, description);
     }
 
     const token = this.getAuthToken();
@@ -62,7 +63,8 @@ export class GroupService {
       name,
       currency,
       user,
-      initialMembers
+      initialMembers,
+      description
     );
 
     // Grant edit permissions to initial members
@@ -156,6 +158,7 @@ export class GroupService {
     const group: Group = {
       id: sheetId,
       name: config.groupName,
+      description: config.description,
       currency: config.defaultCurrency,
       ownerEmail: config.ownerEmail,
       createdAt: config.createdAt,
@@ -165,6 +168,17 @@ export class GroupService {
     };
 
     return { group, expenses, settlements };
+  }
+
+  /**
+   * Updates group description in the group spreadsheet config.
+   */
+  public async updateGroupDescription(sheetId: string, description: string): Promise<void> {
+    if (googleAuthService.getIsDemoMode()) {
+      return await mockGoogleService.updateGroupDescription(sheetId, description);
+    }
+    const token = this.getAuthToken();
+    return await googleSheetsService.updateGroupDescription(token, sheetId, description);
   }
 
   /**
