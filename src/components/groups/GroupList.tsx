@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, Search, FolderPlus, RefreshCw, FolderDown, HandCoins, TrendingUp, TrendingDown } from 'lucide-react';
 import { GroupCard } from './GroupCard';
 import { Button } from '../common/Button';
+import { UserAvatar } from '../common/UserAvatar';
 import { Table, LogIn } from 'lucide-react';
 import type { GoogleDriveFile } from '../../types/google';
 import type { ActiveSettlementItem } from '../../hooks/useHomeSummary';
@@ -198,15 +199,17 @@ export function GroupList({
                         isPayee ? 'bg-emerald-500' : 'bg-rose-500'
                       }`}
                     />
-                    <div className="text-xs truncate">
-                      <span className="font-bold text-slate-900">
-                        {isPayer ? 'You' : item.debt.fromName}
-                      </span>{' '}
-                      <span className="text-slate-400">owes</span>{' '}
-                      <span className="font-bold text-slate-900">
-                        {isPayee ? 'you' : item.debt.toName}
-                      </span>
-                      <span className="text-slate-300 mx-2">•</span>
+                    <div className="flex items-center gap-2 text-xs flex-wrap">
+                      <div className="flex items-center gap-1 font-bold text-slate-900">
+                        <UserAvatar name={item.debt.fromName} picture={item.fromPicture} size="xs" />
+                        <span>{isPayer ? 'You' : item.debt.fromName}</span>
+                      </div>
+                      <span className="text-slate-400">owes</span>
+                      <div className="flex items-center gap-1 font-bold text-slate-900">
+                        <UserAvatar name={item.debt.toName} picture={item.toPicture} size="xs" />
+                        <span>{isPayee ? 'you' : item.debt.toName}</span>
+                      </div>
+                      <span className="text-slate-300 mx-1">•</span>
                       <span className="text-slate-500 font-semibold">{item.groupName}</span>
                     </div>
                   </div>

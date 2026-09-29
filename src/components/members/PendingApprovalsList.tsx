@@ -1,5 +1,6 @@
 import { ShieldAlert, Check, Clock } from 'lucide-react';
 import { Button } from '../common/Button';
+import { UserAvatar } from '../common/UserAvatar';
 import type { PendingInvite } from '../../types/group';
 
 export interface PendingApprovalsListProps {
@@ -39,16 +40,19 @@ export function PendingApprovalsList({
             key={inv.id}
             className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
           >
-            <div>
-              <div className="font-semibold text-slate-900 text-sm">
-                {inv.invitedEmail}
-              </div>
-              <div className="text-amber-800/80 flex items-center gap-1.5 mt-0.5">
-                <Clock className="w-3.5 h-3.5" />
-                <span>
-                  Invited by {inv.invitedByName || inv.invitedByEmail} on{' '}
-                  {new Date(inv.requestedAt).toLocaleDateString()}
-                </span>
+            <div className="flex items-center gap-3">
+              <UserAvatar name={inv.invitedEmail.split('@')[0]} size="sm" />
+              <div>
+                <div className="font-semibold text-slate-900 text-sm">
+                  {inv.invitedEmail}
+                </div>
+                <div className="text-amber-800/80 flex items-center gap-1.5 mt-0.5">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>
+                    Invited by {inv.invitedByName || inv.invitedByEmail} on{' '}
+                    {new Date(inv.requestedAt).toLocaleDateString()}
+                  </span>
+                </div>
               </div>
             </div>
 

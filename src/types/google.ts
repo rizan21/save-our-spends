@@ -3,6 +3,7 @@ export interface GoogleUser {
   name: string;
   picture?: string;
   id?: string;
+  googleName?: string;
 }
 
 export interface GoogleOAuthToken {

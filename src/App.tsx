@@ -25,6 +25,7 @@ import { Button } from './components/common/Button';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { AlertCircle } from 'lucide-react';
 import { LoginScreen } from './components/auth/LoginScreen';
+import { EditProfileModal } from './components/auth/EditProfileModal';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -42,6 +43,8 @@ function SpreadSpendsInner() {
     error: authError,
     login,
     logout,
+    updateUserName,
+    resetUserNameToGoogle,
     setCustomClientId,
     getCustomClientId,
   } = useAuth();
@@ -61,6 +64,7 @@ function SpreadSpendsInner() {
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isSettleUpOpen, setIsSettleUpOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [selectedDebtToSettle, setSelectedDebtToSettle] = useState<SimplifiedDebt | null>(null);
 
   // Keep URL hash in sync with selected group
@@ -120,9 +124,32 @@ function SpreadSpendsInner() {
     isApprovingInvite,
     updateDescription,
     isUpdatingDescription,
+    updateMemberName,
   } = useGroupDetail(selectedGroupId);
 
   const isOwner = !!(group && user && group.ownerEmail === user.email);
+
+  const handleSaveUserName = async (newName: string) => {
+    updateUserName(newName);
+    if (selectedGroupId && user) {
+      try {
+        await updateMemberName({ email: user.email, newName });
+      } catch (err) {
+        console.warn('Could not update member name in group sheet:', err);
+      }
+    }
+  };
+
+  const handleResetUserName = async () => {
+    const updated = resetUserNameToGoogle();
+    if (selectedGroupId && user && updated.name) {
+      try {
+        await updateMemberName({ email: user.email, newName: updated.name });
+      } catch (err) {
+        console.warn('Could not reset member name in group sheet:', err);
+      }
+    }
+  };
 
   const handleSettleDebt = (debt: SimplifiedDebt) => {
     setSelectedDebtToSettle(debt);
@@ -171,7 +198,12 @@ function SpreadSpendsInner() {
   return (
     <div className="min-h-screen bg-slate-50/60 flex flex-col text-slate-800">
       {/* Top Header */}
-      <Navbar user={user} onLogin={login} onLogout={logout} />
+      <Navbar
+        user={user}
+        onLogin={login}
+        onLogout={logout}
+        onOpenEditProfile={() => setIsEditProfileOpen(true)}
+      />
 
       {/* Main Container */}
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
@@ -264,6 +296,7 @@ function SpreadSpendsInner() {
                   settlements={settlements}
                   currentUserEmail={user?.email || ''}
                   currency={group.currency}
+                  members={group.members}
                   simplifiedDebts={financialSummary?.simplifiedDebts || []}
                   onOpenAddExpense={() => setIsAddExpenseOpen(true)}
                   onSettleDebt={handleSettleDebt}
@@ -276,17 +309,21 @@ function SpreadSpendsInner() {
                   <BalancesSummary
                     summary={financialSummary}
                     currentUserEmail={user?.email || ''}
+                    currentUserPicture={user?.picture}
+                    members={group.members}
                     currency={financialSummary?.currency || group.currency}
                   />
                   <MemberSpendings
                     members={group.members}
                     expenses={expenses}
                     currentUserEmail={user?.email || ''}
+                    currentUserPicture={user?.picture}
                     currency={financialSummary?.currency || group.currency}
                   />
                   <SimplifiedDebtsList
                     debts={financialSummary?.simplifiedDebts || []}
                     currentUserEmail={user?.email || ''}
+                    members={group.members}
                     onSettleDebt={handleSettleDebt}
                   />
                 </div>
@@ -299,6 +336,7 @@ function SpreadSpendsInner() {
                     members={group.members}
                     pendingInvites={group.pendingInvites}
                     currentUserEmail={user?.email || ''}
+                    currentUserPicture={user?.picture}
                     isOwner={isOwner}
                     onOpenInviteModal={() => setIsInviteModalOpen(true)}
                     onApproveInvite={async (inviteId) => {
@@ -307,6 +345,7 @@ function SpreadSpendsInner() {
                       }
                     }}
                     isApproving={isApprovingInvite}
+                    onOpenEditProfile={() => setIsEditProfileOpen(true)}
                   />
                   <DirectSheetsLink group={group} />
                 </div>
@@ -378,6 +417,17 @@ function SpreadSpendsInner() {
           currentUserEmail={user?.email || ''}
           currentUserName={user?.name || user?.email || ''}
           onInvite={handleInviteSubmit}
+        />
+      )}
+
+      {/* Edit Profile Modal */}
+      {user && isEditProfileOpen && (
+        <EditProfileModal
+          isOpen={isEditProfileOpen}
+          onClose={() => setIsEditProfileOpen(false)}
+          user={user}
+          onSaveName={handleSaveUserName}
+          onResetName={handleResetUserName}
         />
       )}
     </div>

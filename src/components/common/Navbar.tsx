@@ -1,14 +1,16 @@
-import { Table, LogIn, LogOut } from 'lucide-react';
+import { Table, LogIn, LogOut, Pencil } from 'lucide-react';
 import { Button } from './Button';
+import { UserAvatar } from './UserAvatar';
 import type { GoogleUser } from '../../types/google';
 
 export interface NavbarProps {
   user: GoogleUser | null;
   onLogin: () => void;
   onLogout: () => void;
+  onOpenEditProfile?: () => void;
 }
 
-export function Navbar({ user, onLogin, onLogout }: NavbarProps) {
+export function Navbar({ user, onLogin, onLogout, onOpenEditProfile }: NavbarProps) {
   return (
     <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
@@ -28,20 +30,32 @@ export function Navbar({ user, onLogin, onLogout }: NavbarProps) {
         {/* User Profile / Logout */}
         <div className="flex items-center gap-2">
           {user ? (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                {user.picture ? (
-                  <img src={user.picture} alt={user.name} className="w-8 h-8 rounded-full border border-slate-200 object-cover" />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 font-semibold text-xs flex items-center justify-center">
-                    {user.name.charAt(0).toUpperCase()}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                type="button"
+                onClick={onOpenEditProfile}
+                className="flex items-center gap-2.5 py-1 px-2 rounded-xl hover:bg-slate-100/80 border border-transparent hover:border-slate-200/80 transition-all cursor-pointer group text-left"
+                title="Edit your user name"
+              >
+                <UserAvatar name={user.name} picture={user.picture} size="sm" />
+                <div className="hidden sm:block">
+                  <div className="text-xs font-semibold text-slate-800 flex items-center gap-1.5 group-hover:text-emerald-700 transition-colors">
+                    <span>{user.name}</span>
+                    <Pencil className="w-3 h-3 text-slate-400 group-hover:text-emerald-600 transition-colors" />
                   </div>
-                )}
-                <div className="hidden sm:block text-left text-xs font-semibold text-slate-800">
-                  {user.name}
+                  <div className="text-[10px] text-slate-400 font-normal">
+                    Edit user name
+                  </div>
                 </div>
-              </div>
-              <Button variant="ghost" size="sm" onClick={onLogout} className="p-1.5 text-slate-400 hover:text-rose-600" title="Sign out">
+              </button>
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onLogout}
+                className="p-1.5 text-slate-400 hover:text-rose-600"
+                title="Sign out"
+              >
                 <LogOut className="w-4 h-4" />
               </Button>
             </div>

@@ -1,19 +1,28 @@
+import { useMemo } from 'react';
 import { ArrowRight, CheckCircle2, HandCoins } from 'lucide-react';
 import { Button } from '../common/Button';
+import { UserAvatar } from '../common/UserAvatar';
 import { formatCurrency } from '../../core/splitCalculator';
 import type { SimplifiedDebt } from '../../types/balance';
+import type { Member } from '../../types/group';
 
 export interface SimplifiedDebtsListProps {
   debts: SimplifiedDebt[];
   currentUserEmail: string;
+  members?: Member[];
   onSettleDebt: (debt: SimplifiedDebt) => void;
 }
 
 export function SimplifiedDebtsList({
   debts,
   currentUserEmail,
+  members = [],
   onSettleDebt,
 }: SimplifiedDebtsListProps) {
+  const memberMap = useMemo(
+    () => new Map(members.map((m) => [m.email.toLowerCase(), m])),
+    [members]
+  );
 
   if (debts.length === 0) {
     return (
@@ -55,16 +64,26 @@ export function SimplifiedDebtsList({
                   : 'border-slate-200/70 bg-slate-50/50'
               }`}
             >
-              <div className="flex items-center gap-2.5 text-xs sm:text-sm">
-                <span className="font-semibold text-slate-900">
-                  {isPayer ? 'You' : d.fromName}
-                </span>
+              <div className="flex items-center gap-2.5 text-xs sm:text-sm flex-wrap">
+                <div className="flex items-center gap-1.5 font-semibold text-slate-900">
+                  <UserAvatar
+                    name={d.fromName}
+                    picture={memberMap.get(d.fromEmail.toLowerCase())?.picture}
+                    size="xs"
+                  />
+                  <span>{isPayer ? 'You' : d.fromName}</span>
+                </div>
                 <span className="text-slate-400 flex items-center gap-1">
                   owes <ArrowRight className="w-3.5 h-3.5" />
                 </span>
-                <span className="font-semibold text-slate-900">
-                  {isPayee ? 'You' : d.toName}
-                </span>
+                <div className="flex items-center gap-1.5 font-semibold text-slate-900">
+                  <UserAvatar
+                    name={d.toName}
+                    picture={memberMap.get(d.toEmail.toLowerCase())?.picture}
+                    size="xs"
+                  />
+                  <span>{isPayee ? 'You' : d.toName}</span>
+                </div>
               </div>
 
               <div className="flex items-center justify-between sm:justify-end gap-3">

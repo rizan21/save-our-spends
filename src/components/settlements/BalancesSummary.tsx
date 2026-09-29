@@ -1,18 +1,29 @@
 import type { GroupFinancialSummary } from '../../types/balance';
+import type { Member } from '../../types/group';
 import { ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 import { formatCurrency } from '../../core/splitCalculator';
+import { UserAvatar } from '../common/UserAvatar';
 
 export interface BalancesSummaryProps {
   summary: GroupFinancialSummary | null;
   currentUserEmail: string;
+  currentUserPicture?: string;
+  members?: Member[];
   currency?: string;
 }
 
-export function BalancesSummary({ summary, currentUserEmail, currency: propCurrency }: BalancesSummaryProps) {
+export function BalancesSummary({
+  summary,
+  currentUserEmail,
+  currentUserPicture,
+  members = [],
+  currency: propCurrency,
+}: BalancesSummaryProps) {
   if (!summary) return null;
 
   const currency = propCurrency || summary.currency || 'USD';
   const balancesList = Object.values(summary.balances);
+  const memberMap = new Map<string, Member>(members.map((m) => [m.email, m]));
 
   return (
     <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs space-y-4">
@@ -26,12 +37,14 @@ export function BalancesSummary({ summary, currentUserEmail, currency: propCurre
       <div className="divide-y divide-slate-100">
         {balancesList.map((b) => {
           const isMe = b.email === currentUserEmail;
+          const memberPic = isMe
+            ? (currentUserPicture || memberMap.get(b.email)?.picture)
+            : memberMap.get(b.email)?.picture;
+
           return (
             <div key={b.email} className="py-3 flex items-center justify-between text-xs sm:text-sm">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-semibold flex items-center justify-center text-xs">
-                  {b.name.charAt(0).toUpperCase()}
-                </div>
+                <UserAvatar name={b.name} picture={memberPic} size="sm" />
                 <div>
                   <div className="font-medium text-slate-800 flex items-center gap-1.5">
                     {b.name} {isMe && <span className="text-[11px] text-emerald-600 font-semibold">(You)</span>}

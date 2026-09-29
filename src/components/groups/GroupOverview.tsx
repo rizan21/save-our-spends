@@ -7,6 +7,7 @@ import { CategoryPieChart } from './CategoryPieChart';
 import { CategoryIcon } from '../common/CategoryIcon';
 import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
+import { UserAvatar } from '../common/UserAvatar';
 import {
   Wallet,
   Receipt,
@@ -283,27 +284,42 @@ export function GroupOverview({
           </div>
         ) : (
           <div className="space-y-2.5">
-            {recentExpenses.map((exp) => (
-              <div
-                key={exp.id}
-                className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50/60 hover:bg-slate-50 transition-colors"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <CategoryIcon category={exp.category} size="sm" />
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-slate-900 truncate">
-                      {exp.description}
-                    </div>
-                    <div className="text-xs text-slate-400">
-                      {exp.date} • Paid by {Object.keys(exp.paidBy || {})[0]?.split('@')[0] || 'Member'}
+            {recentExpenses.map((exp) => {
+              const payerEmail = Object.keys(exp.paidBy || {})[0];
+              const payerMember = group.members.find(
+                (m) => m.email.toLowerCase() === payerEmail?.toLowerCase()
+              );
+              const payerName = payerMember?.name || payerEmail?.split('@')[0] || 'Member';
+
+              return (
+                <div
+                  key={exp.id}
+                  className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50/60 hover:bg-slate-50 transition-colors"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <CategoryIcon category={exp.category} size="sm" />
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-slate-900 truncate">
+                        {exp.description}
+                      </div>
+                      <div className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
+                        <span>{exp.date}</span>
+                        <span>•</span>
+                        <span className="inline-flex items-center gap-1">
+                          {payerMember && (
+                            <UserAvatar name={payerName} picture={payerMember.picture} size="xs" />
+                          )}
+                          <span>Paid by {payerName}</span>
+                        </span>
+                      </div>
                     </div>
                   </div>
+                  <div className="text-sm font-bold text-slate-900 shrink-0">
+                    {formatCurrency(exp.amount, currency)}
+                  </div>
                 </div>
-                <div className="text-sm font-bold text-slate-900 shrink-0">
-                  {formatCurrency(exp.amount, currency)}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

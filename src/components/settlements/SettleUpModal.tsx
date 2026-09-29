@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
+import { UserAvatar } from '../common/UserAvatar';
 import type { Member } from '../../types/group';
 import type { PaymentMethod, Settlement } from '../../types/transaction';
 import type { SimplifiedDebt } from '../../types/balance';
-import { Calendar, CreditCard, DollarSign, FileText } from 'lucide-react';
+import { ArrowRight, Calendar, CreditCard, DollarSign, FileText } from 'lucide-react';
 
 export interface SettleUpModalProps {
   isOpen: boolean;
@@ -95,6 +96,9 @@ export function SettleUpModal({
     }
   };
 
+  const currentPayer = members.find((m) => m.email === payerEmail);
+  const currentPayee = members.find((m) => m.email === payeeEmail);
+
   return (
     <Modal
       isOpen={isOpen}
@@ -146,6 +150,36 @@ export function SettleUpModal({
             </select>
           </div>
         </div>
+
+        {/* Payer and Payee Summary Preview with Avatars */}
+        {currentPayer && currentPayee && (
+          <div className="p-2.5 bg-emerald-50/50 border border-emerald-100 rounded-xl flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <UserAvatar name={currentPayer.name} picture={currentPayer.picture} size="sm" />
+              <div className="min-w-0">
+                <div className="text-xs font-semibold text-slate-800 truncate">
+                  {currentPayer.email === currentUserEmail ? 'You' : currentPayer.name}
+                </div>
+                <div className="text-[10px] text-slate-400">Payer</div>
+              </div>
+            </div>
+
+            <div className="text-slate-400 text-xs font-medium shrink-0 flex items-center gap-1">
+              <span>pays</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </div>
+
+            <div className="flex items-center gap-2 min-w-0 text-right justify-end">
+              <div className="min-w-0">
+                <div className="text-xs font-semibold text-slate-800 truncate">
+                  {currentPayee.email === currentUserEmail ? 'You' : currentPayee.name}
+                </div>
+                <div className="text-[10px] text-slate-400">Recipient</div>
+              </div>
+              <UserAvatar name={currentPayee.name} picture={currentPayee.picture} size="sm" />
+            </div>
+          </div>
+        )}
 
         {/* Amount */}
         <div>

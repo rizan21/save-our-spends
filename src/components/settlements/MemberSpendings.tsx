@@ -2,11 +2,13 @@ import type { Member } from '../../types/group';
 import type { Expense } from '../../types/transaction';
 import { formatCurrency } from '../../core/splitCalculator';
 import { ArrowLeftRight } from 'lucide-react';
+import { UserAvatar } from '../common/UserAvatar';
 
 export interface MemberSpendingsProps {
   members: Member[];
   expenses: Expense[];
   currentUserEmail: string;
+  currentUserPicture?: string;
   currency?: string;
 }
 
@@ -14,6 +16,7 @@ export function MemberSpendings({
   members,
   expenses,
   currentUserEmail,
+  currentUserPicture,
   currency = 'USD',
 }: MemberSpendingsProps) {
   const activeExpenses = expenses.filter((e) => e.status === 'ACTIVE');
@@ -102,9 +105,11 @@ export function MemberSpendings({
                 {/* Member Header */}
                 <div className="flex items-center justify-between text-xs sm:text-sm">
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-slate-100 text-slate-700 font-semibold flex items-center justify-center text-xs">
-                      {member.name.charAt(0).toUpperCase()}
-                    </div>
+                    <UserAvatar
+                      name={member.name}
+                      picture={isMe ? (currentUserPicture || member.picture) : member.picture}
+                      size="sm"
+                    />
                     <span className="font-medium text-slate-800">
                       {member.name} {isMe && <span className="text-xs text-emerald-600 font-semibold">(You)</span>}
                     </span>

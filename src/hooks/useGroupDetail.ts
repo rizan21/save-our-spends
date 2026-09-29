@@ -222,6 +222,42 @@ export function useGroupDetail(groupId: string | null) {
     },
   });
 
+  // 6. Optimistic Update Member Name
+  const updateMemberNameMutation = useMutation({
+    mutationFn: async ({ email, newName }: { email: string; newName: string }) => {
+      if (!groupId) throw new Error('No group selected');
+      await groupService.updateMemberName(groupId, email, newName);
+      return { email, newName };
+    },
+    onMutate: async ({ email, newName }) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<GroupDataPayload>(queryKey);
+
+      if (previous) {
+        const updatedMembers = previous.group.members.map((m) =>
+          m.email === email ? { ...m, name: newName } : m
+        );
+        queryClient.setQueryData<GroupDataPayload>(queryKey, {
+          ...previous,
+          group: {
+            ...previous.group,
+            members: updatedMembers,
+          },
+        });
+      }
+
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData<GroupDataPayload>(queryKey, context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
   return {
     group: groupQuery.data?.group || null,
     expenses: groupQuery.data?.expenses || [],
@@ -242,5 +278,7 @@ export function useGroupDetail(groupId: string | null) {
     isApprovingInvite: approveInviteMutation.isPending,
     updateDescription: updateDescriptionMutation.mutateAsync,
     isUpdatingDescription: updateDescriptionMutation.isPending,
+    updateMemberName: updateMemberNameMutation.mutateAsync,
+    isUpdatingMemberName: updateMemberNameMutation.isPending,
   };
 }

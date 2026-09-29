@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { CategoryIcon } from '../common/CategoryIcon';
+import { UserAvatar } from '../common/UserAvatar';
 import {
   calculateEqualSplit,
   calculateExactSplit,
@@ -20,7 +21,6 @@ import {
   AlertCircle,
   ArrowLeft,
   ArrowRight,
-  User,
   Users,
   CheckCircle2,
   Percent,
@@ -782,15 +782,7 @@ export function AddExpenseModal({
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
-                              isSelected
-                                ? 'bg-emerald-600 text-white'
-                                : 'bg-slate-100 text-slate-600'
-                            }`}
-                          >
-                            <User className="w-4 h-4" />
-                          </div>
+                          <UserAvatar name={m.name || m.email} picture={m.picture} size="sm" />
                           <div className="min-w-0">
                             <div className="text-xs font-semibold text-slate-800 flex items-center gap-1.5 truncate">
                               <span>{m.name || m.email}</span>
@@ -879,16 +871,19 @@ export function AddExpenseModal({
                         key={m.email}
                         className="flex items-center justify-between gap-3 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs"
                       >
-                        <div className="min-w-0">
-                          <div className="font-semibold text-slate-800 flex items-center gap-1 truncate">
-                            <span>{m.name || m.email}</span>
-                            {isMe && (
-                              <span className="text-[10px] text-emerald-700 bg-emerald-100/70 px-1 py-0.2 rounded font-bold">
-                                You
-                              </span>
-                            )}
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <UserAvatar name={m.name || m.email} picture={m.picture} size="xs" />
+                          <div className="min-w-0">
+                            <div className="font-semibold text-slate-800 flex items-center gap-1 truncate">
+                              <span>{m.name || m.email}</span>
+                              {isMe && (
+                                <span className="text-[10px] text-emerald-700 bg-emerald-100/70 px-1 py-0.2 rounded font-bold">
+                                  You
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[10px] text-slate-400 truncate">{m.email}</div>
                           </div>
-                          <div className="text-[10px] text-slate-400 truncate">{m.email}</div>
                         </div>
 
                         <div className="flex items-center gap-2 shrink-0">
@@ -1056,6 +1051,7 @@ export function AddExpenseModal({
                             >
                               {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
                             </div>
+                            <UserAvatar name={m.name || m.email} picture={m.picture} size="xs" />
                             <span className="truncate">
                               {m.name || m.email} {isMe ? '(You)' : ''}
                             </span>
@@ -1116,9 +1112,12 @@ export function AddExpenseModal({
                           key={m.email}
                           className="flex items-center justify-between gap-2 p-2 bg-white border border-slate-200 rounded-lg text-xs"
                         >
-                          <span className="text-slate-700 truncate">
-                            {m.name || m.email} {isMe ? '(You)' : ''}
-                          </span>
+                          <div className="flex items-center gap-2 min-w-0 truncate">
+                            <UserAvatar name={m.name || m.email} picture={m.picture} size="xs" />
+                            <span className="text-slate-700 truncate">
+                              {m.name || m.email} {isMe ? '(You)' : ''}
+                            </span>
+                          </div>
                           <div className="flex items-center gap-1.5 shrink-0">
                             {exactRemaining > 0 && (
                               <button
@@ -1193,9 +1192,12 @@ export function AddExpenseModal({
                           key={m.email}
                           className="flex items-center justify-between gap-2 p-2 bg-white border border-slate-200 rounded-lg text-xs"
                         >
-                          <span className="text-slate-700 truncate">
-                            {m.name || m.email} {isMe ? '(You)' : ''}
-                          </span>
+                          <div className="flex items-center gap-2 min-w-0 truncate">
+                            <UserAvatar name={m.name || m.email} picture={m.picture} size="xs" />
+                            <span className="text-slate-700 truncate">
+                              {m.name || m.email} {isMe ? '(You)' : ''}
+                            </span>
+                          </div>
                           <div className="flex items-center gap-2 shrink-0">
                             <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded px-2 py-1">
                               <input
@@ -1255,9 +1257,12 @@ export function AddExpenseModal({
                           key={m.email}
                           className="flex items-center justify-between gap-2 p-2 bg-white border border-slate-200 rounded-lg text-xs"
                         >
-                          <span className="text-slate-700 truncate">
-                            {m.name || m.email} {isMe ? '(You)' : ''}
-                          </span>
+                          <div className="flex items-center gap-2 min-w-0 truncate">
+                            <UserAvatar name={m.name || m.email} picture={m.picture} size="xs" />
+                            <span className="text-slate-700 truncate">
+                              {m.name || m.email} {isMe ? '(You)' : ''}
+                            </span>
+                          </div>
                           <div className="flex items-center gap-2 shrink-0">
                             <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded px-2 py-1">
                               <input
@@ -1299,13 +1304,16 @@ export function AddExpenseModal({
                       key={member.email}
                       className="p-2 bg-white border border-slate-100 rounded-lg flex items-center justify-between text-xs"
                     >
-                      <div className="min-w-0 pr-1">
-                        <div className="font-semibold text-slate-800 truncate">
-                          {member.name || member.email} {isMe ? '(You)' : ''}
-                        </div>
-                        <div className="text-[10px] text-slate-400">
-                          Paid {formatCurrency(paid, defaultCurrency)} • Owes{' '}
-                          {formatCurrency(owed, defaultCurrency)}
+                      <div className="flex items-center gap-2 min-w-0 pr-1">
+                        <UserAvatar name={member.name || member.email} picture={member.picture} size="xs" />
+                        <div className="min-w-0">
+                          <div className="font-semibold text-slate-800 truncate">
+                            {member.name || member.email} {isMe ? '(You)' : ''}
+                          </div>
+                          <div className="text-[10px] text-slate-400">
+                            Paid {formatCurrency(paid, defaultCurrency)} • Owes{' '}
+                            {formatCurrency(owed, defaultCurrency)}
+                          </div>
                         </div>
                       </div>
                       <div className="shrink-0 text-right">

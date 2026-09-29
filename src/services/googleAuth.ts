@@ -48,7 +48,12 @@ export class GoogleAuthService {
           this.token = parsed;
           const savedUser = localStorage.getItem(USER_STORAGE_KEY);
           if (savedUser) {
-            this.user = JSON.parse(savedUser);
+            const parsedUser = JSON.parse(savedUser) as GoogleUser;
+            const customName = this.getSavedCustomName(parsedUser.email);
+            if (customName) {
+              parsedUser.name = customName;
+            }
+            this.user = parsedUser;
           }
         } else {
           localStorage.removeItem(TOKEN_STORAGE_KEY);
@@ -63,6 +68,11 @@ export class GoogleAuthService {
     } catch {
       // Ignore parse errors
     }
+  }
+
+  public getSavedCustomName(email: string): string | null {
+    if (typeof localStorage === 'undefined') return null;
+    return localStorage.getItem(`spread_spends_user_name_${email}`);
   }
 
   public getClientId(): string {
@@ -89,10 +99,14 @@ export class GoogleAuthService {
       localStorage.setItem(DEMO_MODE_STORAGE_KEY, String(enabled));
     }
     if (enabled) {
-      // Mock user for demo mode
+      // Mock user for demo mode with Google profile picture
+      const demoEmail = 'alice.dev@gmail.com';
+      const defaultName = 'Alice Dev (Demo Owner)';
+      const customName = this.getSavedCustomName(demoEmail);
       this.user = {
-        email: 'alice.dev@gmail.com',
-        name: 'Alice Dev (Demo Owner)',
+        email: demoEmail,
+        name: customName || defaultName,
+        googleName: defaultName,
         picture: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop',
       };
     } else {
@@ -148,9 +162,13 @@ export class GoogleAuthService {
    */
   public async requestLogin(): Promise<GoogleUser> {
     if (this.isDemoMode) {
+      const demoEmail = 'alice.dev@gmail.com';
+      const defaultName = 'Alice Dev (Demo Owner)';
+      const customName = this.getSavedCustomName(demoEmail);
       this.user = {
-        email: 'alice.dev@gmail.com',
-        name: 'Alice Dev (Demo Owner)',
+        email: demoEmail,
+        name: customName || defaultName,
+        googleName: defaultName,
         picture: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop',
       };
       return this.user;
@@ -221,12 +239,58 @@ export class GoogleAuthService {
       throw new Error('Failed to retrieve user profile from Google');
     }
     const data = await res.json();
+    const googleName = data.name || data.email;
+    const customName = this.getSavedCustomName(data.email);
     return {
       email: data.email,
-      name: data.name || data.email,
+      name: customName || googleName,
+      googleName,
       picture: data.picture,
       id: data.sub,
     };
+  }
+
+  /**
+   * Updates user name while preserving profile picture and original Google details.
+   */
+  public updateUserName(newName: string): GoogleUser {
+    if (!this.user) {
+      throw new Error('No user is currently signed in');
+    }
+    const trimmed = newName.trim();
+    if (!trimmed) {
+      throw new Error('User name cannot be empty');
+    }
+    const googleName = this.user.googleName || this.user.name;
+    this.user = {
+      ...this.user,
+      name: trimmed,
+      googleName,
+    };
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(this.user));
+      localStorage.setItem(`spread_spends_user_name_${this.user.email}`, trimmed);
+    }
+    return this.user;
+  }
+
+  /**
+   * Resets customized user name back to the original Google account name.
+   */
+  public resetUserNameToGoogle(): GoogleUser {
+    if (!this.user) {
+      throw new Error('No user is currently signed in');
+    }
+    const googleName = this.user.googleName || this.user.email.split('@')[0];
+    this.user = {
+      ...this.user,
+      name: googleName,
+    };
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(this.user));
+      localStorage.removeItem(`spread_spends_user_name_${this.user.email}`);
+    }
+    return this.user;
   }
 
   public logout() {

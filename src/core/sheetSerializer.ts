@@ -99,16 +99,22 @@ export function deserializeGroupConfig(rows: string[][]): GroupConfig {
 /* ==================== Members ==================== */
 
 export function serializeMembers(members: Member[]): string[][] {
-  const rows: string[][] = [HEADERS.MEMBERS];
+  const hasPictures = members.some((m) => !!m.picture);
+  const headers = hasPictures ? [...HEADERS.MEMBERS, 'Picture'] : HEADERS.MEMBERS;
+  const rows: string[][] = [headers];
   for (const m of members) {
-    rows.push([
+    const row = [
       m.email,
       m.name,
       m.role,
       m.status,
       m.addedBy,
       m.joinedAt,
-    ]);
+    ];
+    if (hasPictures) {
+      row.push(m.picture || '');
+    }
+    rows.push(row);
   }
   return rows;
 }
@@ -119,14 +125,18 @@ export function deserializeMembers(rows: string[][]): Member[] {
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
     if (!r || !r[0]) continue;
-    members.push({
+    const member: Member = {
       email: r[0].trim(),
       name: (r[1] ?? '').trim() || r[0].trim(),
       role: (r[2] as Member['role']) || 'MEMBER',
       status: (r[3] as Member['status']) || 'ACTIVE',
       addedBy: (r[4] ?? '').trim(),
       joinedAt: (r[5] ?? '').trim() || new Date().toISOString(),
-    });
+    };
+    if (r[6] && r[6].trim()) {
+      member.picture = r[6].trim();
+    }
+    members.push(member);
   }
   return members;
 }

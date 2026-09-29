@@ -45,6 +45,18 @@ export function useAuth() {
     return googleAuthService.getClientId();
   }, []);
 
+  const updateUserName = useCallback((newName: string) => {
+    const updated = googleAuthService.updateUserName(newName);
+    setUser({ ...updated });
+    return updated;
+  }, []);
+
+  const resetUserNameToGoogle = useCallback(() => {
+    const updated = googleAuthService.resetUserNameToGoogle();
+    setUser({ ...updated });
+    return updated;
+  }, []);
+
   return {
     user,
     isAuthenticated: !!user,
@@ -53,6 +65,8 @@ export function useAuth() {
     error,
     login,
     logout,
+    updateUserName,
+    resetUserNameToGoogle,
     toggleDemoMode,
     setCustomClientId,
     getCustomClientId,

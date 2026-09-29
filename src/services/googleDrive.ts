@@ -58,6 +58,30 @@ export class GoogleDriveService {
 
     return await res.json();
   }
+
+  /**
+   * Retrieves permissions for a file, including members' Google account photoLinks.
+   */
+  public async getFilePermissions(
+    token: string,
+    fileId: string
+  ): Promise<Array<{ emailAddress?: string; photoLink?: string; displayName?: string }>> {
+    try {
+      const fields = encodeURIComponent('permissions(emailAddress, photoLink, displayName)');
+      const url = `https://www.googleapis.com/drive/v3/files/${fileId}/permissions?fields=${fields}`;
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data.permissions || [];
+    } catch {
+      return [];
+    }
+  }
 }
 
 export const googleDriveService = new GoogleDriveService();

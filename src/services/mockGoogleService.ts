@@ -29,6 +29,22 @@ export interface MockSpreadsheet {
 
 const STORAGE_KEY = 'spread_spends_mock_data_v1';
 
+export const MOCK_AVATARS: Record<string, string> = {
+  'alice.dev@gmail.com': 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop',
+  'bob.traveler@gmail.com': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop',
+  'charlie.foodie@gmail.com': 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop',
+  'david.photographer@gmail.com': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop',
+};
+
+export function getMockUserAvatar(email: string): string {
+  const normalized = email.toLowerCase().trim();
+  if (MOCK_AVATARS[normalized]) {
+    return MOCK_AVATARS[normalized];
+  }
+  const seed = encodeURIComponent(normalized.split('@')[0]);
+  return `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`;
+}
+
 // Seed sample data for an instant rich experience
 function getInitialMockSpreadsheets(): Record<string, MockSpreadsheet> {
   const goaId = 'mock-sheet-goa-2026';
@@ -55,6 +71,7 @@ function getInitialMockSpreadsheets(): Record<string, MockSpreadsheet> {
       status: 'ACTIVE',
       addedBy: 'self',
       joinedAt: '2026-09-20T10:00:00.000Z',
+      picture: MOCK_AVATARS[ownerEmail],
     },
     {
       email: bobEmail,
@@ -63,6 +80,7 @@ function getInitialMockSpreadsheets(): Record<string, MockSpreadsheet> {
       status: 'ACTIVE',
       addedBy: ownerEmail,
       joinedAt: '2026-09-20T11:00:00.000Z',
+      picture: MOCK_AVATARS[bobEmail],
     },
     {
       email: charlieEmail,
@@ -71,6 +89,7 @@ function getInitialMockSpreadsheets(): Record<string, MockSpreadsheet> {
       status: 'ACTIVE',
       addedBy: ownerEmail,
       joinedAt: '2026-09-20T11:30:00.000Z',
+      picture: MOCK_AVATARS[charlieEmail],
     },
   ];
 
@@ -278,6 +297,7 @@ class MockGoogleService {
         status: 'ACTIVE',
         addedBy: 'self',
         joinedAt: new Date().toISOString(),
+        picture: owner.picture,
       },
     ];
 
@@ -291,6 +311,7 @@ class MockGoogleService {
           status: 'ACTIVE',
           addedBy: owner.email,
           joinedAt: new Date().toISOString(),
+          picture: getMockUserAvatar(email),
         });
         sharedWith.push(email);
       }
@@ -354,6 +375,11 @@ class MockGoogleService {
 
     const config = deserializeGroupConfig(sheet.tabs[SHEET_TABS.CONFIG] || []);
     const members = deserializeMembers(sheet.tabs[SHEET_TABS.MEMBERS] || []);
+    for (const m of members) {
+      if (!m.picture) {
+        m.picture = getMockUserAvatar(m.email);
+      }
+    }
     const pendingInvites = deserializePendingInvites(sheet.tabs[SHEET_TABS.INVITES] || []);
     const settlements = deserializeSettlements(sheet.tabs[SHEET_TABS.SETTLEMENTS] || []);
 
@@ -469,6 +495,7 @@ class MockGoogleService {
         status: 'ACTIVE',
         addedBy: approverEmail,
         joinedAt: new Date().toISOString(),
+        picture: getMockUserAvatar(target.invitedEmail),
       });
     }
 
@@ -509,6 +536,7 @@ class MockGoogleService {
         status: 'ACTIVE',
         addedBy: ownerEmail,
         joinedAt: new Date().toISOString(),
+        picture: getMockUserAvatar(memberEmail),
       });
       const newMemberTab = getMemberTabName(memberEmail);
       if (!sheet.tabs[newMemberTab]) {
@@ -521,6 +549,25 @@ class MockGoogleService {
       sheet.tabs[SHEET_TABS.MEMBERS] = serializeMembers(members);
       this.saveToStorage();
     }
+  }
+
+  /**
+   * Updates a member's display name in mock storage.
+   */
+  public async updateMemberName(sheetId: string, email: string, newName: string): Promise<void> {
+    const sheet = this.sheets[sheetId];
+    if (!sheet) {
+      throw new Error(`Spreadsheet with ID ${sheetId} not found in mock store`);
+    }
+
+    const members = deserializeMembers(sheet.tabs[SHEET_TABS.MEMBERS] || []);
+    const target = members.find((m) => m.email === email);
+    if (!target) {
+      throw new Error(`Member with email ${email} not found`);
+    }
+    target.name = newName;
+    sheet.tabs[SHEET_TABS.MEMBERS] = serializeMembers(members);
+    this.saveToStorage();
   }
 }
 

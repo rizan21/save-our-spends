@@ -8,6 +8,7 @@ export interface Member {
   status: MemberStatus;
   addedBy: string;
   joinedAt: string;
+  picture?: string;
 }
 
 export type InviteStatus = 'PENDING' | 'APPROVED' | 'REJECTED';

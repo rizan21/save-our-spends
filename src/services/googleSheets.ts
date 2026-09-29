@@ -6,6 +6,7 @@ import {
   serializeGroupConfig,
   deserializeGroupConfig,
   serializeMembers,
+  deserializeMembers,
   serializePendingInvites,
   serializeSettlements,
 } from '../core/sheetSerializer';
@@ -46,6 +47,7 @@ export class GoogleSheetsService {
         status: 'ACTIVE',
         addedBy: 'self',
         joinedAt: new Date().toISOString(),
+        picture: owner.picture,
       },
     ];
 
@@ -340,6 +342,31 @@ export class GoogleSheetsService {
     const formula = generateAllExpensesFormula(memberEmails);
     if (!formula) return;
     await this.updateSheetRange(token, spreadsheetId, `${SHEET_TABS.ALL_EXPENSES}!A2:A2`, [[formula]]);
+  }
+
+  /**
+   * Updates a member's display name in the Members tab of the Google Sheet.
+   */
+  public async updateMemberName(
+    token: string,
+    spreadsheetId: string,
+    email: string,
+    newName: string
+  ): Promise<void> {
+    const memberRows = await this.readTab(token, spreadsheetId, SHEET_TABS.MEMBERS);
+    const members = deserializeMembers(memberRows);
+    const target = members.find((m) => m.email === email);
+    if (!target) {
+      throw new Error(`Member with email ${email} not found`);
+    }
+    target.name = newName;
+    const serialized = serializeMembers(members);
+    await this.updateSheetRange(
+      token,
+      spreadsheetId,
+      `${SHEET_TABS.MEMBERS}!A1:G${serialized.length}`,
+      serialized
+    );
   }
 }
 

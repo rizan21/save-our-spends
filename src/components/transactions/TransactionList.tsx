@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { TransactionItem } from './TransactionItem';
 import { Button } from '../common/Button';
+import { UserAvatar } from '../common/UserAvatar';
 import { Receipt, Plus, HandCoins } from 'lucide-react';
 import type { Expense, Settlement } from '../../types/transaction';
 import type { SimplifiedDebt } from '../../types/balance';
+import type { Member } from '../../types/group';
 import { formatCurrency } from '../../core/splitCalculator';
 
 export interface TransactionListProps {
@@ -11,6 +13,7 @@ export interface TransactionListProps {
   settlements: Settlement[];
   currentUserEmail: string;
   currency: string;
+  members?: Member[];
   simplifiedDebts?: SimplifiedDebt[];
   onOpenAddExpense: () => void;
   onSettleDebt?: (debt: SimplifiedDebt) => void;
@@ -21,6 +24,7 @@ export function TransactionList({
   settlements,
   currentUserEmail,
   currency,
+  members = [],
   simplifiedDebts = [],
   onOpenAddExpense,
   onSettleDebt,
@@ -88,14 +92,24 @@ export function TransactionList({
                       : 'border-slate-200/70 bg-slate-50/50'
                   }`}
                 >
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="font-bold text-slate-900">
-                      {isPayer ? 'You' : debt.fromName}
-                    </span>
+                  <div className="flex items-center gap-2 text-xs flex-wrap">
+                    <div className="flex items-center gap-1 font-bold text-slate-900">
+                      <UserAvatar
+                        name={debt.fromName}
+                        picture={members.find((m) => m.email.toLowerCase() === debt.fromEmail.toLowerCase())?.picture}
+                        size="xs"
+                      />
+                      <span>{isPayer ? 'You' : debt.fromName}</span>
+                    </div>
                     <span className="text-slate-400">owes</span>
-                    <span className="font-bold text-slate-900">
-                      {isPayee ? 'You' : debt.toName}
-                    </span>
+                    <div className="flex items-center gap-1 font-bold text-slate-900">
+                      <UserAvatar
+                        name={debt.toName}
+                        picture={members.find((m) => m.email.toLowerCase() === debt.toEmail.toLowerCase())?.picture}
+                        size="xs"
+                      />
+                      <span>{isPayee ? 'You' : debt.toName}</span>
+                    </div>
                   </div>
 
                   <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
@@ -193,6 +207,7 @@ export function TransactionList({
               item={item}
               currentUserEmail={currentUserEmail}
               currency={currency}
+              members={members}
             />
           ))}
         </div>

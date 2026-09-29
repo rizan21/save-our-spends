@@ -10,6 +10,8 @@ export interface ActiveSettlementItem {
   groupId: string;
   groupName: string;
   debt: SimplifiedDebt;
+  fromPicture?: string;
+  toPicture?: string;
 }
 
 export function useHomeSummary(groups: GoogleDriveFile[], currentUserEmail: string) {
@@ -57,6 +59,8 @@ export function useHomeSummary(groups: GoogleDriveFile[], currentUserEmail: stri
         totalYouOwe += Math.abs(userBalance);
       }
 
+      const memberMap = new Map(group.members.map((m) => [m.email.toLowerCase(), m]));
+
       for (const debt of summary.simplifiedDebts) {
         // Collect debts where the user is either the payer or payee
         if (debt.fromEmail === currentUserEmail || debt.toEmail === currentUserEmail) {
@@ -64,6 +68,8 @@ export function useHomeSummary(groups: GoogleDriveFile[], currentUserEmail: stri
             groupId,
             groupName,
             debt,
+            fromPicture: memberMap.get(debt.fromEmail.toLowerCase())?.picture,
+            toPicture: memberMap.get(debt.toEmail.toLowerCase())?.picture,
           });
         }
       }

@@ -95,18 +95,54 @@ export class GroupService {
 
     const token = this.getAuthToken();
 
-    // 1. Fetch metadata tabs
-    const [configRows, memberRows, inviteRows, settlementRows] = await Promise.all([
+    // 1. Fetch metadata tabs and drive permissions in parallel
+    const [configRows, memberRows, inviteRows, settlementRows, drivePermissions] = await Promise.all([
       googleSheetsService.readTab(token, sheetId, SHEET_TABS.CONFIG),
       googleSheetsService.readTab(token, sheetId, SHEET_TABS.MEMBERS),
       googleSheetsService.readTab(token, sheetId, SHEET_TABS.INVITES),
       googleSheetsService.readTab(token, sheetId, SHEET_TABS.SETTLEMENTS),
+      googleDriveService.getFilePermissions(token, sheetId).catch(() => []),
     ]);
 
     const config = deserializeGroupConfig(configRows);
     const members = deserializeMembers(memberRows);
     const pendingInvites = deserializePendingInvites(inviteRows);
     const settlements = deserializeSettlements(settlementRows);
+
+    // Build permissions photo map
+    const permPhotoMap = new Map<string, string>();
+    for (const p of drivePermissions) {
+      if (p.emailAddress && p.photoLink) {
+        permPhotoMap.set(p.emailAddress.toLowerCase(), p.photoLink);
+      }
+    }
+
+    const currentUser = googleAuthService.getCurrentUser();
+    let memberRowsNeedUpdate = false;
+
+    for (const m of members) {
+      const emailLower = m.email.toLowerCase();
+      // Sync current user's Google picture if available
+      if (currentUser && currentUser.email.toLowerCase() === emailLower && currentUser.picture) {
+        if (m.picture !== currentUser.picture) {
+          m.picture = currentUser.picture;
+          memberRowsNeedUpdate = true;
+        }
+      } else if (!m.picture && permPhotoMap.has(emailLower)) {
+        m.picture = permPhotoMap.get(emailLower);
+      }
+    }
+
+    // If current user's picture was updated/added, sync back to the Members tab
+    if (memberRowsNeedUpdate) {
+      const serialized = serializeMembers(members);
+      googleSheetsService.updateSheetRange(
+        token,
+        sheetId,
+        `${SHEET_TABS.MEMBERS}!A1:G${serialized.length}`,
+        serialized
+      ).catch((err) => console.warn('Could not sync member profile picture to sheet:', err));
+    }
 
     // 2. Fetch all personal member tabs (and fallback to legacy Expenses tab if needed)
     const memberRanges = members.map((m) => `${getMemberTabName(m.email)}!A1:M500`);
@@ -179,6 +215,17 @@ export class GroupService {
     }
     const token = this.getAuthToken();
     return await googleSheetsService.updateGroupDescription(token, sheetId, description);
+  }
+
+  /**
+   * Updates a member's display name in the group spreadsheet.
+   */
+  public async updateMemberName(sheetId: string, email: string, newName: string): Promise<void> {
+    if (googleAuthService.getIsDemoMode()) {
+      return await mockGoogleService.updateMemberName(sheetId, email, newName);
+    }
+    const token = this.getAuthToken();
+    return await googleSheetsService.updateMemberName(token, sheetId, email, newName);
   }
 
   /**
@@ -306,7 +353,7 @@ export class GroupService {
       googleSheetsService.updateSheetRange(
         token,
         sheetId,
-        `${SHEET_TABS.MEMBERS}!A1:F${members.length + 1}`,
+        `${SHEET_TABS.MEMBERS}!A1:G${members.length + 1}`,
         serializeMembers(members)
       ),
     ]);
