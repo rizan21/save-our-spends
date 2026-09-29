@@ -1,0 +1,508 @@
+import type { GoogleDriveFile, GoogleUser } from '../types/google';
+import type { Group, GroupConfig, Member, PendingInvite } from '../types/group';
+import type { Expense, Settlement } from '../types/transaction';
+import {
+  deserializeGroupConfig,
+  deserializeMembers,
+  deserializePendingInvites,
+  deserializeSettlements,
+  deserializeMultiTabExpenses,
+  getMemberTabName,
+  generateAllExpensesFormula,
+  HEADERS,
+  serializeExpenseRow,
+  serializeGroupConfig,
+  serializeMembers,
+  serializePendingInvites,
+  serializeSettlementRow,
+  serializeSettlements,
+  SHEET_TABS,
+} from '../core/sheetSerializer';
+
+export interface MockSpreadsheet {
+  id: string;
+  name: string;
+  ownerEmail: string;
+  sharedWith: string[]; // emails with writer permissions
+  tabs: Record<string, string[][]>;
+}
+
+const STORAGE_KEY = 'spread_spends_mock_data_v1';
+
+// Seed sample data for an instant rich experience
+function getInitialMockSpreadsheets(): Record<string, MockSpreadsheet> {
+  const goaId = 'mock-sheet-goa-2026';
+  const ownerEmail = 'alice.dev@gmail.com';
+  const bobEmail = 'bob.traveler@gmail.com';
+  const charlieEmail = 'charlie.foodie@gmail.com';
+
+  const config: GroupConfig = {
+    appSignature: 'Spread-Spends',
+    schemaVersion: '1.0.0',
+    groupId: goaId,
+    groupName: 'Goa Vacation 2026',
+    defaultCurrency: 'INR',
+    ownerEmail,
+    createdAt: '2026-09-20T10:00:00.000Z',
+  };
+
+  const members: Member[] = [
+    {
+      email: ownerEmail,
+      name: 'Alice Dev (Owner)',
+      role: 'OWNER',
+      status: 'ACTIVE',
+      addedBy: 'self',
+      joinedAt: '2026-09-20T10:00:00.000Z',
+    },
+    {
+      email: bobEmail,
+      name: 'Bob Traveler',
+      role: 'MEMBER',
+      status: 'ACTIVE',
+      addedBy: ownerEmail,
+      joinedAt: '2026-09-20T11:00:00.000Z',
+    },
+    {
+      email: charlieEmail,
+      name: 'Charlie Foodie',
+      role: 'MEMBER',
+      status: 'ACTIVE',
+      addedBy: ownerEmail,
+      joinedAt: '2026-09-20T11:30:00.000Z',
+    },
+  ];
+
+  const pendingInvites: PendingInvite[] = [
+    {
+      id: 'inv-david-01',
+      invitedEmail: 'david.photographer@gmail.com',
+      invitedByEmail: bobEmail,
+      invitedByName: 'Bob Traveler',
+      status: 'PENDING',
+      requestedAt: '2026-09-28T14:30:00.000Z',
+    },
+  ];
+
+  const expenses: Expense[] = [
+    {
+      id: 'exp-beach-villa',
+      date: '2026-09-21',
+      description: 'Beachside Villa Booking (3 Nights)',
+      category: 'lodging',
+      amount: 15000,
+      currency: 'INR',
+      paidBy: { [ownerEmail]: 15000 },
+      splitType: 'EQUAL',
+      splits: {
+        [ownerEmail]: 5000,
+        [bobEmail]: 5000,
+        [charlieEmail]: 5000,
+      },
+      notes: 'Booked directly via Anjuna homestay',
+      createdBy: ownerEmail,
+      createdAt: '2026-09-21T12:00:00.000Z',
+      status: 'ACTIVE',
+    },
+    {
+      id: 'exp-curries-shack',
+      date: '2026-09-22',
+      description: "Dinner at Curlies Shack",
+      category: 'food',
+      amount: 3600,
+      currency: 'INR',
+      paidBy: { [bobEmail]: 3600 },
+      splitType: 'EQUAL',
+      splits: {
+        [ownerEmail]: 1200,
+        [bobEmail]: 1200,
+        [charlieEmail]: 1200,
+      },
+      notes: 'Seafood platter and drinks',
+      createdBy: bobEmail,
+      createdAt: '2026-09-22T21:30:00.000Z',
+      status: 'ACTIVE',
+    },
+    {
+      id: 'exp-scooter-rental',
+      date: '2026-09-23',
+      description: 'Activa Rentals & Fuel',
+      category: 'transport',
+      amount: 2100,
+      currency: 'INR',
+      paidBy: { [charlieEmail]: 2100 },
+      splitType: 'EQUAL',
+      splits: {
+        [ownerEmail]: 700,
+        [bobEmail]: 700,
+        [charlieEmail]: 700,
+      },
+      createdBy: charlieEmail,
+      createdAt: '2026-09-23T10:00:00.000Z',
+      status: 'ACTIVE',
+    },
+  ];
+
+  const settlements: Settlement[] = [
+    {
+      id: 'set-bob-alice-01',
+      date: '2026-09-24',
+      payerEmail: bobEmail,
+      payerName: 'Bob Traveler',
+      payeeEmail: ownerEmail,
+      payeeName: 'Alice Dev (Owner)',
+      amount: 2000,
+      currency: 'INR',
+      paymentMethod: 'UPI',
+      notes: 'Paid via UPI to Alice',
+      recordedBy: bobEmail,
+      createdAt: '2026-09-24T18:00:00.000Z',
+      status: 'ACTIVE',
+    },
+  ];
+
+  return {
+    [goaId]: {
+      id: goaId,
+      name: '[SpreadSpends] Goa Vacation 2026',
+      ownerEmail,
+      sharedWith: [bobEmail, charlieEmail],
+      tabs: {
+        [SHEET_TABS.CONFIG]: serializeGroupConfig(config),
+        [SHEET_TABS.MEMBERS]: serializeMembers(members),
+        [SHEET_TABS.INVITES]: serializePendingInvites(pendingInvites),
+        [SHEET_TABS.SETTLEMENTS]: serializeSettlements(settlements),
+        [SHEET_TABS.ALL_EXPENSES]: [
+          HEADERS.EXPENSES,
+          [generateAllExpensesFormula([ownerEmail, bobEmail, charlieEmail])],
+        ],
+        [getMemberTabName(ownerEmail)]: [
+          HEADERS.EXPENSES,
+          serializeExpenseRow(expenses[0]),
+        ],
+        [getMemberTabName(bobEmail)]: [
+          HEADERS.EXPENSES,
+          serializeExpenseRow(expenses[1]),
+        ],
+        [getMemberTabName(charlieEmail)]: [
+          HEADERS.EXPENSES,
+          serializeExpenseRow(expenses[2]),
+        ],
+      },
+    },
+  };
+}
+
+class MockGoogleService {
+  private sheets: Record<string, MockSpreadsheet> = {};
+
+  constructor() {
+    this.loadFromStorage();
+  }
+
+  private loadFromStorage() {
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          this.sheets = JSON.parse(raw);
+          return;
+        }
+      } catch {
+        // Fallback to default
+      }
+    }
+    this.sheets = getInitialMockSpreadsheets();
+    this.saveToStorage();
+  }
+
+  private saveToStorage() {
+    if (typeof localStorage !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.sheets));
+      } catch {
+        // Ignore quota/private mode errors
+      }
+    }
+  }
+
+  public resetMockData() {
+    this.sheets = getInitialMockSpreadsheets();
+    this.saveToStorage();
+  }
+
+  /**
+   * Searches Drive for spreadsheets the user owns or has access to.
+   */
+  public async listSpreadSpendsFiles(userEmail: string): Promise<GoogleDriveFile[]> {
+    return Object.values(this.sheets)
+      .filter((s) => s.ownerEmail === userEmail || s.sharedWith.includes(userEmail))
+      .map((s) => ({
+        id: s.id,
+        name: s.name,
+        mimeType: 'application/vnd.google-apps.spreadsheet',
+        webViewLink: `https://docs.google.com/spreadsheets/d/${s.id}/edit`,
+        owners: [{ emailAddress: s.ownerEmail, displayName: s.ownerEmail.split('@')[0] }],
+        shared: s.ownerEmail !== userEmail,
+      }));
+  }
+
+  /**
+   * Creates a new group spreadsheet in the mock Drive.
+   */
+  public async createGroupSpreadsheet(
+    groupName: string,
+    currency: string,
+    owner: GoogleUser,
+    initialMemberEmails: string[] = []
+  ): Promise<string> {
+    const sheetId = `sheet_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const config: GroupConfig = {
+      appSignature: 'Spread-Spends',
+      schemaVersion: '1.0.0',
+      groupId: sheetId,
+      groupName,
+      defaultCurrency: currency,
+      ownerEmail: owner.email,
+      createdAt: new Date().toISOString(),
+    };
+
+    const members: Member[] = [
+      {
+        email: owner.email,
+        name: owner.name,
+        role: 'OWNER',
+        status: 'ACTIVE',
+        addedBy: 'self',
+        joinedAt: new Date().toISOString(),
+      },
+    ];
+
+    const sharedWith: string[] = [];
+    for (const email of initialMemberEmails) {
+      if (email && email !== owner.email) {
+        members.push({
+          email,
+          name: email.split('@')[0],
+          role: 'MEMBER',
+          status: 'ACTIVE',
+          addedBy: owner.email,
+          joinedAt: new Date().toISOString(),
+        });
+        sharedWith.push(email);
+      }
+    }
+
+    const memberEmails = members.map((m) => m.email);
+    const tabs: Record<string, string[][]> = {
+      [SHEET_TABS.CONFIG]: serializeGroupConfig(config),
+      [SHEET_TABS.MEMBERS]: serializeMembers(members),
+      [SHEET_TABS.INVITES]: serializePendingInvites([]),
+      [SHEET_TABS.SETTLEMENTS]: serializeSettlements([]),
+      [SHEET_TABS.ALL_EXPENSES]: [
+        HEADERS.EXPENSES,
+        [generateAllExpensesFormula(memberEmails)],
+      ],
+    };
+
+    for (const member of members) {
+      tabs[getMemberTabName(member.email)] = [HEADERS.EXPENSES];
+    }
+
+    this.sheets[sheetId] = {
+      id: sheetId,
+      name: `[SpreadSpends] ${groupName}`,
+      ownerEmail: owner.email,
+      sharedWith,
+      tabs,
+    };
+
+    this.saveToStorage();
+    return sheetId;
+  }
+
+  /**
+   * Loads full group data across all member tabs.
+   */
+  public async loadGroupData(sheetId: string): Promise<{
+    group: Group;
+    expenses: Expense[];
+    settlements: Settlement[];
+  }> {
+    const sheet = this.sheets[sheetId];
+    if (!sheet) {
+      throw new Error(`Spreadsheet with ID ${sheetId} not found in mock store`);
+    }
+
+    const config = deserializeGroupConfig(sheet.tabs[SHEET_TABS.CONFIG] || []);
+    const members = deserializeMembers(sheet.tabs[SHEET_TABS.MEMBERS] || []);
+    const pendingInvites = deserializePendingInvites(sheet.tabs[SHEET_TABS.INVITES] || []);
+    const settlements = deserializeSettlements(sheet.tabs[SHEET_TABS.SETTLEMENTS] || []);
+
+    // Gather all personal member tabs
+    const tabsData: Array<{ tabName: string; rows: string[][] }> = [];
+    for (const m of members) {
+      const tabName = getMemberTabName(m.email);
+      if (sheet.tabs[tabName]) {
+        tabsData.push({ tabName, rows: sheet.tabs[tabName] });
+      }
+    }
+    // Also include legacy Expenses tab if present
+    if (sheet.tabs[SHEET_TABS.EXPENSES]) {
+      tabsData.push({ tabName: SHEET_TABS.EXPENSES, rows: sheet.tabs[SHEET_TABS.EXPENSES] });
+    }
+
+    const expenses = deserializeMultiTabExpenses(tabsData);
+
+    const group: Group = {
+      id: sheetId,
+      name: config.groupName,
+      currency: config.defaultCurrency,
+      ownerEmail: config.ownerEmail,
+      createdAt: config.createdAt,
+      members,
+      pendingInvites,
+      driveFileUrl: `https://docs.google.com/spreadsheets/d/${sheetId}/edit`,
+    };
+
+    return { group, expenses, settlements };
+  }
+
+  /**
+   * Appends an expense row to the author's isolated personal tab (zero write contention).
+   */
+  public async appendExpense(sheetId: string, expense: Expense): Promise<void> {
+    const sheet = this.sheets[sheetId];
+    if (!sheet) throw new Error('Sheet not found');
+
+    const authorEmail = expense.createdBy || sheet.ownerEmail;
+    const authorTab = getMemberTabName(authorEmail);
+
+    if (!sheet.tabs[authorTab]) {
+      sheet.tabs[authorTab] = [HEADERS.EXPENSES];
+    }
+
+    sheet.tabs[authorTab].push(serializeExpenseRow(expense));
+    this.saveToStorage();
+  }
+
+  /**
+   * Appends a settlement row.
+   */
+  public async appendSettlement(sheetId: string, settlement: Settlement): Promise<void> {
+    const sheet = this.sheets[sheetId];
+    if (!sheet) throw new Error('Sheet not found');
+
+    const setTab = sheet.tabs[SHEET_TABS.SETTLEMENTS] || [];
+    setTab.push(serializeSettlementRow(settlement));
+    sheet.tabs[SHEET_TABS.SETTLEMENTS] = setTab;
+    this.saveToStorage();
+  }
+
+  /**
+   * Member proposes an invite (stored in Pending_Invites).
+   */
+  public async proposeInvite(sheetId: string, invite: PendingInvite): Promise<void> {
+    const sheet = this.sheets[sheetId];
+    if (!sheet) throw new Error('Sheet not found');
+
+    const currentInvites = deserializePendingInvites(sheet.tabs[SHEET_TABS.INVITES] || []);
+    // Prevent duplicates
+    if (currentInvites.some((inv) => inv.invitedEmail === invite.invitedEmail && inv.status === 'PENDING')) {
+      throw new Error(`An invite is already pending for ${invite.invitedEmail}`);
+    }
+
+    currentInvites.push(invite);
+    sheet.tabs[SHEET_TABS.INVITES] = serializePendingInvites(currentInvites);
+    this.saveToStorage();
+  }
+
+  /**
+   * Group owner approves a pending invite.
+   * This simulates granting Google Drive writer permissions and moves the user to Members.
+   */
+  public async approveInvite(sheetId: string, inviteId: string, approverEmail: string): Promise<void> {
+    const sheet = this.sheets[sheetId];
+    if (!sheet) throw new Error('Sheet not found');
+    if (sheet.ownerEmail !== approverEmail) {
+      throw new Error('Only the group owner can approve invites and grant Google Drive permissions');
+    }
+
+    const invites = deserializePendingInvites(sheet.tabs[SHEET_TABS.INVITES] || []);
+    const target = invites.find((inv) => inv.id === inviteId);
+    if (!target) throw new Error('Invite not found');
+
+    target.status = 'APPROVED';
+    target.approvedAt = new Date().toISOString();
+
+    // Grant Drive permission
+    if (!sheet.sharedWith.includes(target.invitedEmail)) {
+      sheet.sharedWith.push(target.invitedEmail);
+    }
+
+    // Add to active members
+    const members = deserializeMembers(sheet.tabs[SHEET_TABS.MEMBERS] || []);
+    if (!members.some((m) => m.email === target.invitedEmail)) {
+      members.push({
+        email: target.invitedEmail,
+        name: target.invitedEmail.split('@')[0],
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        addedBy: approverEmail,
+        joinedAt: new Date().toISOString(),
+      });
+    }
+
+    // Provision personal tab for the new member
+    const newMemberTab = getMemberTabName(target.invitedEmail);
+    if (!sheet.tabs[newMemberTab]) {
+      sheet.tabs[newMemberTab] = [HEADERS.EXPENSES];
+    }
+
+    // Update master formula
+    sheet.tabs[SHEET_TABS.ALL_EXPENSES] = [
+      HEADERS.EXPENSES,
+      [generateAllExpensesFormula(members.map((m) => m.email))],
+    ];
+
+    sheet.tabs[SHEET_TABS.INVITES] = serializePendingInvites(invites);
+    sheet.tabs[SHEET_TABS.MEMBERS] = serializeMembers(members);
+    this.saveToStorage();
+  }
+
+  /**
+   * Owner directly adds an invitee (bypasses pending state).
+   */
+  public async addDirectMember(sheetId: string, memberEmail: string, ownerEmail: string): Promise<void> {
+    const sheet = this.sheets[sheetId];
+    if (!sheet) throw new Error('Sheet not found');
+
+    if (!sheet.sharedWith.includes(memberEmail)) {
+      sheet.sharedWith.push(memberEmail);
+    }
+
+    const members = deserializeMembers(sheet.tabs[SHEET_TABS.MEMBERS] || []);
+    if (!members.some((m) => m.email === memberEmail)) {
+      members.push({
+        email: memberEmail,
+        name: memberEmail.split('@')[0],
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        addedBy: ownerEmail,
+        joinedAt: new Date().toISOString(),
+      });
+      const newMemberTab = getMemberTabName(memberEmail);
+      if (!sheet.tabs[newMemberTab]) {
+        sheet.tabs[newMemberTab] = [HEADERS.EXPENSES];
+      }
+      sheet.tabs[SHEET_TABS.ALL_EXPENSES] = [
+        HEADERS.EXPENSES,
+        [generateAllExpensesFormula(members.map((m) => m.email))],
+      ];
+      sheet.tabs[SHEET_TABS.MEMBERS] = serializeMembers(members);
+      this.saveToStorage();
+    }
+  }
+}
+
+export const mockGoogleService = new MockGoogleService();
