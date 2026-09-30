@@ -38,3 +38,11 @@ export const getImportedGroups = async (): Promise<GoogleDriveFile[]> => {
 export const cacheGroupDetail = (groupId: string, data: unknown): void => {
   set(`spread_spends_group_${groupId}`, data).catch(() => {});
 };
+
+export const getCachedGroupDetail = async <T = unknown>(groupId: string): Promise<T | null> => {
+  try {
+    return (await get<T>(`spread_spends_group_${groupId}`)) || null;
+  } catch {
+    return null;
+  }
+};

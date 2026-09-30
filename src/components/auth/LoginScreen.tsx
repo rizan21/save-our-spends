@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Table, Key, CheckCircle2, ShieldCheck, ExternalLink, AlertCircle, ArrowRight } from 'lucide-react';
+import { Table, Key, CheckCircle2, ShieldCheck, ExternalLink, AlertCircle, ArrowRight, Download } from 'lucide-react';
 import { Button } from '../common/Button';
 
 export interface LoginScreenProps {
@@ -8,6 +8,8 @@ export interface LoginScreenProps {
   error: string | null;
   clientId: string;
   onSaveClientId: (id: string) => void;
+  showInstallButton?: boolean;
+  onOpenInstall?: () => void;
 }
 
 export function LoginScreen({
@@ -16,6 +18,8 @@ export function LoginScreen({
   error,
   clientId,
   onSaveClientId,
+  showInstallButton,
+  onOpenInstall,
 }: LoginScreenProps) {
   const [showConfig, setShowConfig] = useState(!clientId);
   const [clientIdInput, setClientIdInput] = useState(clientId);
@@ -163,6 +167,20 @@ export function LoginScreen({
             </li>
           </ul>
         </div>
+
+        {/* Install for Offline Viewing Prompt */}
+        {showInstallButton && onOpenInstall && (
+          <div className="pt-1 text-center">
+            <button
+              type="button"
+              onClick={onOpenInstall}
+              className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200 px-3.5 py-2 rounded-xl transition-all cursor-pointer shadow-xs"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Install app for offline viewing</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

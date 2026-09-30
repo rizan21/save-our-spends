@@ -1,6 +1,6 @@
 import { useQueries } from '@tanstack/react-query';
 import { groupService } from '../services/groupService';
-import { cacheGroupDetail } from '../services/storageService';
+import { cacheGroupDetail, getCachedGroupDetail } from '../services/storageService';
 import { calculateBalances } from '../core/debtSimplifier';
 import type { GoogleDriveFile } from '../types/google';
 import type { SimplifiedDebt } from '../types/balance';
@@ -19,9 +19,15 @@ export function useHomeSummary(groups: GoogleDriveFile[], currentUserEmail: stri
     queries: groups.map((g) => ({
       queryKey: ['group-detail', g.id],
       queryFn: async (): Promise<GroupDataPayload | null> => {
-        const data = await groupService.loadGroup(g.id);
-        cacheGroupDetail(g.id, data);
-        return data;
+        try {
+          const data = await groupService.loadGroup(g.id);
+          cacheGroupDetail(g.id, data);
+          return data;
+        } catch (err) {
+          const cached = await getCachedGroupDetail<GroupDataPayload>(g.id);
+          if (cached) return cached;
+          throw err;
+        }
       },
       staleTime: 1000 * 30, // 30s
       enabled: !!g.id && !!currentUserEmail,

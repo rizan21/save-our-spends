@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { groupService } from '../services/groupService';
-import { cacheGroups, getImportedGroups, saveImportedGroup } from '../services/storageService';
+import { cacheGroups, getCachedGroups, getImportedGroups, saveImportedGroup } from '../services/storageService';
 import type { GoogleDriveFile, GoogleUser } from '../types/google';
 
 export function useGroups(currentUser: GoogleUser | null) {
@@ -11,20 +11,28 @@ export function useGroups(currentUser: GoogleUser | null) {
     queryKey,
     queryFn: async (): Promise<GoogleDriveFile[]> => {
       if (!currentUser) return [];
-      const [live, imported] = await Promise.all([
-        groupService.listGroups(currentUser.email),
-        getImportedGroups(),
-      ]);
+      try {
+        const [live, imported] = await Promise.all([
+          groupService.listGroups(currentUser.email),
+          getImportedGroups(),
+        ]);
 
-      const map = new Map<string, GoogleDriveFile>();
-      for (const f of live) map.set(f.id, f);
-      for (const f of imported) {
-        if (!map.has(f.id)) map.set(f.id, f);
+        const map = new Map<string, GoogleDriveFile>();
+        for (const f of live) map.set(f.id, f);
+        for (const f of imported) {
+          if (!map.has(f.id)) map.set(f.id, f);
+        }
+
+        const combined = Array.from(map.values());
+        cacheGroups(combined);
+        return combined;
+      } catch (err) {
+        const cached = await getCachedGroups();
+        if (cached && cached.length > 0) {
+          return cached;
+        }
+        throw err;
       }
-
-      const combined = Array.from(map.values());
-      cacheGroups(combined);
-      return combined;
     },
     enabled: !!currentUser,
     staleTime: 1000 * 30, // 30 seconds

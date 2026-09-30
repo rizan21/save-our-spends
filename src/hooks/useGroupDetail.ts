@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { groupService } from '../services/groupService';
-import { cacheGroupDetail } from '../services/storageService';
+import { cacheGroupDetail, getCachedGroupDetail } from '../services/storageService';
 import { calculateBalances } from '../core/debtSimplifier';
 import type { Group, PendingInvite } from '../types/group';
 import type { Expense, Settlement } from '../types/transaction';
@@ -20,9 +20,15 @@ export function useGroupDetail(groupId: string | null) {
     queryKey,
     queryFn: async (): Promise<GroupDataPayload | null> => {
       if (!groupId) return null;
-      const data = await groupService.loadGroup(groupId);
-      cacheGroupDetail(groupId, data);
-      return data;
+      try {
+        const data = await groupService.loadGroup(groupId);
+        cacheGroupDetail(groupId, data);
+        return data;
+      } catch (err) {
+        const cached = await getCachedGroupDetail<GroupDataPayload>(groupId);
+        if (cached) return cached;
+        throw err;
+      }
     },
     enabled: !!groupId,
     staleTime: 1000 * 15, // 15 seconds

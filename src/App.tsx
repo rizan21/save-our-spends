@@ -28,6 +28,9 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { AlertCircle } from 'lucide-react';
 import { LoginScreen } from './components/auth/LoginScreen';
 import { EditProfileModal } from './components/auth/EditProfileModal';
+import { usePwaInstall } from './hooks/usePwaInstall';
+import { InstallAppModal } from './components/pwa/InstallAppModal';
+import { OfflineIndicator } from './components/pwa/OfflineIndicator';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,6 +53,17 @@ function SpreadSpendsInner() {
     setCustomClientId,
     getCustomClientId,
   } = useAuth();
+
+  const {
+    isOpen: isInstallModalOpen,
+    isIOS,
+    isAndroid,
+    isStandalone,
+    canPromptDirectly,
+    openInstallModal,
+    closeInstallModal,
+    triggerInstall,
+  } = usePwaInstall();
 
   // URL Hash Routing: #group=<groupId>
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(() => {
@@ -208,13 +222,25 @@ function SpreadSpendsInner() {
 
   if (!user) {
     return (
-      <LoginScreen
-        onLogin={login}
-        isLoading={isAuthLoading}
-        error={authError}
-        clientId={getCustomClientId()}
-        onSaveClientId={setCustomClientId}
-      />
+      <>
+        <LoginScreen
+          onLogin={login}
+          isLoading={isAuthLoading}
+          error={authError}
+          clientId={getCustomClientId()}
+          onSaveClientId={setCustomClientId}
+          showInstallButton={!isStandalone}
+          onOpenInstall={openInstallModal}
+        />
+        <InstallAppModal
+          isOpen={isInstallModalOpen}
+          onClose={closeInstallModal}
+          isIOS={isIOS}
+          isAndroid={isAndroid}
+          canPromptDirectly={canPromptDirectly}
+          onTriggerInstall={triggerInstall}
+        />
+      </>
     );
   }
 
@@ -226,7 +252,12 @@ function SpreadSpendsInner() {
         onLogin={login}
         onLogout={logout}
         onOpenEditProfile={() => setIsEditProfileOpen(true)}
+        showInstallButton={!isStandalone}
+        onOpenInstall={openInstallModal}
       />
+
+      {/* Offline Mode Alert */}
+      <OfflineIndicator />
 
       {/* Main Container */}
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
@@ -503,6 +534,16 @@ function SpreadSpendsInner() {
           onResetName={handleResetUserName}
         />
       )}
+
+      {/* PWA Install Modal for Android & iOS */}
+      <InstallAppModal
+        isOpen={isInstallModalOpen}
+        onClose={closeInstallModal}
+        isIOS={isIOS}
+        isAndroid={isAndroid}
+        canPromptDirectly={canPromptDirectly}
+        onTriggerInstall={triggerInstall}
+      />
     </div>
   );
 }

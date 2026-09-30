@@ -1,4 +1,4 @@
-import { Table, LogIn, LogOut, Pencil } from 'lucide-react';
+import { Table, LogIn, LogOut, Pencil, Download } from 'lucide-react';
 import { Button } from './Button';
 import { UserAvatar } from './UserAvatar';
 import type { GoogleUser } from '../../types/google';
@@ -8,9 +8,18 @@ export interface NavbarProps {
   onLogin: () => void;
   onLogout: () => void;
   onOpenEditProfile?: () => void;
+  showInstallButton?: boolean;
+  onOpenInstall?: () => void;
 }
 
-export function Navbar({ user, onLogin, onLogout, onOpenEditProfile }: NavbarProps) {
+export function Navbar({
+  user,
+  onLogin,
+  onLogout,
+  onOpenEditProfile,
+  showInstallButton,
+  onOpenInstall,
+}: NavbarProps) {
   return (
     <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
@@ -29,6 +38,22 @@ export function Navbar({ user, onLogin, onLogout, onOpenEditProfile }: NavbarPro
 
         {/* User Profile / Logout */}
         <div className="flex items-center gap-2">
+          {showInstallButton && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onOpenInstall}
+              className="text-xs gap-1.5 border-emerald-300/80 text-emerald-800 bg-emerald-50/60 hover:bg-emerald-100/80 shadow-xs cursor-pointer py-1.5 px-2.5"
+              title="Install app for offline viewing"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="hidden sm:inline">Install App</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-100 px-1 py-0.2 rounded-sm hidden md:inline">
+                Offline
+              </span>
+            </Button>
+          )}
+
           {user ? (
             <div className="flex items-center gap-2 sm:gap-3">
               <button
