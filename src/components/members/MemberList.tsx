@@ -34,7 +34,6 @@ export function MemberList({
       <PendingApprovalsList
         pendingInvites={pendingInvites}
         isOwner={isOwner}
-        currentUserEmail={currentUserEmail}
         onApproveInvite={onApproveInvite}
         isApproving={isApproving}
       />

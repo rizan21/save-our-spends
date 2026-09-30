@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
-  X,
   Download,
   Share,
   PlusSquare,
@@ -9,9 +8,9 @@ import {
   CheckCircle2,
   Smartphone,
   MoreVertical,
-  Layers,
 } from 'lucide-react';
 import { Button } from '../common/Button';
+import { Modal } from '../common/Modal';
 
 export interface InstallAppModalProps {
   isOpen: boolean;
@@ -35,22 +34,6 @@ export function InstallAppModal({
 
   const [isInstalling, setIsInstalling] = useState(false);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleKeyDown);
-    }
-    return () => {
-      document.body.style.overflow = '';
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
-
   const handleInstallClick = async () => {
     setIsInstalling(true);
     try {
@@ -61,52 +44,16 @@ export function InstallAppModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 overflow-y-auto"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="install-modal-title"
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="Install Spread-Spends"
+      description="Install on your home screen for full offline viewing and instant access."
+      maxWidth="lg"
     >
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
-        onClick={onClose}
-      />
-
-      {/* Modal Card / Bottom Sheet */}
-      <div className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-800 overflow-hidden z-10 animate-in slide-in-from-bottom sm:zoom-in-95 duration-200">
-        {/* Top Decorative Header */}
-        <div className="bg-gradient-to-br from-emerald-600 to-teal-700 p-6 text-white relative">
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors cursor-pointer"
-            aria-label="Close"
-          >
-            <X className="w-5 h-5" />
-          </button>
-
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white shadow-inner">
-              <Layers className="w-6 h-6" />
-            </div>
-            <div>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-400/20 text-emerald-100 border border-emerald-300/30">
-                <WifiOff className="w-3 h-3" />
-                Offline Viewing Ready
-              </span>
-              <h2 id="install-modal-title" className="text-xl font-bold tracking-tight text-white mt-1">
-                Install Spread-Spends
-              </h2>
-            </div>
-          </div>
-
-          <p className="text-xs sm:text-sm text-emerald-50/90 leading-relaxed">
-            Install the web app on your home screen to view your expense groups, balances, and debts anytime — even without internet.
-          </p>
-        </div>
-
+      <div className="space-y-5">
         {/* Platform Selector Tabs */}
-        <div className="px-6 pt-4 pb-2 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
           <div className="text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
             Installation Guide
           </div>
@@ -138,10 +85,8 @@ export function InstallAppModal({
           </div>
         </div>
 
-        {/* Content Body */}
-        <div className="p-6 space-y-5 max-h-[68vh] overflow-y-auto">
-          {/* Key Offline Perks */}
-          <div className="grid grid-cols-3 gap-2.5 text-center">
+        {/* Key Offline Perks */}
+        <div className="grid grid-cols-3 gap-2.5 text-center">
             <div className="p-2.5 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/60 flex flex-col items-center">
               <WifiOff className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mb-1" />
               <span className="text-xs font-bold text-slate-800 dark:text-slate-200">100% Offline</span>
@@ -276,10 +221,8 @@ export function InstallAppModal({
               </div>
             </div>
           )}
-        </div>
-
         {/* Footer Actions */}
-        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-850 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
+        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
           <Button variant="ghost" size="sm" onClick={onClose} className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200">
             Maybe later
           </Button>
@@ -293,6 +236,6 @@ export function InstallAppModal({
           </Button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

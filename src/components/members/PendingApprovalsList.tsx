@@ -6,7 +6,6 @@ import type { PendingInvite } from '../../types/group';
 export interface PendingApprovalsListProps {
   pendingInvites: PendingInvite[];
   isOwner: boolean;
-  currentUserEmail: string;
   onApproveInvite: (inviteId: string) => Promise<unknown>;
   isApproving: boolean;
 }

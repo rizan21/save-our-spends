@@ -12,22 +12,16 @@ export interface BeforeInstallPromptEvent extends Event {
 const DISMISSED_KEY = 'spread_spends_pwa_dismissed_at';
 const SNOOZE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
+const isIOS =
+  typeof window !== 'undefined' &&
+  (/iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase()) ||
+    (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1));
+
+const isAndroid =
+  typeof window !== 'undefined' && /android/.test(window.navigator.userAgent.toLowerCase());
+
 export function usePwaInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-
-  const [isIOS] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    const ua = window.navigator.userAgent.toLowerCase();
-    return (
-      /iphone|ipad|ipod/.test(ua) ||
-      (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1)
-    );
-  });
-
-  const [isAndroid] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return /android/.test(window.navigator.userAgent.toLowerCase());
-  });
 
   const [isStandalone, setIsStandalone] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
@@ -39,21 +33,9 @@ export function usePwaInstall() {
   });
 
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [isInstalled, setIsInstalled] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return (
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as unknown as { standalone?: boolean }).standalone === true ||
-      document.referrer.includes('android-app://')
-    );
-  });
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    if (isStandalone) {
-      return;
-    }
+    if (typeof window === 'undefined' || isStandalone) return;
 
     // Intercept Android beforeinstallprompt event
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -62,7 +44,6 @@ export function usePwaInstall() {
     };
 
     const handleAppInstalled = () => {
-      setIsInstalled(true);
       setIsStandalone(true);
       setDeferredPrompt(null);
       setIsOpen(false);
@@ -90,7 +71,7 @@ export function usePwaInstall() {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, [isStandalone, isIOS, isAndroid]);
+  }, [isStandalone]);
 
   const openInstallModal = useCallback(() => {
     setIsOpen(true);
@@ -111,7 +92,6 @@ export function usePwaInstall() {
       await deferredPrompt.prompt();
       const choice = await deferredPrompt.userChoice;
       if (choice.outcome === 'accepted') {
-        setIsInstalled(true);
         setIsStandalone(true);
         setDeferredPrompt(null);
         setIsOpen(false);
@@ -128,7 +108,7 @@ export function usePwaInstall() {
     isIOS,
     isAndroid,
     isStandalone,
-    isInstalled,
+    isInstalled: isStandalone,
     canPromptDirectly: !!deferredPrompt,
     openInstallModal,
     closeInstallModal,

@@ -67,6 +67,29 @@ const STEPS: StepDef[] = [
   { step: 3, title: 'Who Owes', subtitle: 'Split method' },
 ];
 
+function SplitMemberRow({
+  member,
+  currentUserEmail,
+  children,
+}: {
+  member: Member;
+  currentUserEmail: string;
+  children: React.ReactNode;
+}) {
+  const isMe = member.email === currentUserEmail;
+  return (
+    <div className="flex items-center justify-between gap-2 p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs">
+      <div className="flex items-center gap-2 min-w-0 truncate">
+        <UserAvatar name={member.name || member.email} picture={member.picture} size="xs" />
+        <span className="text-slate-700 dark:text-slate-200 truncate">
+          {member.name || member.email} {isMe ? '(You)' : ''}
+        </span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
 export function AddExpenseModal({
   isOpen,
   onClose,
@@ -959,29 +982,10 @@ export function AddExpenseModal({
                 {/* Member Input Rows */}
                 <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
                   {members.map((m) => {
-                    const isMe = m.email === currentUserEmail;
                     const val = multiPayerAmounts[m.email] || '';
 
                     return (
-                      <div
-                        key={m.email}
-                        className="flex items-center justify-between gap-3 p-2.5 bg-slate-50 dark:bg-slate-850/60 border border-slate-200 dark:border-slate-800 rounded-xl text-xs"
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <UserAvatar name={m.name || m.email} picture={m.picture} size="xs" />
-                          <div className="min-w-0">
-                            <div className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-1 truncate">
-                              <span>{m.name || m.email}</span>
-                              {isMe && (
-                                <span className="text-[10px] text-emerald-700 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950 px-1 py-0.2 rounded font-bold">
-                                  You
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-[10px] text-slate-400 dark:text-slate-500 truncate">{m.email}</div>
-                          </div>
-                        </div>
-
+                      <SplitMemberRow key={m.email} member={m} currentUserEmail={currentUserEmail}>
                         <div className="flex items-center gap-2 shrink-0">
                           {payerRemaining > 0 && (
                             <button
@@ -1014,7 +1018,7 @@ export function AddExpenseModal({
                             />
                           </div>
                         </div>
-                      </div>
+                      </SplitMemberRow>
                     );
                   })}
                 </div>
@@ -1200,20 +1204,10 @@ export function AddExpenseModal({
                   {/* Member Rows */}
                   <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
                     {members.map((m) => {
-                      const isMe = m.email === currentUserEmail;
                       const val = exactInputs[m.email] || '';
 
                       return (
-                        <div
-                          key={m.email}
-                          className="flex items-center justify-between gap-2 p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
-                        >
-                          <div className="flex items-center gap-2 min-w-0 truncate">
-                            <UserAvatar name={m.name || m.email} picture={m.picture} size="xs" />
-                            <span className="text-slate-700 dark:text-slate-200 truncate">
-                              {m.name || m.email} {isMe ? '(You)' : ''}
-                            </span>
-                          </div>
+                        <SplitMemberRow key={m.email} member={m} currentUserEmail={currentUserEmail}>
                           <div className="flex items-center gap-1.5 shrink-0">
                             {exactRemaining > 0 && (
                               <button
@@ -1239,7 +1233,7 @@ export function AddExpenseModal({
                               />
                             </div>
                           </div>
-                        </div>
+                        </SplitMemberRow>
                       );
                     })}
                   </div>
@@ -1279,21 +1273,11 @@ export function AddExpenseModal({
                   {/* Member Rows */}
                   <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
                     {members.map((m) => {
-                      const isMe = m.email === currentUserEmail;
                       const share = splitResult.splits[m.email] || 0;
                       const val = percentageInputs[m.email] || '';
 
                       return (
-                        <div
-                          key={m.email}
-                          className="flex items-center justify-between gap-2 p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
-                        >
-                          <div className="flex items-center gap-2 min-w-0 truncate">
-                            <UserAvatar name={m.name || m.email} picture={m.picture} size="xs" />
-                            <span className="text-slate-700 dark:text-slate-200 truncate">
-                              {m.name || m.email} {isMe ? '(You)' : ''}
-                            </span>
-                          </div>
+                        <SplitMemberRow key={m.email} member={m} currentUserEmail={currentUserEmail}>
                           <div className="flex items-center gap-2 shrink-0">
                             <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-2 py-1">
                               <input
@@ -1317,7 +1301,7 @@ export function AddExpenseModal({
                               {formatCurrency(share, defaultCurrency)}
                             </span>
                           </div>
-                        </div>
+                        </SplitMemberRow>
                       );
                     })}
                   </div>
@@ -1344,21 +1328,11 @@ export function AddExpenseModal({
                   {/* Member Rows */}
                   <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
                     {members.map((m) => {
-                      const isMe = m.email === currentUserEmail;
                       const share = splitResult.splits[m.email] || 0;
                       const val = shareInputs[m.email] || '1';
 
                       return (
-                        <div
-                          key={m.email}
-                          className="flex items-center justify-between gap-2 p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs"
-                        >
-                          <div className="flex items-center gap-2 min-w-0 truncate">
-                            <UserAvatar name={m.name || m.email} picture={m.picture} size="xs" />
-                            <span className="text-slate-700 dark:text-slate-200 truncate">
-                              {m.name || m.email} {isMe ? '(You)' : ''}
-                            </span>
-                          </div>
+                        <SplitMemberRow key={m.email} member={m} currentUserEmail={currentUserEmail}>
                           <div className="flex items-center gap-2 shrink-0">
                             <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-2 py-1">
                               <input
@@ -1378,7 +1352,7 @@ export function AddExpenseModal({
                               {formatCurrency(share, defaultCurrency)}
                             </span>
                           </div>
-                        </div>
+                        </SplitMemberRow>
                       );
                     })}
                   </div>

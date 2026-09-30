@@ -1,34 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { WifiOff, Wifi } from 'lucide-react';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 
 export function OfflineIndicator() {
   const { isOnline } = useOnlineStatus();
   const [showRestored, setShowRestored] = useState(false);
+  const wasOffline = useRef(false);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
-    const handleOnline = () => {
+    if (!isOnline) {
+      wasOffline.current = true;
+    } else if (wasOffline.current) {
+      wasOffline.current = false;
       setShowRestored(true);
-      timer = setTimeout(() => {
-        setShowRestored(false);
-      }, 3500);
-    };
-
-    const handleOffline = () => {
-      clearTimeout(timer);
-      setShowRestored(false);
-    };
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
+      const timer = setTimeout(() => setShowRestored(false), 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [isOnline]);
 
   if (!isOnline) {
     return (

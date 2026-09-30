@@ -22,36 +22,23 @@ export function MemberSpendings({
   const activeExpenses = expenses.filter((e) => e.status === 'ACTIVE');
 
   // Compute how much each member paid and consumed
-  const paidMap = new Map<string, number>();
-  const consumedMap = new Map<string, number>();
-
-  for (const m of members) {
-    paidMap.set(m.email, 0);
-    consumedMap.set(m.email, 0);
-  }
+  const spendings: Record<string, { paid: number; consumed: number }> = {};
+  for (const m of members) spendings[m.email] = { paid: 0, consumed: 0 };
 
   for (const exp of activeExpenses) {
-    // Paid out of pocket
-    for (const [payerEmail, paidAmount] of Object.entries(exp.paidBy || {})) {
-      const currentPaid = paidMap.get(payerEmail) || 0;
-      paidMap.set(payerEmail, currentPaid + paidAmount);
+    for (const [p, amt] of Object.entries(exp.paidBy || {})) {
+      if (spendings[p]) spendings[p].paid += amt;
     }
-    // Consumed share
-    for (const [consumerEmail, consumedAmount] of Object.entries(exp.splits || {})) {
-      const currentConsumed = consumedMap.get(consumerEmail) || 0;
-      consumedMap.set(consumerEmail, currentConsumed + consumedAmount);
+    for (const [c, amt] of Object.entries(exp.splits || {})) {
+      if (spendings[c]) spendings[c].consumed += amt;
     }
   }
 
-  const memberSpendings = members.map((m) => {
-    const paid = paidMap.get(m.email) || 0;
-    const consumed = consumedMap.get(m.email) || 0;
-    return {
-      member: m,
-      paid,
-      consumed,
-    };
-  });
+  const memberSpendings = members.map((m) => ({
+    member: m,
+    paid: spendings[m.email]?.paid || 0,
+    consumed: spendings[m.email]?.consumed || 0,
+  }));
 
   // Calculate highest amount among all paid and consumed to proportionally scale bars
   const maxAmount = Math.max(

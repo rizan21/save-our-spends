@@ -136,18 +136,6 @@ export class GoogleAuthService {
     const clientId = this.getClientId();
     if (!clientId) return;
 
-    if (!window.google?.accounts?.oauth2) {
-      await new Promise<void>((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = 'https://accounts.google.com/gsi/client';
-        script.async = true;
-        script.defer = true;
-        script.onload = () => resolve();
-        script.onerror = () => reject(new Error('Failed to load Google Identity Services'));
-        document.head.appendChild(script);
-      });
-    }
-
     if (window.google?.accounts?.oauth2) {
       this.tokenClient = window.google.accounts.oauth2.initTokenClient({
         client_id: clientId,

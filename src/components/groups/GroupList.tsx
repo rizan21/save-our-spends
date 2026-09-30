@@ -1,9 +1,8 @@
 import { useState } from 'react';
-import { Plus, Search, FolderPlus, RefreshCw, FolderDown, HandCoins, TrendingUp, TrendingDown } from 'lucide-react';
+import { Plus, Search, FolderPlus, RefreshCw, FolderDown, HandCoins, TrendingUp, TrendingDown, Table, LogIn } from 'lucide-react';
 import { GroupCard } from './GroupCard';
 import { Button } from '../common/Button';
 import { UserAvatar } from '../common/UserAvatar';
-import { Table, LogIn } from 'lucide-react';
 import type { GoogleDriveFile } from '../../types/google';
 import type { ActiveSettlementItem } from '../../hooks/useHomeSummary';
 import type { SimplifiedDebt } from '../../types/balance';
