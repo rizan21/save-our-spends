@@ -10,6 +10,22 @@ export type ExpenseCategory =
   | 'shopping'
   | 'general';
 
+export interface ChangeDetail {
+  field: string;
+  label: string;
+  oldValue: string;
+  newValue: string;
+}
+
+export interface EditHistoryRecord {
+  id: string;
+  editedAt: string; // ISO 8601
+  editedBy: string; // user email
+  editedByName?: string; // user display name
+  summary: string;
+  changes: ChangeDetail[];
+}
+
 export interface Expense {
   id: string;
   date: string; // YYYY-MM-DD
@@ -25,6 +41,7 @@ export interface Expense {
   createdBy: string;
   createdAt: string;
   status: 'ACTIVE' | 'DELETED';
+  history?: EditHistoryRecord[];
 }
 
 export type PaymentMethod =
@@ -48,4 +65,6 @@ export interface Settlement {
   recordedBy: string;
   createdAt: string;
   status: 'ACTIVE' | 'DELETED';
+  history?: EditHistoryRecord[];
 }
+

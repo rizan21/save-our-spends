@@ -28,6 +28,7 @@ export const HEADERS = {
     'Created By',
     'Created At',
     'Status',
+    'History (JSON)',
   ],
   SETTLEMENTS: [
     'ID',
@@ -43,6 +44,7 @@ export const HEADERS = {
     'Recorded By',
     'Created At',
     'Status',
+    'History (JSON)',
   ],
 };
 
@@ -195,6 +197,7 @@ export function serializeExpenseRow(exp: Expense): string[] {
     exp.createdBy,
     exp.createdAt,
     exp.status,
+    JSON.stringify(exp.history || []),
   ];
 }
 
@@ -229,7 +232,19 @@ export function deserializeExpenses(rows: string[][]): Expense[] {
       splits = {};
     }
 
-    expenses.push({
+    let history: Expense['history'] = undefined;
+    if (r[13]) {
+      try {
+        const parsed = JSON.parse(r[13]);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          history = parsed;
+        }
+      } catch {
+        history = undefined;
+      }
+    }
+
+    const expense: Expense = {
       id: r[0].trim(),
       date: (r[1] ?? '').trim(),
       description: (r[2] ?? '').trim(),
@@ -243,7 +258,13 @@ export function deserializeExpenses(rows: string[][]): Expense[] {
       createdBy: (r[10] ?? '').trim(),
       createdAt: (r[11] ?? '').trim() || new Date().toISOString(),
       status: (r[12] as Expense['status']) || 'ACTIVE',
-    });
+    };
+
+    if (history) {
+      expense.history = history;
+    }
+
+    expenses.push(expense);
   }
   return expenses;
 }
@@ -265,6 +286,7 @@ export function serializeSettlementRow(set: Settlement): string[] {
     set.recordedBy,
     set.createdAt,
     set.status,
+    JSON.stringify(set.history || []),
   ];
 }
 
@@ -284,7 +306,19 @@ export function deserializeSettlements(rows: string[][]): Settlement[] {
     const r = rows[i];
     if (!r || !r[0]) continue;
 
-    settlements.push({
+    let history: Settlement['history'] = undefined;
+    if (r[13]) {
+      try {
+        const parsed = JSON.parse(r[13]);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          history = parsed;
+        }
+      } catch {
+        history = undefined;
+      }
+    }
+
+    const settlement: Settlement = {
       id: r[0].trim(),
       date: (r[1] ?? '').trim(),
       payerEmail: (r[2] ?? '').trim(),
@@ -298,7 +332,13 @@ export function deserializeSettlements(rows: string[][]): Settlement[] {
       recordedBy: (r[10] ?? '').trim(),
       createdAt: (r[11] ?? '').trim() || new Date().toISOString(),
       status: (r[12] as Settlement['status']) || 'ACTIVE',
-    });
+    };
+
+    if (history) {
+      settlement.history = history;
+    }
+
+    settlements.push(settlement);
   }
   return settlements;
 }
@@ -323,9 +363,9 @@ export function generateAllExpensesFormula(memberEmails: string[]): string {
   if (validEmails.length === 0) return '';
   if (validEmails.length === 1) {
     const tab = getMemberTabName(validEmails[0]);
-    return `=IFERROR(SORT('${tab}'!A2:M, 2, FALSE), "")`;
+    return `=IFERROR(SORT('${tab}'!A2:N, 2, FALSE), "")`;
   }
-  const ranges = validEmails.map((e) => `'${getMemberTabName(e)}'!A2:M`);
+  const ranges = validEmails.map((e) => `'${getMemberTabName(e)}'!A2:N`);
   return `=IFERROR(SORT(VSTACK(${ranges.join(', ')}), 2, FALSE), "")`;
 }
 

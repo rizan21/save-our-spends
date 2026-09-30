@@ -17,6 +17,9 @@ export interface TransactionListProps {
   simplifiedDebts?: SimplifiedDebt[];
   onOpenAddExpense: () => void;
   onSettleDebt?: (debt: SimplifiedDebt) => void;
+  onEditExpense?: (expense: Expense) => void;
+  onEditSettlement?: (settlement: Settlement) => void;
+  onViewHistory?: (item: { type: 'EXPENSE'; data: Expense } | { type: 'SETTLEMENT'; data: Settlement }) => void;
 }
 
 export function TransactionList({
@@ -28,6 +31,9 @@ export function TransactionList({
   simplifiedDebts = [],
   onOpenAddExpense,
   onSettleDebt,
+  onEditExpense,
+  onEditSettlement,
+  onViewHistory,
 }: TransactionListProps) {
   const [filter, setFilter] = useState<'all' | 'expenses' | 'settlements'>('all');
 
@@ -208,6 +214,14 @@ export function TransactionList({
               currentUserEmail={currentUserEmail}
               currency={currency}
               members={members}
+              onEdit={(unifiedItem) => {
+                if (unifiedItem.type === 'EXPENSE') {
+                  onEditExpense?.(unifiedItem.data);
+                } else {
+                  onEditSettlement?.(unifiedItem.data);
+                }
+              }}
+              onViewHistory={onViewHistory}
             />
           ))}
         </div>

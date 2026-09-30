@@ -3,6 +3,7 @@ import { groupService } from '../services/groupService';
 import { googleAuthService } from '../services/googleAuth';
 import { mockGoogleService } from '../services/mockGoogleService';
 import { calculateBalances } from '../core/debtSimplifier';
+import type { Expense, Settlement } from '../types/transaction';
 
 describe('groupService - Unified Facade Lifecycle', () => {
   beforeEach(() => {
@@ -178,5 +179,94 @@ describe('groupService - Unified Facade Lifecycle', () => {
     await groupService.updateGroupDescription(groupId, 'Updated Goa trip notes with beach club reservations.');
     const data = await groupService.loadGroup(groupId);
     expect(data.group.description).toBe('Updated Goa trip notes with beach club reservations.');
+  });
+
+  test('updateExpense updates expense fields and preserves history audit trail', async () => {
+    const groups = await groupService.listGroups('alice.dev@gmail.com');
+    const groupId = groups[0].id;
+    const initial = await groupService.loadGroup(groupId);
+    const target = initial.expenses.find((e) => e.id === 'exp-beach-villa')!;
+
+    const updatedExpense: Expense = {
+      ...target,
+      amount: 18000,
+      splits: {
+        'alice.dev@gmail.com': 6000,
+        'bob.traveler@gmail.com': 6000,
+        'charlie.foodie@gmail.com': 6000,
+      },
+      notes: 'Updated to include late checkout',
+      history: [
+        {
+          id: 'hist-edit-1',
+          editedAt: new Date().toISOString(),
+          editedBy: 'alice.dev@gmail.com',
+          editedByName: 'Alice Dev (Owner)',
+          summary: 'Updated Amount from ₹15,000.00 to ₹18,000.00',
+          changes: [
+            {
+              field: 'amount',
+              label: 'Amount',
+              oldValue: '₹15,000.00',
+              newValue: '₹18,000.00',
+            },
+          ],
+        },
+      ],
+    };
+
+    await groupService.updateExpense(groupId, updatedExpense);
+    const reloaded = await groupService.loadGroup(groupId);
+    const modified = reloaded.expenses.find((e) => e.id === 'exp-beach-villa')!;
+
+    expect(modified.amount).toBe(18000);
+    expect(modified.notes).toBe('Updated to include late checkout');
+    expect(modified.history).toBeDefined();
+    expect(modified.history!.length).toBe(1);
+    expect(modified.history![0].summary).toBe('Updated Amount from ₹15,000.00 to ₹18,000.00');
+
+    // Balance recalculation verification
+    const summary = calculateBalances(reloaded.group.members, reloaded.expenses, reloaded.settlements, reloaded.group.currency);
+    expect(summary.totalSpending).toBeGreaterThan(initial.expenses.reduce((s, e) => s + e.amount, 0));
+  });
+
+  test('updateSettlement updates settlement fields and records history', async () => {
+    const groups = await groupService.listGroups('alice.dev@gmail.com');
+    const groupId = groups[0].id;
+    const initial = await groupService.loadGroup(groupId);
+    const target = initial.settlements[0];
+
+    const updatedSettlement: Settlement = {
+      ...target,
+      amount: 2500,
+      paymentMethod: 'Bank Transfer',
+      notes: 'Corrected amount sent via NEFT',
+      history: [
+        {
+          id: 'hist-set-1',
+          editedAt: new Date().toISOString(),
+          editedBy: 'bob.traveler@gmail.com',
+          editedByName: 'Bob Traveler',
+          summary: 'Updated Amount and Payment method',
+          changes: [
+            {
+              field: 'amount',
+              label: 'Amount',
+              oldValue: '₹2,000.00',
+              newValue: '₹2,500.00',
+            },
+          ],
+        },
+      ],
+    };
+
+    await groupService.updateSettlement(groupId, updatedSettlement);
+    const reloaded = await groupService.loadGroup(groupId);
+    const modified = reloaded.settlements.find((s) => s.id === target.id)!;
+
+    expect(modified.amount).toBe(2500);
+    expect(modified.paymentMethod).toBe('Bank Transfer');
+    expect(modified.history).toBeDefined();
+    expect(modified.history!.length).toBe(1);
   });
 });

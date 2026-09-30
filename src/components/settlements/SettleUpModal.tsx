@@ -5,7 +5,9 @@ import { UserAvatar } from '../common/UserAvatar';
 import type { Member } from '../../types/group';
 import type { PaymentMethod, Settlement } from '../../types/transaction';
 import type { SimplifiedDebt } from '../../types/balance';
-import { ArrowRight, Calendar, CreditCard, DollarSign, FileText } from 'lucide-react';
+import { computeSettlementDiff } from '../../core/historyTracker';
+import { combineDateAndTime, extractTimeFromTimestamp } from '../../core/dateTime';
+import { ArrowRight, Calendar, Clock, CreditCard, DollarSign, FileText } from 'lucide-react';
 
 export interface SettleUpModalProps {
   isOpen: boolean;
@@ -14,7 +16,9 @@ export interface SettleUpModalProps {
   currentUserEmail: string;
   currency: string;
   prefillDebt?: SimplifiedDebt | null;
-  onAddSettlement: (settlement: Settlement) => Promise<unknown>;
+  onAddSettlement?: (settlement: Settlement) => Promise<unknown>;
+  onEditSettlement?: (settlement: Settlement) => Promise<unknown>;
+  initialSettlement?: Settlement | null;
 }
 
 const PAYMENT_METHODS: PaymentMethod[] = [
@@ -33,17 +37,21 @@ export function SettleUpModal({
   currency,
   prefillDebt,
   onAddSettlement,
+  onEditSettlement,
+  initialSettlement,
 }: SettleUpModalProps) {
-  const [payerEmail, setPayerEmail] = useState(() => prefillDebt?.fromEmail || currentUserEmail);
+  const [payerEmail, setPayerEmail] = useState(() => initialSettlement?.payerEmail || prefillDebt?.fromEmail || currentUserEmail);
   const [payeeEmail, setPayeeEmail] = useState(() => {
+    if (initialSettlement) return initialSettlement.payeeEmail;
     if (prefillDebt) return prefillDebt.toEmail;
     const other = members.find((m) => m.email !== currentUserEmail);
     return other?.email || '';
   });
-  const [amountStr, setAmountStr] = useState(() => (prefillDebt ? prefillDebt.amount.toString() : ''));
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('UPI');
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [notes, setNotes] = useState('');
+  const [amountStr, setAmountStr] = useState(() => (initialSettlement ? initialSettlement.amount.toString() : prefillDebt ? prefillDebt.amount.toString() : ''));
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(() => initialSettlement?.paymentMethod || 'UPI');
+  const [date, setDate] = useState(() => initialSettlement?.date || new Date().toISOString().split('T')[0]);
+  const [time, setTime] = useState(() => extractTimeFromTimestamp(initialSettlement?.createdAt));
+  const [notes, setNotes] = useState(() => initialSettlement?.notes || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -69,6 +77,47 @@ export function SettleUpModal({
 
     const payer = members.find((m) => m.email === payerEmail);
     const payee = members.find((m) => m.email === payeeEmail);
+    const createdAt = combineDateAndTime(date, time);
+
+    if (initialSettlement) {
+      const updatedSettlement: Settlement = {
+        ...initialSettlement,
+        date,
+        createdAt,
+        payerEmail,
+        payerName: payer?.name || payerEmail,
+        payeeEmail,
+        payeeName: payee?.name || payeeEmail,
+        amount: Math.round(amount * 100) / 100,
+        currency,
+        paymentMethod,
+        notes: notes.trim() || undefined,
+      };
+
+      const diff = computeSettlementDiff(
+        initialSettlement,
+        updatedSettlement,
+        currentUserEmail,
+        members.find((m) => m.email === currentUserEmail)?.name,
+        members
+      );
+
+      if (diff) {
+        updatedSettlement.history = [...(initialSettlement.history || []), diff];
+      }
+
+      try {
+        if (onEditSettlement) {
+          await onEditSettlement(updatedSettlement);
+        }
+        onClose();
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : 'Failed to update settlement');
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
 
     const settlement: Settlement = {
       id: `set_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
@@ -82,12 +131,14 @@ export function SettleUpModal({
       paymentMethod,
       notes: notes.trim() || undefined,
       recordedBy: currentUserEmail,
-      createdAt: new Date().toISOString(),
+      createdAt,
       status: 'ACTIVE',
     };
 
     try {
-      await onAddSettlement(settlement);
+      if (onAddSettlement) {
+        await onAddSettlement(settlement);
+      }
       onClose();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to record settlement');
@@ -103,8 +154,12 @@ export function SettleUpModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Record a Payment"
-      description="Record money paid between members to clear debts."
+      title={initialSettlement ? 'Edit Settlement Payment' : 'Record a Payment'}
+      description={
+        initialSettlement
+          ? 'Modify details and record the change history for this settlement payment.'
+          : 'Record money paid between members to clear debts.'
+      }
       maxWidth="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -200,26 +255,27 @@ export function SettleUpModal({
           />
         </div>
 
-        {/* Payment Method & Date */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
-              <CreditCard className="w-3.5 h-3.5 text-slate-400" />
-              Method
-            </label>
-            <select
-              value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-              className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            >
-              {PAYMENT_METHODS.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
-          </div>
+        {/* Payment Method */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
+            <CreditCard className="w-3.5 h-3.5 text-slate-400" />
+            Method
+          </label>
+          <select
+            value={paymentMethod}
+            onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+            className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          >
+            {PAYMENT_METHODS.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+        </div>
 
+        {/* Date & Time */}
+        <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
               <Calendar className="w-3.5 h-3.5 text-slate-400" />
@@ -229,6 +285,20 @@ export function SettleUpModal({
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
+              className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5 text-slate-400" />
+              Time
+            </label>
+            <input
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
               className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
               required
             />
@@ -255,7 +325,7 @@ export function SettleUpModal({
             Cancel
           </Button>
           <Button type="submit" isLoading={isSubmitting}>
-            Record Payment in Sheet
+            {initialSettlement ? 'Save Changes' : 'Record Payment in Sheet'}
           </Button>
         </div>
       </form>

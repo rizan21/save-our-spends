@@ -3,6 +3,7 @@ import type { Group } from '../../types/group';
 import type { Expense } from '../../types/transaction';
 import type { GroupFinancialSummary } from '../../types/balance';
 import { formatCurrency } from '../../core/splitCalculator';
+import { formatTransactionDateTime } from '../../core/dateTime';
 import { CategoryPieChart } from './CategoryPieChart';
 import { CategoryIcon } from '../common/CategoryIcon';
 import { Button } from '../common/Button';
@@ -27,6 +28,7 @@ export interface GroupOverviewProps {
   financialSummary: GroupFinancialSummary | null;
   onNavigateToExpenses: () => void;
   onOpenAddExpense: () => void;
+  onViewExpense?: (expense: Expense) => void;
   onUpdateDescription: (description: string) => Promise<void>;
   isUpdatingDescription?: boolean;
 }
@@ -37,6 +39,7 @@ export function GroupOverview({
   financialSummary,
   onNavigateToExpenses,
   onOpenAddExpense,
+  onViewExpense,
   onUpdateDescription,
   isUpdatingDescription = false,
 }: GroupOverviewProps) {
@@ -291,10 +294,24 @@ export function GroupOverview({
               );
               const payerName = payerMember?.name || payerEmail?.split('@')[0] || 'Member';
 
+              const dt = formatTransactionDateTime(exp.date, exp.createdAt);
+
               return (
                 <div
                   key={exp.id}
-                  className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50/60 hover:bg-slate-50 transition-colors"
+                  role={onViewExpense ? 'button' : undefined}
+                  tabIndex={onViewExpense ? 0 : undefined}
+                  onClick={() => onViewExpense?.(exp)}
+                  onKeyDown={(e) => {
+                    if (onViewExpense && (e.key === 'Enter' || e.key === ' ')) {
+                      e.preventDefault();
+                      onViewExpense(exp);
+                    }
+                  }}
+                  className={`flex items-center justify-between gap-3 p-3 rounded-xl border border-transparent bg-slate-50/60 hover:bg-slate-100/80 transition-all text-left ${
+                    onViewExpense ? 'cursor-pointer hover:border-emerald-300 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20' : ''
+                  }`}
+                  aria-label={onViewExpense ? `View history and details for ${exp.description}` : undefined}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <CategoryIcon category={exp.category} size="sm" />
@@ -303,7 +320,8 @@ export function GroupOverview({
                         {exp.description}
                       </div>
                       <div className="text-xs text-slate-400 flex items-center gap-1.5 mt-0.5">
-                        <span>{exp.date}</span>
+                        <span className="font-semibold text-slate-600">{dt.date}</span>
+                        <span className="text-slate-400 font-normal">{dt.time}</span>
                         <span>•</span>
                         <span className="inline-flex items-center gap-1">
                           {payerMember && (

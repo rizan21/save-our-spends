@@ -98,6 +98,70 @@ export function useGroupDetail(groupId: string | null) {
     },
   });
 
+  // Optimistic Update Expense
+  const updateExpenseMutation = useMutation({
+    mutationFn: async (expense: Expense) => {
+      if (!groupId) throw new Error('No group selected');
+      await groupService.updateExpense(groupId, expense);
+      return expense;
+    },
+    onMutate: async (updatedExpense: Expense) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<GroupDataPayload>(queryKey);
+
+      if (previous) {
+        queryClient.setQueryData<GroupDataPayload>(queryKey, {
+          ...previous,
+          expenses: previous.expenses.map((e) =>
+            e.id === updatedExpense.id ? updatedExpense : e
+          ),
+        });
+      }
+
+      return { previous };
+    },
+    onError: (_err, _updatedExpense, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData<GroupDataPayload>(queryKey, context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
+  // Optimistic Update Settlement
+  const updateSettlementMutation = useMutation({
+    mutationFn: async (settlement: Settlement) => {
+      if (!groupId) throw new Error('No group selected');
+      await groupService.updateSettlement(groupId, settlement);
+      return settlement;
+    },
+    onMutate: async (updatedSettlement: Settlement) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<GroupDataPayload>(queryKey);
+
+      if (previous) {
+        queryClient.setQueryData<GroupDataPayload>(queryKey, {
+          ...previous,
+          settlements: previous.settlements.map((s) =>
+            s.id === updatedSettlement.id ? updatedSettlement : s
+          ),
+        });
+      }
+
+      return { previous };
+    },
+    onError: (_err, _updatedSettlement, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData<GroupDataPayload>(queryKey, context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
   // 3. Optimistic Propose Invite
   const proposeInviteMutation = useMutation({
     mutationFn: async (invite: PendingInvite) => {
@@ -270,8 +334,12 @@ export function useGroupDetail(groupId: string | null) {
     // Mutations
     addExpense: addExpenseMutation.mutateAsync,
     isAddingExpense: addExpenseMutation.isPending,
+    updateExpense: updateExpenseMutation.mutateAsync,
+    isUpdatingExpense: updateExpenseMutation.isPending,
     addSettlement: addSettlementMutation.mutateAsync,
     isAddingSettlement: addSettlementMutation.isPending,
+    updateSettlement: updateSettlementMutation.mutateAsync,
+    isUpdatingSettlement: updateSettlementMutation.isPending,
     proposeInvite: proposeInviteMutation.mutateAsync,
     isProposingInvite: proposeInviteMutation.isPending,
     approveInvite: approveInviteMutation.mutateAsync,

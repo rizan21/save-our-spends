@@ -157,13 +157,57 @@ describe('sheetSerializer - Roundtrip conversions', () => {
     );
   });
 
+  test('Expenses with history serialization and deserialization roundtrip', () => {
+    const expensesWithHistory: Expense[] = [
+      {
+        id: 'exp-hist-1',
+        date: '2026-06-05',
+        description: 'Groceries at Supermarket',
+        category: 'groceries',
+        amount: 95.0,
+        currency: 'EUR',
+        paidBy: { 'alice@test.com': 95.0 },
+        splitType: 'EQUAL',
+        splits: { 'alice@test.com': 47.5, 'bob@test.com': 47.5 },
+        createdBy: 'alice@test.com',
+        createdAt: '2026-06-05T18:00:00.000Z',
+        status: 'ACTIVE',
+        history: [
+          {
+            id: 'hist-1',
+            editedAt: '2026-06-06T10:00:00.000Z',
+            editedBy: 'bob@test.com',
+            editedByName: 'Bob Jones',
+            summary: 'Updated Amount from €85.50 to €95.00',
+            changes: [
+              {
+                field: 'amount',
+                label: 'Amount',
+                oldValue: '€85.50',
+                newValue: '€95.00',
+              },
+            ],
+          },
+        ],
+      },
+    ];
+
+    const rows = serializeExpenses(expensesWithHistory);
+    const restored = deserializeExpenses(rows);
+    expect(restored.length).toBe(1);
+    expect(restored[0].history).toBeDefined();
+    expect(restored[0].history?.length).toBe(1);
+    expect(restored[0].history?.[0].summary).toBe('Updated Amount from €85.50 to €95.00');
+    expect(restored[0].history?.[0].changes[0].field).toBe('amount');
+  });
+
   test('generateAllExpensesFormula produces valid VSTACK formula', () => {
     expect(generateAllExpensesFormula([])).toBe('');
     expect(generateAllExpensesFormula(['alice@test.com'])).toBe(
-      `=IFERROR(SORT('Exp_alice@test.com'!A2:M, 2, FALSE), "")`
+      `=IFERROR(SORT('Exp_alice@test.com'!A2:N, 2, FALSE), "")`
     );
     expect(generateAllExpensesFormula(['alice@test.com', 'bob@test.com'])).toBe(
-      `=IFERROR(SORT(VSTACK('Exp_alice@test.com'!A2:M, 'Exp_bob@test.com'!A2:M), 2, FALSE), "")`
+      `=IFERROR(SORT(VSTACK('Exp_alice@test.com'!A2:N, 'Exp_bob@test.com'!A2:N), 2, FALSE), "")`
     );
   });
 

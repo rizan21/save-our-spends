@@ -1,18 +1,32 @@
 import { CategoryIcon } from '../common/CategoryIcon';
 import { UserAvatar } from '../common/UserAvatar';
-import { HandCoins } from 'lucide-react';
+import { HandCoins, Pencil, History } from 'lucide-react';
 import type { Expense, Settlement } from '../../types/transaction';
 import type { Member } from '../../types/group';
 import { formatCurrency } from '../../core/splitCalculator';
+import { formatTransactionDateTime } from '../../core/dateTime';
+
+export type UnifiedTransactionItem =
+  | { type: 'EXPENSE'; data: Expense }
+  | { type: 'SETTLEMENT'; data: Settlement };
 
 export interface TransactionItemProps {
-  item: { type: 'EXPENSE'; data: Expense } | { type: 'SETTLEMENT'; data: Settlement };
+  item: UnifiedTransactionItem;
   currentUserEmail: string;
   currency: string;
   members?: Member[];
+  onEdit?: (item: UnifiedTransactionItem) => void;
+  onViewHistory?: (item: UnifiedTransactionItem) => void;
 }
 
-export function TransactionItem({ item, currentUserEmail, currency, members = [] }: TransactionItemProps) {
+export function TransactionItem({
+  item,
+  currentUserEmail,
+  currency,
+  members = [],
+  onEdit,
+  onViewHistory,
+}: TransactionItemProps) {
 
   if (item.type === 'SETTLEMENT') {
     const s = item.data;
@@ -20,9 +34,30 @@ export function TransactionItem({ item, currentUserEmail, currency, members = []
     const isPayee = s.payeeEmail === currentUserEmail;
     const payerMember = members.find((m) => m.email.toLowerCase() === s.payerEmail.toLowerCase());
     const payeeMember = members.find((m) => m.email.toLowerCase() === s.payeeEmail.toLowerCase());
+    const hasHistory = !!(s.history && s.history.length > 0);
+
+    const handleCardClick = () => {
+      onViewHistory?.(item);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onViewHistory?.(item);
+      }
+    };
+
+    const dt = formatTransactionDateTime(s.date, s.createdAt);
 
     return (
-      <div className="p-4 bg-white border border-slate-200/80 rounded-2xl flex items-center justify-between hover:border-slate-300 transition-all shadow-xs">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={handleCardClick}
+        onKeyDown={handleKeyDown}
+        aria-label={`Settlement: ${isPayer ? 'You' : s.payerName} paid ${isPayee ? 'You' : s.payeeName} ${formatCurrency(s.amount, currency)}. Click to view history and details.`}
+        className="p-4 bg-white border border-slate-200/80 rounded-2xl flex items-center justify-between hover:border-emerald-300 hover:shadow-xs hover:bg-slate-50/50 cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all gap-3 text-left"
+      >
         <div className="flex items-center gap-3.5 min-w-0">
           <div className="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 border border-teal-100 flex items-center justify-center shrink-0">
             <HandCoins className="w-5 h-5" />
@@ -39,22 +74,74 @@ export function TransactionItem({ item, currentUserEmail, currency, members = []
                 <span>{isPayee ? 'You' : s.payeeName}</span>
               </span>
             </div>
-            <div className="text-xs text-slate-500 mt-0.5">
-              <span>{s.date}</span> • <span className="text-teal-700 font-medium">{s.paymentMethod}</span>
-              {s.notes && <span> • {s.notes}</span>}
+            <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
+              <span className="font-semibold text-slate-700">{dt.date}</span>
+              <span className="text-slate-400 font-normal">{dt.time}</span>
+              <span>•</span>
+              <span className="text-teal-700 font-medium">{s.paymentMethod}</span>
+              {s.notes && <span>• {s.notes}</span>}
+              {hasHistory && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewHistory?.(item);
+                  }}
+                  className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 px-1.5 py-0.5 rounded-md cursor-pointer transition-colors shadow-2xs"
+                  title="View edit history"
+                >
+                  <History className="w-3 h-3 text-amber-600" />
+                  <span>Edited ({s.history!.length})</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
 
-        <div className="text-right shrink-0">
-          <div className="text-sm font-bold text-slate-900">
-            {formatCurrency(s.amount, currency)}
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="text-right">
+            <div className="text-sm font-bold text-slate-900">
+              {formatCurrency(s.amount, currency)}
+            </div>
+            <div className="text-[11px] font-medium">
+              {isPayer && <span className="text-slate-500">You paid</span>}
+              {isPayee && <span className="text-emerald-600">You received</span>}
+              {!isPayer && !isPayee && <span className="text-slate-400">Settled</span>}
+            </div>
           </div>
-          <div className="text-[11px] font-medium">
-            {isPayer && <span className="text-slate-500">You paid</span>}
-            {isPayee && <span className="text-emerald-600">You received</span>}
-            {!isPayer && !isPayee && <span className="text-slate-400">Settled</span>}
-          </div>
+
+          {(onEdit || (onViewHistory && hasHistory)) && (
+            <div className="flex items-center gap-1 border-l border-slate-100 pl-2">
+              {onEdit && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(item);
+                  }}
+                  className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                  title="Edit settlement"
+                  aria-label="Edit settlement"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onViewHistory && hasHistory && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onViewHistory(item);
+                  }}
+                  className="p-1.5 text-amber-600 hover:text-amber-800 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+                  title="View change history"
+                  aria-label="View change history"
+                >
+                  <History className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </div>
     );
@@ -65,6 +152,7 @@ export function TransactionItem({ item, currentUserEmail, currency, members = []
   const userPaid = exp.paidBy[currentUserEmail] || 0;
   const userOwed = exp.splits[currentUserEmail] || 0;
   const userNet = userPaid - userOwed;
+  const hasHistory = !!(exp.history && exp.history.length > 0);
 
   // Single payer name or "multiple people"
   const payerEmails = Object.keys(exp.paidBy);
@@ -78,16 +166,37 @@ export function TransactionItem({ item, currentUserEmail, currency, members = []
       : singlePayerMember?.name || singlePayerEmail.split('@')[0]
     : `${payerEmails.length} people`;
 
+  const handleCardClick = () => {
+    onViewHistory?.(item);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onViewHistory?.(item);
+    }
+  };
+
+  const dt = formatTransactionDateTime(exp.date, exp.createdAt);
+
   return (
-    <div className="p-4 bg-white border border-slate-200/80 rounded-2xl flex items-center justify-between hover:border-slate-300 transition-all shadow-xs">
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={handleCardClick}
+      onKeyDown={handleKeyDown}
+      aria-label={`Expense: ${exp.description}, ${formatCurrency(exp.amount, currency)}. Click to view history and details.`}
+      className="p-4 bg-white border border-slate-200/80 rounded-2xl flex items-center justify-between hover:border-emerald-300 hover:shadow-xs hover:bg-slate-50/50 cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all gap-3 text-left"
+    >
       <div className="flex items-center gap-3.5 min-w-0">
         <CategoryIcon category={exp.category} size="md" />
         <div className="min-w-0">
           <div className="font-semibold text-slate-900 text-sm truncate">
             {exp.description}
           </div>
-          <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-1 flex-wrap">
-            <span>{exp.date}</span>
+          <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
+            <span className="font-semibold text-slate-700">{dt.date}</span>
+            <span className="text-slate-400 font-normal">{dt.time}</span>
             <span>•</span>
             <span className="inline-flex items-center gap-1">
               {singlePayerMember && (
@@ -97,40 +206,73 @@ export function TransactionItem({ item, currentUserEmail, currency, members = []
                   size="xs"
                 />
               )}
-              <span>{primaryPayerName} paid {formatCurrency(exp.amount, currency)}</span>
+              <span>{primaryPayerName} paid</span>
             </span>
             {exp.notes && <span>• {exp.notes}</span>}
+            {hasHistory && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewHistory?.(item);
+                }}
+                className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 px-1.5 py-0.5 rounded-md cursor-pointer transition-colors shadow-2xs"
+                title="View edit history"
+              >
+                <History className="w-3 h-3 text-amber-600" />
+                <span>Edited ({exp.history!.length})</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="text-right shrink-0">
-        {userNet > 0.005 ? (
-          <div>
-            <div className="text-[10px] text-emerald-600 font-medium uppercase tracking-wider">
-              You lent
-            </div>
-            <div className="text-sm font-bold text-emerald-600">
-              +{formatCurrency(userNet, currency)}
-            </div>
+      <div className="flex items-center gap-3 shrink-0">
+        <div className="text-right">
+          <div className="text-sm font-bold text-slate-900">
+            {formatCurrency(exp.amount, currency)}
           </div>
-        ) : userNet < -0.005 ? (
-          <div>
-            <div className="text-[10px] text-rose-500 font-medium uppercase tracking-wider">
-              You borrowed
-            </div>
-            <div className="text-sm font-bold text-rose-600">
-              -{formatCurrency(userNet, currency)}
-            </div>
+          <div className="text-[11px] font-medium">
+            {userNet > 0.005 ? (
+              <span className="text-emerald-600">You lent +{formatCurrency(userNet, currency)}</span>
+            ) : userNet < -0.005 ? (
+              <span className="text-rose-600">You owe {formatCurrency(Math.abs(userNet), currency)}</span>
+            ) : (
+              <span className="text-slate-400">Not involved</span>
+            )}
           </div>
-        ) : (
-          <div>
-            <div className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
-              Not involved
-            </div>
-            <div className="text-sm font-medium text-slate-400">
-              {formatCurrency(0, currency)}
-            </div>
+        </div>
+
+        {(onEdit || (onViewHistory && hasHistory)) && (
+          <div className="flex items-center gap-1 border-l border-slate-100 pl-2">
+            {onEdit && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(item);
+                }}
+                className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                title="Edit expense"
+                aria-label="Edit expense"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {onViewHistory && hasHistory && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewHistory(item);
+                }}
+                className="p-1.5 text-amber-600 hover:text-amber-800 hover:bg-amber-50 rounded-lg transition-colors cursor-pointer"
+                title="View change history"
+                aria-label="View change history"
+              >
+                <History className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         )}
       </div>

@@ -145,7 +145,7 @@ export class GroupService {
     }
 
     // 2. Fetch all personal member tabs (and fallback to legacy Expenses tab if needed)
-    const memberRanges = members.map((m) => `${getMemberTabName(m.email)}!A1:M500`);
+    const memberRanges = members.map((m) => `${getMemberTabName(m.email)}!A1:Z500`);
     let tabsData: Array<{ tabName: string; rows: string[][] }> = [];
 
     if (memberRanges.length > 0) {
@@ -265,6 +265,30 @@ export class GroupService {
     const token = this.getAuthToken();
     const row = serializeSettlementRow(settlement);
     await googleSheetsService.appendRow(token, sheetId, SHEET_TABS.SETTLEMENTS, row);
+  }
+
+  /**
+   * Updates an existing expense and records its change history.
+   */
+  public async updateExpense(sheetId: string, expense: Expense): Promise<void> {
+    if (googleAuthService.getIsDemoMode()) {
+      return await mockGoogleService.updateExpense(sheetId, expense);
+    }
+
+    const token = this.getAuthToken();
+    return await googleSheetsService.updateExpense(token, sheetId, expense);
+  }
+
+  /**
+   * Updates an existing settlement and records its change history.
+   */
+  public async updateSettlement(sheetId: string, settlement: Settlement): Promise<void> {
+    if (googleAuthService.getIsDemoMode()) {
+      return await mockGoogleService.updateSettlement(sheetId, settlement);
+    }
+
+    const token = this.getAuthToken();
+    return await googleSheetsService.updateSettlement(token, sheetId, settlement);
   }
 
   /**

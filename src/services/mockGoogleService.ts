@@ -27,7 +27,7 @@ export interface MockSpreadsheet {
   tabs: Record<string, string[][]>;
 }
 
-const STORAGE_KEY = 'spread_spends_mock_data_v1';
+const STORAGE_KEY = 'spread_spends_mock_data_v2';
 
 export const MOCK_AVATARS: Record<string, string> = {
   'alice.dev@gmail.com': 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop',
@@ -142,6 +142,29 @@ function getInitialMockSpreadsheets(): Record<string, MockSpreadsheet> {
       createdBy: bobEmail,
       createdAt: '2026-09-22T21:30:00.000Z',
       status: 'ACTIVE',
+      history: [
+        {
+          id: 'edit-curlies-01',
+          editedAt: '2026-09-23T08:15:00.000Z',
+          editedBy: bobEmail,
+          editedByName: 'Bob Traveler',
+          summary: 'Updated Amount and Notes',
+          changes: [
+            {
+              field: 'amount',
+              label: 'Amount',
+              oldValue: '₹3,200.00',
+              newValue: '₹3,600.00',
+            },
+            {
+              field: 'notes',
+              label: 'Notes',
+              oldValue: 'Seafood platter',
+              newValue: 'Seafood platter and drinks',
+            },
+          ],
+        },
+      ],
     },
     {
       id: 'exp-scooter-rental',
@@ -226,6 +249,19 @@ class MockGoogleService {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
           this.sheets = JSON.parse(raw);
+          return;
+        }
+
+        // Migrate from v1 if present, preserving custom user sheets while refreshing Goa demo sheet to include audit history
+        const rawV1 = localStorage.getItem('spread_spends_mock_data_v1');
+        if (rawV1) {
+          const oldSheets = JSON.parse(rawV1);
+          const initial = getInitialMockSpreadsheets();
+          this.sheets = {
+            ...oldSheets,
+            'mock-sheet-goa-2026': initial['mock-sheet-goa-2026'],
+          };
+          this.saveToStorage();
           return;
         }
       } catch {
@@ -441,6 +477,49 @@ class MockGoogleService {
     const setTab = sheet.tabs[SHEET_TABS.SETTLEMENTS] || [];
     setTab.push(serializeSettlementRow(settlement));
     sheet.tabs[SHEET_TABS.SETTLEMENTS] = setTab;
+    this.saveToStorage();
+  }
+
+  /**
+   * Updates an existing expense row and preserves history.
+   */
+  public async updateExpense(sheetId: string, expense: Expense): Promise<void> {
+    const sheet = this.sheets[sheetId];
+    if (!sheet) throw new Error('Sheet not found');
+
+    let updated = false;
+    for (const [tabName, rows] of Object.entries(sheet.tabs)) {
+      if (tabName.startsWith('Exp_') || tabName === SHEET_TABS.EXPENSES) {
+        const rowIndex = rows.findIndex((r, idx) => idx > 0 && r[0] === expense.id);
+        if (rowIndex !== -1) {
+          rows[rowIndex] = serializeExpenseRow(expense);
+          updated = true;
+          break;
+        }
+      }
+    }
+
+    if (!updated) {
+      throw new Error(`Expense with ID ${expense.id} not found in sheet`);
+    }
+
+    this.saveToStorage();
+  }
+
+  /**
+   * Updates an existing settlement row and preserves history.
+   */
+  public async updateSettlement(sheetId: string, settlement: Settlement): Promise<void> {
+    const sheet = this.sheets[sheetId];
+    if (!sheet) throw new Error('Sheet not found');
+
+    const setTab = sheet.tabs[SHEET_TABS.SETTLEMENTS] || [];
+    const rowIndex = setTab.findIndex((r, idx) => idx > 0 && r[0] === settlement.id);
+    if (rowIndex === -1) {
+      throw new Error(`Settlement with ID ${settlement.id} not found in sheet`);
+    }
+
+    setTab[rowIndex] = serializeSettlementRow(settlement);
     this.saveToStorage();
   }
 

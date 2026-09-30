@@ -9,9 +9,12 @@ import {
   deserializeMembers,
   serializePendingInvites,
   serializeSettlements,
+  serializeExpenseRow,
+  serializeSettlementRow,
 } from '../core/sheetSerializer';
 import type { GroupConfig, Member } from '../types/group';
 import type { GoogleUser } from '../types/google';
+import type { Expense, Settlement } from '../types/transaction';
 
 export class GoogleSheetsService {
   /**
@@ -327,7 +330,7 @@ export class GoogleSheetsService {
     }
 
     // Populate header row
-    await this.updateSheetRange(token, spreadsheetId, `${tabName}!A1:M1`, [HEADERS.EXPENSES]);
+    await this.updateSheetRange(token, spreadsheetId, `${tabName}!A1:N1`, [HEADERS.EXPENSES]);
     return tabName;
   }
 
@@ -367,6 +370,68 @@ export class GoogleSheetsService {
       `${SHEET_TABS.MEMBERS}!A1:G${serialized.length}`,
       serialized
     );
+  }
+
+  /**
+   * Updates an existing expense row and its history in the author's personal tab (or legacy Expenses tab).
+   */
+  public async updateExpense(
+    token: string,
+    spreadsheetId: string,
+    expense: Expense
+  ): Promise<void> {
+    const authorEmail = expense.createdBy;
+    const preferredTab = authorEmail ? getMemberTabName(authorEmail) : '';
+    let targetTab = preferredTab;
+    let rowIndex = -1;
+
+    if (targetTab) {
+      try {
+        const rows = await this.readTab(token, spreadsheetId, targetTab);
+        rowIndex = rows.findIndex((r, idx) => idx > 0 && r[0] === expense.id);
+      } catch {
+        rowIndex = -1;
+      }
+    }
+
+    if (rowIndex === -1) {
+      try {
+        const rows = await this.readTab(token, spreadsheetId, SHEET_TABS.EXPENSES);
+        rowIndex = rows.findIndex((r, idx) => idx > 0 && r[0] === expense.id);
+        if (rowIndex !== -1) {
+          targetTab = SHEET_TABS.EXPENSES;
+        }
+      } catch {
+        rowIndex = -1;
+      }
+    }
+
+    if (rowIndex === -1) {
+      throw new Error(`Expense with ID ${expense.id} not found in spreadsheet`);
+    }
+
+    const serialized = serializeExpenseRow(expense);
+    const range = `${targetTab}!A${rowIndex + 1}:N${rowIndex + 1}`;
+    await this.updateSheetRange(token, spreadsheetId, range, [serialized]);
+  }
+
+  /**
+   * Updates an existing settlement row and its history in the Settlements tab.
+   */
+  public async updateSettlement(
+    token: string,
+    spreadsheetId: string,
+    settlement: Settlement
+  ): Promise<void> {
+    const rows = await this.readTab(token, spreadsheetId, SHEET_TABS.SETTLEMENTS);
+    const rowIndex = rows.findIndex((r, idx) => idx > 0 && r[0] === settlement.id);
+    if (rowIndex === -1) {
+      throw new Error(`Settlement with ID ${settlement.id} not found in spreadsheet`);
+    }
+
+    const serialized = serializeSettlementRow(settlement);
+    const range = `${SHEET_TABS.SETTLEMENTS}!A${rowIndex + 1}:N${rowIndex + 1}`;
+    await this.updateSheetRange(token, spreadsheetId, range, [serialized]);
   }
 }
 

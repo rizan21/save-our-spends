@@ -14,6 +14,8 @@ import {
 } from '../../core/splitCalculator';
 import type { Member } from '../../types/group';
 import type { Expense, ExpenseCategory, SplitType } from '../../types/transaction';
+import { computeExpenseDiff } from '../../core/historyTracker';
+import { combineDateAndTime, extractTimeFromTimestamp } from '../../core/dateTime';
 import {
   Calendar,
   FileText,
@@ -26,6 +28,7 @@ import {
   Percent,
   Hash,
   DollarSign,
+  Clock,
 } from 'lucide-react';
 
 export interface AddExpenseModalProps {
@@ -34,7 +37,9 @@ export interface AddExpenseModalProps {
   members: Member[];
   currentUserEmail: string;
   defaultCurrency: string;
-  onAddExpense: (expense: Expense) => Promise<unknown>;
+  onAddExpense?: (expense: Expense) => Promise<unknown>;
+  onEditExpense?: (expense: Expense) => Promise<unknown>;
+  initialExpense?: Expense | null;
 }
 
 const CATEGORIES: ExpenseCategory[] = [
@@ -69,6 +74,8 @@ export function AddExpenseModal({
   currentUserEmail,
   defaultCurrency,
   onAddExpense,
+  onEditExpense,
+  initialExpense,
 }: AddExpenseModalProps) {
   // Wizard navigation
   const [currentStep, setCurrentStep] = useState<Step>(1);
@@ -76,11 +83,12 @@ export function AddExpenseModal({
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Step 1: Expense Details
-  const [description, setDescription] = useState('');
-  const [amountStr, setAmountStr] = useState('');
-  const [category, setCategory] = useState<ExpenseCategory>('food');
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
-  const [notes, setNotes] = useState('');
+  const [description, setDescription] = useState(() => initialExpense?.description || '');
+  const [amountStr, setAmountStr] = useState(() => (initialExpense ? initialExpense.amount.toString() : ''));
+  const [category, setCategory] = useState<ExpenseCategory>(() => initialExpense?.category || 'food');
+  const [date, setDate] = useState(() => initialExpense?.date || new Date().toISOString().split('T')[0]);
+  const [time, setTime] = useState(() => extractTimeFromTimestamp(initialExpense?.createdAt));
+  const [notes, setNotes] = useState(() => initialExpense?.notes || '');
 
   // Default payer fallback
   const defaultPayerEmail = useMemo(() => {
@@ -91,40 +99,64 @@ export function AddExpenseModal({
   }, [members, currentUserEmail]);
 
   // Step 2: Payer State
-  const [isMultiPayer, setIsMultiPayer] = useState(false);
-  const [singlePayerEmail, setSinglePayerEmail] = useState(defaultPayerEmail);
-  const [multiPayerAmounts, setMultiPayerAmounts] = useState<Record<string, string>>({});
+  const [isMultiPayer, setIsMultiPayer] = useState(() => !!initialExpense && Object.keys(initialExpense.paidBy).length > 1);
+  const [singlePayerEmail, setSinglePayerEmail] = useState(() => {
+    if (initialExpense) {
+      const keys = Object.keys(initialExpense.paidBy);
+      if (keys.length === 1) return keys[0];
+    }
+    return defaultPayerEmail;
+  });
+  const [multiPayerAmounts, setMultiPayerAmounts] = useState<Record<string, string>>(() => {
+    if (initialExpense) {
+      return Object.fromEntries(
+        Object.entries(initialExpense.paidBy).map(([k, v]) => [k, v.toString()])
+      );
+    }
+    return {};
+  });
 
   // Step 3: Split State
-  const [splitType, setSplitType] = useState<SplitType>('EQUAL');
-  const [includedMembers, setIncludedMembers] = useState<string[]>(() =>
-    members.map((m) => m.email)
-  );
-  const [exactInputs, setExactInputs] = useState<Record<string, string>>({});
-  const [percentageInputs, setPercentageInputs] = useState<Record<string, string>>({});
-  const [shareInputs, setShareInputs] = useState<Record<string, string>>({});
+  const [splitType, setSplitType] = useState<SplitType>(() => initialExpense?.splitType || 'EQUAL');
+  const [includedMembers, setIncludedMembers] = useState<string[]>(() => {
+    if (initialExpense) {
+      const splitKeys = Object.keys(initialExpense.splits);
+      if (splitKeys.length > 0) return splitKeys;
+    }
+    return members.map((m) => m.email);
+  });
+  const [exactInputs, setExactInputs] = useState<Record<string, string>>(() => {
+    if (initialExpense?.splitType === 'EXACT') {
+      return Object.fromEntries(
+        Object.entries(initialExpense.splits).map(([k, v]) => [k, v.toString()])
+      );
+    }
+    return {};
+  });
+  const [percentageInputs, setPercentageInputs] = useState<Record<string, string>>(() => {
+    if (initialExpense?.splitType === 'PERCENTAGE' && initialExpense.amount > 0) {
+      return Object.fromEntries(
+        Object.entries(initialExpense.splits).map(([k, v]) => [
+          k,
+          ((v / initialExpense.amount) * 100).toFixed(1),
+        ])
+      );
+    }
+    return {};
+  });
+  const [shareInputs, setShareInputs] = useState<Record<string, string>>(() => {
+    if (initialExpense?.splitMeta) {
+      return Object.fromEntries(
+        Object.entries(initialExpense.splitMeta).map(([k, v]) => [k, v.toString()])
+      );
+    }
+    return {};
+  });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Total amount parsed
   const totalAmount = parseFloat(amountStr) || 0;
-
-  // Track modal opening to reset wizard step and errors without calling setState in an effect
-  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
-  if (isOpen !== prevIsOpen) {
-    setPrevIsOpen(isOpen);
-    if (isOpen) {
-      setCurrentStep(1);
-      setStepError(null);
-      setSubmitError(null);
-      if (!singlePayerEmail && defaultPayerEmail) {
-        setSinglePayerEmail(defaultPayerEmail);
-      }
-      if (includedMembers.length === 0 && members.length > 0) {
-        setIncludedMembers(members.map((m) => m.email));
-      }
-    }
-  }
 
   // Helper to get display name
   const getMemberName = useCallback(
@@ -461,6 +493,48 @@ export function AddExpenseModal({
     setIsSubmitting(true);
     setSubmitError(null);
 
+    const createdAt = combineDateAndTime(date, time);
+
+    if (initialExpense) {
+      const updatedExpense: Expense = {
+        ...initialExpense,
+        date,
+        createdAt,
+        description: description.trim(),
+        category,
+        amount: roundToCents(totalAmount),
+        currency: defaultCurrency,
+        paidBy: payerValidation.paidBy,
+        splitType,
+        splits: splitResult.splits,
+        notes: notes.trim() || undefined,
+      };
+
+      const diff = computeExpenseDiff(
+        initialExpense,
+        updatedExpense,
+        currentUserEmail,
+        getMemberName(currentUserEmail),
+        members
+      );
+
+      if (diff) {
+        updatedExpense.history = [...(initialExpense.history || []), diff];
+      }
+
+      try {
+        if (onEditExpense) {
+          await onEditExpense(updatedExpense);
+        }
+        onClose();
+      } catch (err: unknown) {
+        setSubmitError(err instanceof Error ? err.message : 'Failed to update expense');
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
+
     const expense: Expense = {
       id: `exp_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       date,
@@ -473,12 +547,14 @@ export function AddExpenseModal({
       splits: splitResult.splits,
       notes: notes.trim() || undefined,
       createdBy: currentUserEmail,
-      createdAt: new Date().toISOString(),
+      createdAt,
       status: 'ACTIVE',
     };
 
     try {
-      await onAddExpense(expense);
+      if (onAddExpense) {
+        await onAddExpense(expense);
+      }
       // Reset form
       setDescription('');
       setAmountStr('');
@@ -509,7 +585,12 @@ export function AddExpenseModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Add an Expense" maxWidth="lg">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={initialExpense ? 'Edit Expense' : 'Add an Expense'}
+      maxWidth="lg"
+    >
       <form onSubmit={handleFormSubmit} className="space-y-5">
         {/* Wizard Stepper */}
         <div className="border-b border-slate-100 pb-4">
@@ -617,25 +698,26 @@ export function AddExpenseModal({
               </div>
             </div>
 
-            {/* Description & Date */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Description <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="What was this for? (e.g. Dinner, Fuel, Groceries)"
-                  value={description}
-                  onChange={(e) => {
-                    setDescription(e.target.value);
-                    if (stepError) setStepError(null);
-                  }}
-                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  required
-                />
-              </div>
+            {/* Description */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Description <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="What was this for? (e.g. Dinner, Fuel, Groceries)"
+                value={description}
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  if (stepError) setStepError(null);
+                }}
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                required
+              />
+            </div>
 
+            {/* Date & Time */}
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
                   <Calendar className="w-3.5 h-3.5 text-slate-400" />
@@ -645,6 +727,20 @@ export function AddExpenseModal({
                   type="date"
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
+                  className="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-700"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-slate-400" />
+                  Time
+                </label>
+                <input
+                  type="time"
+                  value={time}
+                  onChange={(e) => setTime(e.target.value)}
                   className="w-full px-3 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-700"
                   required
                 />
@@ -1358,7 +1454,7 @@ export function AddExpenseModal({
                 disabled={!splitResult.isValid}
                 className="gap-1.5"
               >
-                <span>Save Expense to Sheet</span>
+                <span>{initialExpense ? 'Save Changes' : 'Save Expense to Sheet'}</span>
               </Button>
             </div>
           </div>

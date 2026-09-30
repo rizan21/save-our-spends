@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Navbar } from './components/common/Navbar';
 import { GroupList } from './components/groups/GroupList';
@@ -8,10 +8,12 @@ import { CreateGroupModal } from './components/groups/CreateGroupModal';
 import { OpenGroupModal } from './components/groups/OpenGroupModal';
 import { TransactionList } from './components/transactions/TransactionList';
 import { AddExpenseModal } from './components/transactions/AddExpenseModal';
+import { TransactionHistoryModal } from './components/transactions/TransactionHistoryModal';
 import { BalancesSummary } from './components/settlements/BalancesSummary';
 import { MemberSpendings } from './components/settlements/MemberSpendings';
 import { SimplifiedDebtsList } from './components/settlements/SimplifiedDebtsList';
 import { SettleUpModal } from './components/settlements/SettleUpModal';
+import type { Expense, Settlement } from './types/transaction';
 import { MemberList } from './components/members/MemberList';
 import { InviteMemberModal } from './components/members/InviteMemberModal';
 import { DirectSheetsLink } from './components/export/DirectSheetsLink';
@@ -66,6 +68,13 @@ function SpreadSpendsInner() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [selectedDebtToSettle, setSelectedDebtToSettle] = useState<SimplifiedDebt | null>(null);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [editingSettlement, setEditingSettlement] = useState<Settlement | null>(null);
+  const [viewingHistoryTransaction, setViewingHistoryTransaction] = useState<
+    | { type: 'EXPENSE'; data: Expense }
+    | { type: 'SETTLEMENT'; data: Settlement }
+    | null
+  >(null);
 
   // Keep URL hash in sync with selected group
   useEffect(() => {
@@ -118,7 +127,9 @@ function SpreadSpendsInner() {
     error: groupError,
     refetch: refetchGroup,
     addExpense,
+    updateExpense,
     addSettlement,
+    updateSettlement,
     proposeInvite,
     approveInvite,
     isApprovingInvite,
@@ -126,6 +137,18 @@ function SpreadSpendsInner() {
     isUpdatingDescription,
     updateMemberName,
   } = useGroupDetail(selectedGroupId);
+
+  // Derive live transaction for history modal from freshest expenses/settlements
+  const currentViewingTransaction = useMemo(() => {
+    if (!viewingHistoryTransaction) return null;
+    if (viewingHistoryTransaction.type === 'EXPENSE') {
+      const live = expenses.find((e) => e.id === viewingHistoryTransaction.data.id);
+      return live ? { type: 'EXPENSE' as const, data: live } : viewingHistoryTransaction;
+    } else {
+      const live = settlements.find((s) => s.id === viewingHistoryTransaction.data.id);
+      return live ? { type: 'SETTLEMENT' as const, data: live } : viewingHistoryTransaction;
+    }
+  }, [viewingHistoryTransaction, expenses, settlements]);
 
   const isOwner = !!(group && user && group.ownerEmail === user.email);
 
@@ -282,6 +305,7 @@ function SpreadSpendsInner() {
                   financialSummary={financialSummary}
                   onNavigateToExpenses={() => setActiveTab('expenses')}
                   onOpenAddExpense={() => setIsAddExpenseOpen(true)}
+                  onViewExpense={(exp) => setViewingHistoryTransaction({ type: 'EXPENSE', data: exp })}
                   onUpdateDescription={async (desc) => {
                     await updateDescription(desc);
                   }}
@@ -298,8 +322,14 @@ function SpreadSpendsInner() {
                   currency={group.currency}
                   members={group.members}
                   simplifiedDebts={financialSummary?.simplifiedDebts || []}
-                  onOpenAddExpense={() => setIsAddExpenseOpen(true)}
+                  onOpenAddExpense={() => {
+                    setEditingExpense(null);
+                    setIsAddExpenseOpen(true);
+                  }}
                   onSettleDebt={handleSettleDebt}
+                  onEditExpense={(exp) => setEditingExpense(exp)}
+                  onEditSettlement={(set) => setEditingSettlement(set)}
+                  onViewHistory={(item) => setViewingHistoryTransaction(item)}
                 />
               )}
 
@@ -377,32 +407,75 @@ function SpreadSpendsInner() {
         }}
       />
 
-      {/* Add Expense Modal */}
-      {group && (
+      {/* Add / Edit Expense Modal */}
+      {group && (isAddExpenseOpen || !!editingExpense) && (
         <AddExpenseModal
-          isOpen={isAddExpenseOpen}
-          onClose={() => setIsAddExpenseOpen(false)}
+          key={editingExpense ? `edit-${editingExpense.id}` : 'new-expense'}
+          isOpen={isAddExpenseOpen || !!editingExpense}
+          onClose={() => {
+            setIsAddExpenseOpen(false);
+            setEditingExpense(null);
+          }}
           members={group.members}
           currentUserEmail={user?.email || ''}
           defaultCurrency={group.currency}
+          initialExpense={editingExpense}
           onAddExpense={addExpense}
+          onEditExpense={async (updated) => {
+            await updateExpense(updated);
+            setEditingExpense(null);
+            setViewingHistoryTransaction({ type: 'EXPENSE', data: updated });
+          }}
         />
       )}
 
-      {/* Settle Up Modal */}
-      {group && isSettleUpOpen && (
+      {/* Settle Up / Edit Settlement Modal */}
+      {group && (isSettleUpOpen || !!editingSettlement) && (
         <SettleUpModal
-          key={selectedDebtToSettle ? `${selectedDebtToSettle.fromEmail}-${selectedDebtToSettle.toEmail}-${selectedDebtToSettle.amount}` : 'manual-settle'}
-          isOpen={isSettleUpOpen}
+          key={
+            editingSettlement
+              ? `edit-${editingSettlement.id}`
+              : selectedDebtToSettle
+              ? `${selectedDebtToSettle.fromEmail}-${selectedDebtToSettle.toEmail}-${selectedDebtToSettle.amount}`
+              : 'manual-settle'
+          }
+          isOpen={isSettleUpOpen || !!editingSettlement}
           onClose={() => {
             setIsSettleUpOpen(false);
+            setEditingSettlement(null);
             setSelectedDebtToSettle(null);
           }}
           members={group.members}
           currentUserEmail={user?.email || ''}
           currency={group.currency}
           prefillDebt={selectedDebtToSettle}
+          initialSettlement={editingSettlement}
           onAddSettlement={addSettlement}
+          onEditSettlement={async (updated) => {
+            await updateSettlement(updated);
+            setEditingSettlement(null);
+            setViewingHistoryTransaction({ type: 'SETTLEMENT', data: updated });
+          }}
+        />
+      )}
+
+      {/* Transaction Edit History Modal */}
+      {group && currentViewingTransaction && (
+        <TransactionHistoryModal
+          isOpen={!!viewingHistoryTransaction}
+          onClose={() => setViewingHistoryTransaction(null)}
+          transaction={currentViewingTransaction}
+          members={group.members}
+          currency={group.currency}
+          onOpenEdit={() => {
+            const item = currentViewingTransaction;
+            setViewingHistoryTransaction(null);
+            if (item.type === 'EXPENSE') {
+              setEditingExpense(item.data);
+            } else {
+              setEditingSettlement(item.data);
+            }
+          }}
         />
       )}
 
