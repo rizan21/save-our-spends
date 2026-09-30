@@ -17,12 +17,12 @@ const sizeClasses = {
 
 // Consistent soft background palette for initials fallback
 const bgColors = [
-  'bg-emerald-100 text-emerald-800 border-emerald-200',
-  'bg-blue-100 text-blue-800 border-blue-200',
-  'bg-purple-100 text-purple-800 border-purple-200',
-  'bg-amber-100 text-amber-800 border-amber-200',
-  'bg-teal-100 text-teal-800 border-teal-200',
-  'bg-indigo-100 text-indigo-800 border-indigo-200',
+  'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800',
+  'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800',
+  'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800',
+  'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:border-amber-800',
+  'bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-950 dark:text-teal-300 dark:border-teal-800',
+  'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-950 dark:text-indigo-300 dark:border-indigo-800',
 ];
 
 function getInitialsColor(name: string): string {
@@ -52,7 +52,7 @@ export function UserAvatar({
         alt={name || 'User profile'}
         referrerPolicy="no-referrer"
         onError={() => setImageError(true)}
-        className={`${sizeClass} rounded-full object-cover border border-slate-200/80 shadow-2xs shrink-0 ${className}`}
+        className={`${sizeClass} rounded-full object-cover border border-slate-200/80 dark:border-slate-700 shadow-2xs shrink-0 ${className}`}
       />
     );
   }

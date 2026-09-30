@@ -164,7 +164,7 @@ export function SettleUpModal({
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl">
+          <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 text-xs rounded-xl">
             {error}
           </div>
         )}
@@ -172,16 +172,16 @@ export function SettleUpModal({
         {/* Payer and Payee Selection */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">
               Who paid?
             </label>
             <select
               value={payerEmail}
               onChange={(e) => setPayerEmail(e.target.value)}
-              className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
               {members.map((m) => (
-                <option key={m.email} value={m.email}>
+                <option key={m.email} value={m.email} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
                   {m.name || m.email} {m.email === currentUserEmail ? '(You)' : ''}
                 </option>
               ))}
@@ -189,16 +189,16 @@ export function SettleUpModal({
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">
               Paid to whom?
             </label>
             <select
               value={payeeEmail}
               onChange={(e) => setPayeeEmail(e.target.value)}
-              className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
             >
               {members.map((m) => (
-                <option key={m.email} value={m.email}>
+                <option key={m.email} value={m.email} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
                   {m.name || m.email} {m.email === currentUserEmail ? '(You)' : ''}
                 </option>
               ))}
@@ -208,28 +208,28 @@ export function SettleUpModal({
 
         {/* Payer and Payee Summary Preview with Avatars */}
         {currentPayer && currentPayee && (
-          <div className="p-2.5 bg-emerald-50/50 border border-emerald-100 rounded-xl flex items-center justify-between gap-2">
+          <div className="p-2.5 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 rounded-xl flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">
               <UserAvatar name={currentPayer.name} picture={currentPayer.picture} size="sm" />
               <div className="min-w-0">
-                <div className="text-xs font-semibold text-slate-800 truncate">
+                <div className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">
                   {currentPayer.email === currentUserEmail ? 'You' : currentPayer.name}
                 </div>
-                <div className="text-[10px] text-slate-400">Payer</div>
+                <div className="text-[10px] text-slate-400 dark:text-slate-500">Payer</div>
               </div>
             </div>
 
-            <div className="text-slate-400 text-xs font-medium shrink-0 flex items-center gap-1">
+            <div className="text-slate-400 dark:text-slate-500 text-xs font-medium shrink-0 flex items-center gap-1">
               <span>pays</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </div>
 
             <div className="flex items-center gap-2 min-w-0 text-right justify-end">
               <div className="min-w-0">
-                <div className="text-xs font-semibold text-slate-800 truncate">
+                <div className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">
                   {currentPayee.email === currentUserEmail ? 'You' : currentPayee.name}
                 </div>
-                <div className="text-[10px] text-slate-400">Recipient</div>
+                <div className="text-[10px] text-slate-400 dark:text-slate-500">Recipient</div>
               </div>
               <UserAvatar name={currentPayee.name} picture={currentPayee.picture} size="sm" />
             </div>
@@ -238,8 +238,8 @@ export function SettleUpModal({
 
         {/* Amount */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
-            <DollarSign className="w-3.5 h-3.5 text-slate-400" />
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1 flex items-center gap-1">
+            <DollarSign className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
             Amount ({currency})
           </label>
           <input
@@ -249,7 +249,7 @@ export function SettleUpModal({
             placeholder="0.00"
             value={amountStr}
             onChange={(e) => setAmountStr(e.target.value)}
-            className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold"
+            className="w-full px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold"
             required
             autoFocus
           />
@@ -257,17 +257,17 @@ export function SettleUpModal({
 
         {/* Payment Method */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
-            <CreditCard className="w-3.5 h-3.5 text-slate-400" />
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1 flex items-center gap-1">
+            <CreditCard className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
             Method
           </label>
           <select
             value={paymentMethod}
             onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-            className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           >
             {PAYMENT_METHODS.map((m) => (
-              <option key={m} value={m}>
+              <option key={m} value={m} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
                 {m}
               </option>
             ))}
@@ -277,29 +277,29 @@ export function SettleUpModal({
         {/* Date & Time */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-slate-400" />
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1 flex items-center gap-1">
+              <Calendar className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
               Date
             </label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5 text-slate-400" />
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1 flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
               Time
             </label>
             <input
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               required
             />
           </div>
@@ -307,8 +307,8 @@ export function SettleUpModal({
 
         {/* Notes */}
         <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center gap-1">
-            <FileText className="w-3.5 h-3.5 text-slate-400" />
+          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1 flex items-center gap-1">
+            <FileText className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
             Notes (Optional)
           </label>
           <input
@@ -316,11 +316,11 @@ export function SettleUpModal({
             placeholder="e.g. Paid via bank transfer, Cash at hotel"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
         </div>
 
-        <div className="pt-2 flex justify-end gap-2 border-t border-slate-100">
+        <div className="pt-2 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
           <Button type="button" variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>

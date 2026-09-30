@@ -53,15 +53,15 @@ export function GroupList({
   if (!currentUserEmail) {
     return (
       <div className="py-8 sm:py-12">
-        <div className="bg-white border border-slate-200/90 rounded-3xl p-8 sm:p-12 text-center max-w-xl mx-auto shadow-sm space-y-6">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-8 sm:p-12 text-center max-w-xl mx-auto shadow-sm space-y-6">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/20">
             <Table className="w-8 h-8" />
           </div>
           <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
               Split expenses with Google Sheets
             </h2>
-            <p className="text-sm text-slate-500 max-w-md mx-auto leading-relaxed">
+            <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto leading-relaxed">
               Every expense group is stored securely on your own Google Drive as a structured spreadsheet. No third-party database, 100% private and transparent.
             </p>
           </div>
@@ -71,17 +71,17 @@ export function GroupList({
               <span>Sign in with Google</span>
             </Button>
           </div>
-          <div className="grid grid-cols-3 gap-3 pt-6 border-t border-slate-100 text-xs text-slate-600">
+          <div className="grid grid-cols-3 gap-3 pt-6 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400">
             <div>
-              <strong className="block text-slate-800 font-semibold">100% Private</strong>
+              <strong className="block text-slate-800 dark:text-slate-200 font-semibold">100% Private</strong>
               <span>Stored on your Drive</span>
             </div>
             <div>
-              <strong className="block text-slate-800 font-semibold">Real Sheets</strong>
+              <strong className="block text-slate-800 dark:text-slate-200 font-semibold">Real Sheets</strong>
               <span>Formulas & CSV Export</span>
             </div>
             <div>
-              <strong className="block text-slate-800 font-semibold">Smart Settle</strong>
+              <strong className="block text-slate-800 dark:text-slate-200 font-semibold">Smart Settle</strong>
               <span>Minimal payments</span>
             </div>
           </div>
@@ -95,8 +95,8 @@ export function GroupList({
       {/* Top Banner & Primary Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Your Groups</h2>
-          <p className="text-xs text-slate-500 mt-1">
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Your Groups</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Spreadsheets detected in your Google Drive or shared with your Google account.
           </p>
         </div>
@@ -133,29 +133,29 @@ export function GroupList({
       {/* Overall Financial Balance Overview */}
       {(totalYouAreOwed > 0 || totalYouOwe > 0) && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="p-4 bg-white border border-emerald-100 rounded-2xl shadow-xs flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+          <div className="p-4 bg-white dark:bg-slate-900 border border-emerald-100 dark:border-emerald-950/80 rounded-2xl shadow-xs flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
               <TrendingUp className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
                 Total You Are Owed
               </span>
-              <span className="text-xl font-extrabold text-emerald-600">
+              <span className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
                 +{formatCurrency(totalYouAreOwed, currency)}
               </span>
             </div>
           </div>
 
-          <div className="p-4 bg-white border border-rose-100 rounded-2xl shadow-xs flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center shrink-0">
+          <div className="p-4 bg-white dark:bg-slate-900 border border-rose-100 dark:border-rose-950/80 rounded-2xl shadow-xs flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-500 dark:text-rose-400 flex items-center justify-center shrink-0">
               <TrendingDown className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
                 Total You Owe
               </span>
-              <span className="text-xl font-extrabold text-rose-600">
+              <span className="text-xl font-extrabold text-rose-600 dark:text-rose-400">
                 -{formatCurrency(totalYouOwe, currency)}
               </span>
             </div>
@@ -165,20 +165,20 @@ export function GroupList({
 
       {/* Active Settlements Section */}
       {activeSettlements.length > 0 && (
-        <div className="bg-white border border-emerald-200/90 rounded-2xl p-5 shadow-xs space-y-3.5">
+        <div className="bg-white dark:bg-slate-900 border border-emerald-200/90 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-3.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/60 flex items-center justify-center shrink-0">
                 <HandCoins className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-slate-900 text-sm">Active Settlements</h3>
-                <p className="text-xs text-slate-500">
+                <h3 className="font-bold text-slate-900 dark:text-white text-sm">Active Settlements</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Outstanding balances awaiting payment across your groups.
                 </p>
               </div>
             </div>
-            <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-full">
+            <span className="px-2.5 py-0.5 bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold text-xs rounded-full">
               {activeSettlements.length} active
             </span>
           </div>
@@ -191,7 +191,7 @@ export function GroupList({
               return (
                 <div
                   key={`${item.groupId}-${idx}`}
-                  className="p-3.5 bg-slate-50 border border-slate-200/70 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-emerald-50/20 hover:border-emerald-200 transition-all"
+                  className="p-3.5 bg-slate-50 dark:bg-slate-850 border border-slate-200/70 dark:border-slate-800 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 hover:border-emerald-200 dark:hover:border-emerald-800 transition-all"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <span
@@ -200,24 +200,24 @@ export function GroupList({
                       }`}
                     />
                     <div className="flex items-center gap-2 text-xs flex-wrap">
-                      <div className="flex items-center gap-1 font-bold text-slate-900">
+                      <div className="flex items-center gap-1 font-bold text-slate-900 dark:text-white">
                         <UserAvatar name={item.debt.fromName} picture={item.fromPicture} size="xs" />
                         <span>{isPayer ? 'You' : item.debt.fromName}</span>
                       </div>
-                      <span className="text-slate-400">owes</span>
-                      <div className="flex items-center gap-1 font-bold text-slate-900">
+                      <span className="text-slate-400 dark:text-slate-500">owes</span>
+                      <div className="flex items-center gap-1 font-bold text-slate-900 dark:text-white">
                         <UserAvatar name={item.debt.toName} picture={item.toPicture} size="xs" />
                         <span>{isPayee ? 'you' : item.debt.toName}</span>
                       </div>
-                      <span className="text-slate-300 mx-1">•</span>
-                      <span className="text-slate-500 font-semibold">{item.groupName}</span>
+                      <span className="text-slate-300 dark:text-slate-600 mx-1">•</span>
+                      <span className="text-slate-500 dark:text-slate-400 font-semibold">{item.groupName}</span>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
                     <span
                       className={`text-sm font-extrabold ${
-                        isPayee ? 'text-emerald-600' : 'text-rose-600'
+                        isPayee ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
                       }`}
                     >
                       {formatCurrency(item.debt.amount, item.debt.currency)}
@@ -243,13 +243,13 @@ export function GroupList({
       {/* Search Bar */}
       {groups.length > 0 && (
         <div className="relative">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             placeholder="Search groups..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs placeholder:text-slate-400"
+            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
           />
         </div>
       )}
@@ -260,13 +260,13 @@ export function GroupList({
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="p-5 bg-white border border-slate-100 rounded-2xl animate-pulse flex items-center justify-between"
+              className="p-5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl animate-pulse flex items-center justify-between"
             >
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-slate-200 rounded-xl" />
+                <div className="w-12 h-12 bg-slate-200 dark:bg-slate-800 rounded-xl" />
                 <div className="space-y-2">
-                  <div className="w-40 h-4 bg-slate-200 rounded" />
-                  <div className="w-24 h-3 bg-slate-100 rounded" />
+                  <div className="w-40 h-4 bg-slate-200 dark:bg-slate-800 rounded" />
+                  <div className="w-24 h-3 bg-slate-100 dark:bg-slate-850 rounded" />
                 </div>
               </div>
             </div>
@@ -276,13 +276,13 @@ export function GroupList({
 
       {/* Empty State */}
       {!isLoading && filtered.length === 0 && (
-        <div className="p-12 text-center bg-white border border-dashed border-slate-200 rounded-2xl space-y-4">
-          <div className="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto">
+        <div className="p-12 text-center bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl space-y-4">
+          <div className="w-14 h-14 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-2xl flex items-center justify-center mx-auto">
             <FolderPlus className="w-7 h-7" />
           </div>
           <div>
-            <h3 className="text-base font-semibold text-slate-800">No groups found</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
+            <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200">No groups found</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-1">
               {search
                 ? `No groups matching "${search}".`
                 : 'Create your first expense group. It will instantly generate a structured Google Sheet in your Google Drive.'}

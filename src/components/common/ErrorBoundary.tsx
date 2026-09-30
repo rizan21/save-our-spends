@@ -39,12 +39,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
       return (
         <div className="min-h-[50vh] flex items-center justify-center p-6">
-          <div className="bg-white border border-rose-200 rounded-3xl p-8 max-w-md w-full text-center space-y-4 shadow-lg shadow-rose-100/50">
-            <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto">
+          <div className="bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900/60 rounded-3xl p-8 max-w-md w-full text-center space-y-4 shadow-lg shadow-rose-100/50 dark:shadow-none">
+            <div className="w-12 h-12 bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 rounded-2xl flex items-center justify-center mx-auto">
               <AlertCircle className="w-6 h-6" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900">Something went wrong</h3>
-            <p className="text-sm text-slate-500">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">Something went wrong</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               {this.state.error?.message || 'An unexpected rendering error occurred.'}
             </p>
             <div className="pt-2 flex justify-center gap-3">

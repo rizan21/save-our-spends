@@ -8,10 +8,10 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 const variants = {
   primary: 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs focus:ring-emerald-500',
-  secondary: 'bg-slate-800 hover:bg-slate-900 text-white shadow-xs focus:ring-slate-700',
-  outline: 'border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 focus:ring-slate-400',
+  secondary: 'bg-slate-800 hover:bg-slate-900 text-white shadow-xs focus:ring-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600',
+  outline: 'border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 focus:ring-slate-400 dark:border-slate-700 dark:bg-slate-850 dark:hover:bg-slate-800 dark:text-slate-200 dark:focus:ring-slate-600',
   danger: 'bg-rose-600 hover:bg-rose-700 text-white shadow-xs focus:ring-rose-500',
-  ghost: 'hover:bg-slate-100 text-slate-700 focus:ring-slate-400',
+  ghost: 'hover:bg-slate-100 text-slate-700 focus:ring-slate-400 dark:hover:bg-slate-800 dark:text-slate-300 dark:focus:ring-slate-600',
 };
 
 const sizes = {

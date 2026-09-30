@@ -97,18 +97,18 @@ export function CategoryPieChart({
 
   if (activeExpenses.length === 0 || totalSpend === 0) {
     return (
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-6 sm:p-8 shadow-xs">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xs">
         <div className="flex items-center gap-2 mb-4">
-          <PieChartIcon className="w-5 h-5 text-slate-500" />
-          <h2 className="text-base font-bold text-slate-900">Spending by Category</h2>
+          <PieChartIcon className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">Spending by Category</h2>
         </div>
         <div className="text-center py-8 space-y-3">
-          <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+          <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto text-slate-400 dark:text-slate-500">
             <PieChartIcon className="w-8 h-8" />
           </div>
           <div className="space-y-1">
-            <p className="text-sm font-semibold text-slate-700">No expenses logged yet</p>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">No expenses logged yet</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
               Add your first group expense to see spending distribution and insights broken down by category.
             </p>
           </div>
@@ -126,13 +126,13 @@ export function CategoryPieChart({
   }
 
   return (
-    <div className="bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-6 shadow-xs space-y-6">
-      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xs space-y-6">
+      <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
         <div className="flex items-center gap-2">
-          <PieChartIcon className="w-5 h-5 text-emerald-600" />
-          <h2 className="text-base font-bold text-slate-900">Spending by Category</h2>
+          <PieChartIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          <h2 className="text-base font-bold text-slate-900 dark:text-white">Spending by Category</h2>
         </div>
-        <span className="text-xs font-medium text-slate-500">
+        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
           {categoryBreakdown.length} {categoryBreakdown.length === 1 ? 'category' : 'categories'} •{' '}
           {activeExpenses.length} {activeExpenses.length === 1 ? 'expense' : 'expenses'}
         </span>
@@ -152,7 +152,7 @@ export function CategoryPieChart({
                 cx="90"
                 cy="90"
                 r={radius}
-                className="stroke-slate-100 fill-none"
+                className="stroke-slate-100 dark:stroke-slate-800 fill-none"
                 strokeWidth={strokeWidth}
               />
               {/* Slices */}
@@ -182,32 +182,32 @@ export function CategoryPieChart({
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 pointer-events-none transition-all">
               {activeCategory ? (
                 <>
-                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 truncate max-w-[120px]">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate max-w-[120px]">
                     {activeCategory.name}
                   </span>
-                  <span className="text-lg font-bold text-slate-900 mt-0.5">
+                  <span className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
                     {formatCurrency(activeCategory.amount, currency)}
                   </span>
-                  <span className="text-xs font-semibold text-emerald-600 mt-0.5">
+                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
                     {activeCategory.percentage.toFixed(1)}% of total
                   </span>
                 </>
               ) : (
                 <>
-                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                     Total Spending
                   </span>
-                  <span className="text-lg font-bold text-slate-900 mt-0.5">
+                  <span className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
                     {formatCurrency(totalSpend, currency)}
                   </span>
-                  <span className="text-xs text-slate-500 mt-0.5">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     {activeExpenses.length} {activeExpenses.length === 1 ? 'expense' : 'expenses'}
                   </span>
                 </>
               )}
             </div>
           </div>
-          <p className="text-[11px] text-slate-400 mt-2 text-center">
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2 text-center">
             Hover over a slice or category to inspect details
           </p>
         </div>
@@ -224,35 +224,35 @@ export function CategoryPieChart({
                   onMouseLeave={() => setHoveredCategory(null)}
                   className={`p-3 rounded-xl border transition-all cursor-pointer ${
                     isHovered
-                      ? 'bg-slate-50 border-emerald-400 shadow-xs ring-1 ring-emerald-400/30'
-                      : 'bg-white border-slate-200/80 hover:border-slate-300'
+                      ? 'bg-slate-50 dark:bg-slate-800 border-emerald-400 dark:border-emerald-500 shadow-xs ring-1 ring-emerald-400/30'
+                      : 'bg-white dark:bg-slate-850/60 border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <CategoryIcon category={item.category} size="sm" />
                       <div className="min-w-0">
-                        <div className="text-sm font-semibold text-slate-900 truncate">
+                        <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
                           {item.name}
                         </div>
-                        <div className="text-xs text-slate-400">
+                        <div className="text-xs text-slate-400 dark:text-slate-500">
                           {item.count} {item.count === 1 ? 'expense' : 'expenses'}
                         </div>
                       </div>
                     </div>
 
                     <div className="text-right shrink-0">
-                      <div className="text-sm font-bold text-slate-900">
+                      <div className="text-sm font-bold text-slate-900 dark:text-white">
                         {formatCurrency(item.amount, currency)}
                       </div>
-                      <div className="text-xs font-semibold text-slate-500">
+                      <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                         {item.percentage.toFixed(1)}%
                       </div>
                     </div>
                   </div>
 
                   {/* Percentage Progress Bar */}
-                  <div className="mt-2.5 w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                  <div className="mt-2.5 w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-300 ${item.barColor}`}
                       style={{ width: `${Math.min(Math.max(item.percentage, 2), 100)}%` }}

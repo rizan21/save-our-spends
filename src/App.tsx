@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ThemeProvider } from './context/ThemeProvider';
 import { Navbar } from './components/common/Navbar';
 import { GroupList } from './components/groups/GroupList';
 import { GroupHeader, type GroupTab } from './components/groups/GroupHeader';
@@ -245,7 +246,7 @@ function SpreadSpendsInner() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/60 flex flex-col text-slate-800">
+    <div className="min-h-screen bg-slate-50/60 dark:bg-slate-950 flex flex-col text-slate-800 dark:text-slate-100 transition-colors">
       {/* Top Header */}
       <Navbar
         user={user}
@@ -287,18 +288,18 @@ function SpreadSpendsInner() {
           ) : isGroupLoading ? (
             /* ================= Loading Group View ================= */
             <div className="space-y-4 animate-pulse">
-              <div className="h-8 w-48 bg-slate-200 rounded-lg" />
-              <div className="h-28 bg-white border border-slate-200 rounded-2xl" />
-              <div className="h-64 bg-white border border-slate-200 rounded-2xl" />
+              <div className="h-8 w-48 bg-slate-200 dark:bg-slate-800 rounded-lg" />
+              <div className="h-28 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl" />
+              <div className="h-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl" />
             </div>
           ) : groupError || !group ? (
             /* ================= Group Error / Not Found View ================= */
-            <div className="bg-white border border-rose-200 rounded-3xl p-8 text-center space-y-4 shadow-sm">
-              <div className="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto">
+            <div className="bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900/50 rounded-3xl p-8 text-center space-y-4 shadow-sm">
+              <div className="w-12 h-12 bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 rounded-2xl flex items-center justify-center mx-auto">
                 <AlertCircle className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900">Failed to Load Group</h3>
-              <p className="text-sm text-slate-500 max-w-md mx-auto">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Failed to Load Group</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto">
                 {groupError instanceof Error
                   ? groupError.message
                   : "Unable to load group data from Google Drive. Please ensure you have access to this sheet."}
@@ -550,9 +551,11 @@ function SpreadSpendsInner() {
 
 export function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <SpreadSpendsInner />
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <SpreadSpendsInner />
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 

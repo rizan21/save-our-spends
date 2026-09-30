@@ -106,27 +106,27 @@ export function OpenGroupModal({ isOpen, onClose, onOpenGroup }: OpenGroupModalP
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Open Shared Group">
       <div className="space-y-6">
-        <p className="text-xs text-slate-500 leading-relaxed">
+        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
           If someone shared a Spread-Spends sheet with you, open it below. Selecting or pasting
-          it authorizes the sheet under Google's least-privilege <code className="text-emerald-700 bg-emerald-50 px-1 py-0.5 rounded">drive.file</code> scope.
+          it authorizes the sheet under Google's least-privilege <code className="text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1 py-0.5 rounded">drive.file</code> scope.
         </p>
 
         {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2.5 text-xs text-red-700">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-500" />
+          <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl flex items-start gap-2.5 text-xs text-red-700 dark:text-red-300">
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-500 dark:text-red-400" />
             <span>{error}</span>
           </div>
         )}
 
         {/* Primary Option: Google Drive Picker */}
-        <div className="p-4 bg-emerald-50/60 border border-emerald-100 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="p-4 bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm">
               <FolderSearch className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-sm font-semibold text-slate-900">Google Drive Picker</h4>
-              <p className="text-xs text-slate-500">Pick any shared spreadsheet from your Drive.</p>
+              <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Google Drive Picker</h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Pick any shared spreadsheet from your Drive.</p>
             </div>
           </div>
           <Button
@@ -142,25 +142,25 @@ export function OpenGroupModal({ isOpen, onClose, onOpenGroup }: OpenGroupModalP
 
         {/* Divider */}
         <div className="flex items-center gap-3">
-          <div className="h-px bg-slate-200 flex-1" />
-          <span className="text-xs uppercase tracking-wider text-slate-400 font-medium">Or paste link</span>
-          <div className="h-px bg-slate-200 flex-1" />
+          <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1" />
+          <span className="text-xs uppercase tracking-wider text-slate-400 dark:text-slate-500 font-medium">Or paste link</span>
+          <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1" />
         </div>
 
         {/* Secondary Option: Manual URL or ID */}
         <form onSubmit={handleManualSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">
               Spreadsheet Link or ID
             </label>
             <div className="relative">
-              <Link2 className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Link2 className="w-4 h-4 text-slate-400 dark:text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="https://docs.google.com/spreadsheets/d/... or ID"
                 value={sheetInput}
                 onChange={(e) => setSheetInput(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl text-xs focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
           </div>

@@ -83,11 +83,11 @@ export function EditProfileModal({
     >
       <div className="space-y-6">
         {/* Profile Picture Card */}
-        <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+        <div className="bg-slate-50 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
           <div className="relative">
             <UserAvatar name={user.name} picture={user.picture} size="xl" />
             <div
-              className="absolute -bottom-1 -right-1 bg-white border border-slate-200 rounded-full p-1 shadow-xs"
+              className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-full p-1 shadow-xs"
               title="Profile picture from Google"
             >
               {/* Google G icon */}
@@ -114,13 +114,13 @@ export function EditProfileModal({
 
           <div className="space-y-1">
             <div className="flex items-center justify-center sm:justify-start gap-1.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-emerald-600" />
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                 Google Account Photo
               </span>
             </div>
-            <p className="text-xs text-slate-500 font-medium">{user.email}</p>
-            <p className="text-[11px] text-slate-400">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{user.email}</p>
+            <p className="text-[11px] text-slate-400 dark:text-slate-500">
               Profile picture is set to your connected Google account.
             </p>
           </div>
@@ -129,7 +129,7 @@ export function EditProfileModal({
         {/* Edit User Name Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="user-name-input" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            <label htmlFor="user-name-input" className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
               User Name / Display Name
             </label>
             <input
@@ -141,26 +141,26 @@ export function EditProfileModal({
                 setError(null);
               }}
               placeholder="Enter your preferred name..."
-              className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs text-slate-900"
+              className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 shadow-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500"
               autoFocus
             />
-            <p className="text-[11px] text-slate-400 mt-1">
+            <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
               This name will be shown on expense splits, shared groups, and settlement receipts.
             </p>
           </div>
 
           {/* Reset to Google Name Option */}
           {user.googleName && (
-            <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
-              <span className="text-slate-500">
-                Google account name: <strong className="text-slate-700">{user.googleName}</strong>
+            <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100 dark:border-slate-800">
+              <span className="text-slate-500 dark:text-slate-400">
+                Google account name: <strong className="text-slate-700 dark:text-slate-300">{user.googleName}</strong>
               </span>
               {isCustomName && onResetName && (
                 <button
                   type="button"
                   onClick={handleResetToGoogle}
                   disabled={isSaving}
-                  className="text-emerald-600 hover:text-emerald-700 font-medium inline-flex items-center gap-1 cursor-pointer hover:underline disabled:opacity-50"
+                  className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-medium inline-flex items-center gap-1 cursor-pointer hover:underline disabled:opacity-50"
                 >
                   <RotateCcw className="w-3 h-3" />
                   <span>Restore</span>
@@ -171,7 +171,7 @@ export function EditProfileModal({
 
           {/* Error Message */}
           {error && (
-            <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl flex items-center gap-2">
+            <div className="p-3 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/60 text-rose-700 dark:text-rose-400 text-xs rounded-xl flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
@@ -179,14 +179,14 @@ export function EditProfileModal({
 
           {/* Success Message */}
           {successMessage && (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs rounded-xl flex items-center gap-2">
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-900/60 text-emerald-700 dark:text-emerald-300 text-xs rounded-xl flex items-center gap-2">
               <Check className="w-4 h-4 shrink-0" />
               <span>{successMessage}</span>
             </div>
           )}
 
           {/* Modal Actions */}
-          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-slate-100 dark:border-slate-800">
             <Button
               type="button"
               variant="ghost"

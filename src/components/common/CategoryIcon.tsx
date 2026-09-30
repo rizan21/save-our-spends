@@ -33,14 +33,14 @@ export function CategoryIcon({ category, className = '', size = 'md' }: Category
     ExpenseCategory,
     { icon: typeof Utensils; bg: string; color: string }
   > = {
-    food: { icon: Utensils, bg: 'bg-amber-100', color: 'text-amber-700' },
-    transport: { icon: Car, bg: 'bg-blue-100', color: 'text-blue-700' },
-    lodging: { icon: Hotel, bg: 'bg-indigo-100', color: 'text-indigo-700' },
-    entertainment: { icon: Film, bg: 'bg-purple-100', color: 'text-purple-700' },
-    groceries: { icon: ShoppingCart, bg: 'bg-emerald-100', color: 'text-emerald-700' },
-    utilities: { icon: Zap, bg: 'bg-orange-100', color: 'text-orange-700' },
-    shopping: { icon: ShoppingBag, bg: 'bg-rose-100', color: 'text-rose-700' },
-    general: { icon: Receipt, bg: 'bg-slate-100', color: 'text-slate-700' },
+    food: { icon: Utensils, bg: 'bg-amber-100 dark:bg-amber-950/60', color: 'text-amber-700 dark:text-amber-400' },
+    transport: { icon: Car, bg: 'bg-blue-100 dark:bg-blue-950/60', color: 'text-blue-700 dark:text-blue-400' },
+    lodging: { icon: Hotel, bg: 'bg-indigo-100 dark:bg-indigo-950/60', color: 'text-indigo-700 dark:text-indigo-400' },
+    entertainment: { icon: Film, bg: 'bg-purple-100 dark:bg-purple-950/60', color: 'text-purple-700 dark:text-purple-400' },
+    groceries: { icon: ShoppingCart, bg: 'bg-emerald-100 dark:bg-emerald-950/60', color: 'text-emerald-700 dark:text-emerald-400' },
+    utilities: { icon: Zap, bg: 'bg-orange-100 dark:bg-orange-950/60', color: 'text-orange-700 dark:text-orange-400' },
+    shopping: { icon: ShoppingBag, bg: 'bg-rose-100 dark:bg-rose-950/60', color: 'text-rose-700 dark:text-rose-400' },
+    general: { icon: Receipt, bg: 'bg-slate-100 dark:bg-slate-800', color: 'text-slate-700 dark:text-slate-300' },
   };
 
   const config = configs[category] || configs.general;

@@ -66,17 +66,17 @@ export function TransactionList({
     <div className="space-y-4">
       {/* Active Settlements Widget for this group */}
       {simplifiedDebts && simplifiedDebts.length > 0 && (
-        <div className="bg-white border border-emerald-200/90 rounded-2xl p-4 shadow-xs space-y-3">
+        <div className="bg-white dark:bg-slate-900 border border-emerald-200/90 dark:border-emerald-800/60 rounded-2xl p-4 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                 <HandCoins className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="font-bold text-slate-900 text-xs sm:text-sm">
+                <h4 className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">
                   Active Settlements ({simplifiedDebts.length})
                 </h4>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
                   Payments required to settle all debts in this group.
                 </p>
               </div>
@@ -94,12 +94,12 @@ export function TransactionList({
                   key={idx}
                   className={`p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition-all ${
                     isMyDebt
-                      ? 'border-emerald-200 bg-emerald-50/40 shadow-xs'
-                      : 'border-slate-200/70 bg-slate-50/50'
+                      ? 'border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/40 dark:bg-emerald-950/20 shadow-xs'
+                      : 'border-slate-200/70 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/40'
                   }`}
                 >
                   <div className="flex items-center gap-2 text-xs flex-wrap">
-                    <div className="flex items-center gap-1 font-bold text-slate-900">
+                    <div className="flex items-center gap-1 font-bold text-slate-900 dark:text-white">
                       <UserAvatar
                         name={debt.fromName}
                         picture={members.find((m) => m.email.toLowerCase() === debt.fromEmail.toLowerCase())?.picture}
@@ -107,8 +107,8 @@ export function TransactionList({
                       />
                       <span>{isPayer ? 'You' : debt.fromName}</span>
                     </div>
-                    <span className="text-slate-400">owes</span>
-                    <div className="flex items-center gap-1 font-bold text-slate-900">
+                    <span className="text-slate-400 dark:text-slate-500">owes</span>
+                    <div className="flex items-center gap-1 font-bold text-slate-900 dark:text-white">
                       <UserAvatar
                         name={debt.toName}
                         picture={members.find((m) => m.email.toLowerCase() === debt.toEmail.toLowerCase())?.picture}
@@ -122,10 +122,10 @@ export function TransactionList({
                     <span
                       className={`text-sm font-extrabold ${
                         isPayee
-                          ? 'text-emerald-600'
+                          ? 'text-emerald-600 dark:text-emerald-400'
                           : isPayer
-                          ? 'text-rose-600'
-                          : 'text-slate-900'
+                          ? 'text-rose-600 dark:text-rose-400'
+                          : 'text-slate-900 dark:text-white'
                       }`}
                     >
                       {formatCurrency(debt.amount, debt.currency || currency)}
@@ -151,13 +151,13 @@ export function TransactionList({
 
       {/* Feed Filters */}
       <div className="flex items-center justify-between">
-        <div className="flex gap-1.5 p-1 bg-slate-100 rounded-xl text-xs font-medium">
+        <div className="flex gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs font-medium">
           <button
             onClick={() => setFilter('all')}
             className={`px-3 py-1.5 rounded-lg transition-all ${
               filter === 'all'
-                ? 'bg-white text-slate-900 shadow-xs font-semibold'
-                : 'text-slate-500 hover:text-slate-900'
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs font-semibold'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
             All ({expenses.length + settlements.length})
@@ -166,8 +166,8 @@ export function TransactionList({
             onClick={() => setFilter('expenses')}
             className={`px-3 py-1.5 rounded-lg transition-all ${
               filter === 'expenses'
-                ? 'bg-white text-slate-900 shadow-xs font-semibold'
-                : 'text-slate-500 hover:text-slate-900'
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs font-semibold'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
             Expenses ({expenses.length})
@@ -176,8 +176,8 @@ export function TransactionList({
             onClick={() => setFilter('settlements')}
             className={`px-3 py-1.5 rounded-lg transition-all ${
               filter === 'settlements'
-                ? 'bg-white text-slate-900 shadow-xs font-semibold'
-                : 'text-slate-500 hover:text-slate-900'
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs font-semibold'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
             Settlements ({settlements.length})
@@ -187,13 +187,13 @@ export function TransactionList({
 
       {/* Empty State */}
       {items.length === 0 && (
-        <div className="p-12 text-center bg-white border border-dashed border-slate-200 rounded-2xl space-y-3">
-          <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center mx-auto">
+        <div className="p-12 text-center bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
+          <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 rounded-xl flex items-center justify-center mx-auto">
             <Receipt className="w-6 h-6" />
           </div>
           <div>
-            <h4 className="text-sm font-semibold text-slate-800">No transactions recorded</h4>
-            <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
+            <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200">No transactions recorded</h4>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 max-w-xs mx-auto">
               Add an expense to start splitting bills with group members.
             </p>
           </div>
