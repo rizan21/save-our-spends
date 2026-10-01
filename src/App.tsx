@@ -3,8 +3,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from './context/ThemeProvider';
 import { Navbar } from './components/common/Navbar';
 import { GroupList } from './components/groups/GroupList';
-import { GroupHeader, type GroupTab } from './components/groups/GroupHeader';
+import { GroupHeader } from './components/groups/GroupHeader';
 import { GroupOverview } from './components/groups/GroupOverview';
+import { GroupTabsContainer } from './components/groups/GroupTabsContainer';
+import { useSwipeableTabs } from './hooks/useSwipeableTabs';
 import { CreateGroupModal } from './components/groups/CreateGroupModal';
 import { OpenGroupModal } from './components/groups/OpenGroupModal';
 import { TransactionList } from './components/transactions/TransactionList';
@@ -73,7 +75,16 @@ function SpreadSpendsInner() {
     return match ? decodeURIComponent(match[1]) : null;
   });
 
-  const [activeTab, setActiveTab] = useState<GroupTab>('overview');
+  const {
+    activeTab,
+    slideDirection,
+    dragOffset,
+    isDragging,
+    setTab,
+    touchHandlers,
+  } = useSwipeableTabs({
+    initialTab: 'overview',
+  });
 
   // Modal visibility states
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
@@ -104,7 +115,7 @@ function SpreadSpendsInner() {
 
   const handleSelectGroup = (groupId: string) => {
     setSelectedGroupId(groupId);
-    setActiveTab('overview');
+    setTab('overview');
     window.location.hash = `#group=${encodeURIComponent(groupId)}`;
   };
 
@@ -319,7 +330,7 @@ function SpreadSpendsInner() {
                 currentUserEmail={user?.email || ''}
                 financialSummary={financialSummary}
                 activeTab={activeTab}
-                onTabChange={setActiveTab}
+                onTabChange={setTab}
                 onBack={handleBackToGroups}
                 onOpenAddExpense={() => setIsAddExpenseOpen(true)}
                 onOpenSettleUp={() => {
@@ -329,89 +340,97 @@ function SpreadSpendsInner() {
                 onOpenInvite={() => setIsInviteModalOpen(true)}
               />
 
-              {/* TAB: Overview */}
-              {activeTab === 'overview' && (
-                <GroupOverview
-                  group={group}
-                  expenses={expenses}
-                  financialSummary={financialSummary}
-                  onNavigateToExpenses={() => setActiveTab('expenses')}
-                  onOpenAddExpense={() => setIsAddExpenseOpen(true)}
-                  onViewExpense={(exp) => setViewingHistoryTransaction({ type: 'EXPENSE', data: exp })}
-                  onUpdateDescription={async (desc) => {
-                    await updateDescription(desc);
-                  }}
-                  isUpdatingDescription={isUpdatingDescription}
-                />
-              )}
-
-              {/* TAB: Expenses */}
-              {activeTab === 'expenses' && (
-                <TransactionList
-                  expenses={expenses}
-                  settlements={settlements}
-                  currentUserEmail={user?.email || ''}
-                  currency={group.currency}
-                  members={group.members}
-                  simplifiedDebts={financialSummary?.simplifiedDebts || []}
-                  onOpenAddExpense={() => {
-                    setEditingExpense(null);
-                    setIsAddExpenseOpen(true);
-                  }}
-                  onSettleDebt={handleSettleDebt}
-                  onEditExpense={(exp) => setEditingExpense(exp)}
-                  onEditSettlement={(set) => setEditingSettlement(set)}
-                  onViewHistory={(item) => setViewingHistoryTransaction(item)}
-                />
-              )}
-
-              {/* TAB: Balances & Settle */}
-              {activeTab === 'balances' && (
-                <div className="space-y-6">
-                  <BalancesSummary
-                    summary={financialSummary}
-                    currentUserEmail={user?.email || ''}
-                    currentUserPicture={user?.picture}
-                    members={group.members}
-                    currency={financialSummary?.currency || group.currency}
-                  />
-                  <MemberSpendings
-                    members={group.members}
+              <GroupTabsContainer
+                activeTab={activeTab}
+                slideDirection={slideDirection}
+                dragOffset={dragOffset}
+                isDragging={isDragging}
+                touchHandlers={touchHandlers}
+              >
+                {/* TAB: Overview */}
+                {activeTab === 'overview' && (
+                  <GroupOverview
+                    group={group}
                     expenses={expenses}
-                    currentUserEmail={user?.email || ''}
-                    currentUserPicture={user?.picture}
-                    currency={financialSummary?.currency || group.currency}
-                  />
-                  <SimplifiedDebtsList
-                    debts={financialSummary?.simplifiedDebts || []}
-                    currentUserEmail={user?.email || ''}
-                    members={group.members}
-                    onSettleDebt={handleSettleDebt}
-                  />
-                </div>
-              )}
-
-              {/* TAB: Members & Invites */}
-              {activeTab === 'members' && (
-                <div className="space-y-6">
-                  <MemberList
-                    members={group.members}
-                    pendingInvites={group.pendingInvites}
-                    currentUserEmail={user?.email || ''}
-                    currentUserPicture={user?.picture}
-                    isOwner={isOwner}
-                    onOpenInviteModal={() => setIsInviteModalOpen(true)}
-                    onApproveInvite={async (inviteId) => {
-                      if (user) {
-                        await approveInvite({ inviteId, approverEmail: user.email });
-                      }
+                    financialSummary={financialSummary}
+                    onNavigateToExpenses={() => setTab('expenses', 'left')}
+                    onOpenAddExpense={() => setIsAddExpenseOpen(true)}
+                    onViewExpense={(exp) => setViewingHistoryTransaction({ type: 'EXPENSE', data: exp })}
+                    onUpdateDescription={async (desc) => {
+                      await updateDescription(desc);
                     }}
-                    isApproving={isApprovingInvite}
-                    onOpenEditProfile={() => setIsEditProfileOpen(true)}
+                    isUpdatingDescription={isUpdatingDescription}
                   />
-                  <DirectSheetsLink group={group} />
-                </div>
-              )}
+                )}
+
+                {/* TAB: Expenses */}
+                {activeTab === 'expenses' && (
+                  <TransactionList
+                    expenses={expenses}
+                    settlements={settlements}
+                    currentUserEmail={user?.email || ''}
+                    currency={group.currency}
+                    members={group.members}
+                    simplifiedDebts={financialSummary?.simplifiedDebts || []}
+                    onOpenAddExpense={() => {
+                      setEditingExpense(null);
+                      setIsAddExpenseOpen(true);
+                    }}
+                    onSettleDebt={handleSettleDebt}
+                    onEditExpense={(exp) => setEditingExpense(exp)}
+                    onEditSettlement={(set) => setEditingSettlement(set)}
+                    onViewHistory={(item) => setViewingHistoryTransaction(item)}
+                  />
+                )}
+
+                {/* TAB: Balances & Settle */}
+                {activeTab === 'balances' && (
+                  <div className="space-y-6">
+                    <BalancesSummary
+                      summary={financialSummary}
+                      currentUserEmail={user?.email || ''}
+                      currentUserPicture={user?.picture}
+                      members={group.members}
+                      currency={financialSummary?.currency || group.currency}
+                    />
+                    <MemberSpendings
+                      members={group.members}
+                      expenses={expenses}
+                      currentUserEmail={user?.email || ''}
+                      currentUserPicture={user?.picture}
+                      currency={financialSummary?.currency || group.currency}
+                    />
+                    <SimplifiedDebtsList
+                      debts={financialSummary?.simplifiedDebts || []}
+                      currentUserEmail={user?.email || ''}
+                      members={group.members}
+                      onSettleDebt={handleSettleDebt}
+                    />
+                  </div>
+                )}
+
+                {/* TAB: Members & Invites */}
+                {activeTab === 'members' && (
+                  <div className="space-y-6">
+                    <MemberList
+                      members={group.members}
+                      pendingInvites={group.pendingInvites}
+                      currentUserEmail={user?.email || ''}
+                      currentUserPicture={user?.picture}
+                      isOwner={isOwner}
+                      onOpenInviteModal={() => setIsInviteModalOpen(true)}
+                      onApproveInvite={async (inviteId) => {
+                        if (user) {
+                          await approveInvite({ inviteId, approverEmail: user.email });
+                        }
+                      }}
+                      isApproving={isApprovingInvite}
+                      onOpenEditProfile={() => setIsEditProfileOpen(true)}
+                    />
+                    <DirectSheetsLink group={group} />
+                  </div>
+                )}
+              </GroupTabsContainer>
             </div>
           )}
         </ErrorBoundary>

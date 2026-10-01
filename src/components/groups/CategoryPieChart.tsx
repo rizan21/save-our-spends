@@ -21,19 +21,7 @@ interface CategorySpending {
   barColor: string;
 }
 
-const CATEGORY_META: Record<
-  ExpenseCategory,
-  { name: string; hex: string; barClass: string }
-> = {
-  food: { name: 'Food & Dining', hex: '#f59e0b', barClass: 'bg-amber-500' },
-  transport: { name: 'Transportation', hex: '#3b82f6', barClass: 'bg-blue-500' },
-  lodging: { name: 'Lodging & Accommodation', hex: '#6366f1', barClass: 'bg-indigo-500' },
-  entertainment: { name: 'Entertainment', hex: '#a855f7', barClass: 'bg-purple-500' },
-  groceries: { name: 'Groceries', hex: '#10b981', barClass: 'bg-emerald-500' },
-  utilities: { name: 'Bills & Utilities', hex: '#f97316', barClass: 'bg-orange-500' },
-  shopping: { name: 'Shopping', hex: '#f43f5e', barClass: 'bg-rose-500' },
-  general: { name: 'General & Others', hex: '#64748b', barClass: 'bg-slate-500' },
-};
+import { CATEGORY_META } from '../../constants/categories';
 
 export function CategoryPieChart({
   expenses,
@@ -41,6 +29,10 @@ export function CategoryPieChart({
   onOpenAddExpense,
 }: CategoryPieChartProps) {
   const [hoveredCategory, setHoveredCategory] = useState<ExpenseCategory | null>(null);
+
+  const toggleCategory = (cat: ExpenseCategory) => {
+    setHoveredCategory((prev) => (prev === cat ? null : cat));
+  };
 
   // Filter active expenses
   const activeExpenses = expenses.filter((e) => e.status === 'ACTIVE');
@@ -72,9 +64,9 @@ export function CategoryPieChart({
     })
     .sort((a, b) => b.amount - a.amount);
 
-  // Geometry for SVG Donut
-  const radius = 64;
-  const circumference = 2 * Math.PI * radius; // ~402.12
+  // Geometry for SVG Donut (optimized for mobile touch & visibility)
+  const radius = 66;
+  const circumference = 2 * Math.PI * radius; // ~414.69
   const strokeWidth = 22;
   const hoveredStrokeWidth = 26;
 
@@ -97,7 +89,7 @@ export function CategoryPieChart({
 
   if (activeExpenses.length === 0 || totalSpend === 0) {
     return (
-      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xs">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 sm:p-8 shadow-xs">
         <div className="flex items-center gap-2 mb-4">
           <PieChartIcon className="w-5 h-5 text-slate-500 dark:text-slate-400" />
           <h2 className="text-base font-bold text-slate-900 dark:text-white">Spending by Category</h2>
@@ -114,7 +106,7 @@ export function CategoryPieChart({
           </div>
           {onOpenAddExpense && (
             <div className="pt-2">
-              <Button size="sm" onClick={onOpenAddExpense} className="gap-1.5">
+              <Button size="sm" onClick={onOpenAddExpense} className="gap-1.5 min-h-[38px]">
                 <Plus className="w-4 h-4" />
                 <span>Add First Expense</span>
               </Button>
@@ -126,11 +118,11 @@ export function CategoryPieChart({
   }
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xs space-y-6">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xs space-y-5 sm:space-y-6">
       <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
         <div className="flex items-center gap-2">
           <PieChartIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-          <h2 className="text-base font-bold text-slate-900 dark:text-white">Spending by Category</h2>
+          <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Spending by Category</h2>
         </div>
         <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
           {categoryBreakdown.length} {categoryBreakdown.length === 1 ? 'category' : 'categories'} •{' '}
@@ -138,12 +130,12 @@ export function CategoryPieChart({
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 items-center">
         {/* SVG Donut Chart */}
         <div className="md:col-span-5 flex flex-col items-center justify-center relative">
-          <div className="relative w-56 h-56 flex items-center justify-center">
+          <div className="relative w-60 h-60 sm:w-64 sm:h-64 flex items-center justify-center">
             <svg
-              className="w-full h-full -rotate-90 transform"
+              className="w-full h-full -rotate-90 transform cursor-pointer"
               viewBox="0 0 180 180"
               aria-label="Expense Category Donut Chart"
             >
@@ -169,7 +161,8 @@ export function CategoryPieChart({
                     strokeWidth={isHovered ? hoveredStrokeWidth : strokeWidth}
                     strokeDasharray={slice.strokeDasharray}
                     strokeDashoffset={slice.strokeDashoffset}
-                    className="transition-all duration-200 cursor-pointer"
+                    className="transition-all duration-200 cursor-pointer touch-manipulation"
+                    onClick={() => toggleCategory(slice.category)}
                     onMouseEnter={() => setHoveredCategory(slice.category)}
                     onMouseLeave={() => setHoveredCategory(null)}
                     opacity={hoveredCategory && !isHovered ? 0.45 : 1}
@@ -179,13 +172,13 @@ export function CategoryPieChart({
             </svg>
 
             {/* Center Information */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 pointer-events-none transition-all">
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-3 pointer-events-none transition-all">
               {activeCategory ? (
                 <>
-                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 truncate max-w-[120px]">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 max-w-[130px] line-clamp-2 leading-tight">
                     {activeCategory.name}
                   </span>
-                  <span className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
+                  <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mt-0.5">
                     {formatCurrency(activeCategory.amount, currency)}
                   </span>
                   <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
@@ -197,7 +190,7 @@ export function CategoryPieChart({
                   <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                     Total Spending
                   </span>
-                  <span className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
+                  <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mt-0.5">
                     {formatCurrency(totalSpend, currency)}
                   </span>
                   <span className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -208,21 +201,22 @@ export function CategoryPieChart({
             </div>
           </div>
           <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2 text-center">
-            Hover over a slice or category to inspect details
+            Tap or hover over a slice to inspect details
           </p>
         </div>
 
         {/* Category Breakdown Table / Cards */}
-        <div className="md:col-span-7 space-y-3">
-          <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+        <div className="md:col-span-7 space-y-2.5">
+          <div className="space-y-2 max-h-none md:max-h-80 overflow-visible md:overflow-y-auto pr-0 md:pr-1">
             {categoryBreakdown.map((item) => {
               const isHovered = hoveredCategory === item.category;
               return (
                 <div
                   key={item.category}
+                  onClick={() => toggleCategory(item.category)}
                   onMouseEnter={() => setHoveredCategory(item.category)}
                   onMouseLeave={() => setHoveredCategory(null)}
-                  className={`p-3 rounded-xl border transition-all cursor-pointer ${
+                  className={`p-2.5 sm:p-3 rounded-xl border transition-all cursor-pointer touch-manipulation ${
                     isHovered
                       ? 'bg-slate-50 dark:bg-slate-800 border-emerald-400 dark:border-emerald-500 shadow-xs ring-1 ring-emerald-400/30'
                       : 'bg-white dark:bg-slate-850/60 border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
@@ -252,7 +246,7 @@ export function CategoryPieChart({
                   </div>
 
                   {/* Percentage Progress Bar */}
-                  <div className="mt-2.5 w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                  <div className="mt-2 w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-300 ${item.barColor}`}
                       style={{ width: `${Math.min(Math.max(item.percentage, 2), 100)}%` }}
@@ -267,3 +261,4 @@ export function CategoryPieChart({
     </div>
   );
 }
+
