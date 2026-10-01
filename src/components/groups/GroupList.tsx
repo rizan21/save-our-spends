@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, FolderPlus, RefreshCw, FolderDown, HandCoins, TrendingUp, TrendingDown, Table, LogIn } from 'lucide-react';
+import { Plus, Search, FolderPlus, RefreshCw, FolderDown, HandCoins, TrendingUp, TrendingDown, Table, LogIn, Bell, BellOff } from 'lucide-react';
 import { GroupCard } from './GroupCard';
 import { Button } from '../common/Button';
 import { UserAvatar } from '../common/UserAvatar';
@@ -18,6 +18,8 @@ export interface GroupListProps {
   totalYouAreOwed?: number;
   totalYouOwe?: number;
   currency?: string;
+  isPushEnabled?: boolean;
+  onOpenNotifications?: () => void;
   onSelectGroup: (groupId: string) => void;
   onOpenCreateGroup: () => void;
   onOpenImportModal?: () => void;
@@ -36,6 +38,8 @@ export function GroupList({
   totalYouAreOwed = 0,
   totalYouOwe = 0,
   currency = 'USD',
+  isPushEnabled = false,
+  onOpenNotifications,
   onSelectGroup,
   onOpenCreateGroup,
   onOpenImportModal,
@@ -110,6 +114,27 @@ export function GroupList({
             <RefreshCw className={`w-4 h-4 ${isRefetching ? 'animate-spin' : ''}`} />
             <span className="hidden sm:inline">Refresh</span>
           </Button>
+          {onOpenNotifications && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onOpenNotifications}
+              className="gap-1.5"
+              title={isPushEnabled ? 'Notifications active across your groups' : 'Configure push notifications & real-time sync'}
+            >
+              {isPushEnabled ? (
+                <>
+                  <Bell className="w-4 h-4 text-emerald-600 dark:text-emerald-400 fill-emerald-500/20" />
+                  <span className="hidden sm:inline">Sync On</span>
+                </>
+              ) : (
+                <>
+                  <BellOff className="w-4 h-4 text-slate-400" />
+                  <span className="hidden sm:inline">Notify</span>
+                </>
+              )}
+            </Button>
+          )}
           {onOpenImportModal && (
             <Button
               variant="outline"

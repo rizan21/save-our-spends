@@ -24,6 +24,7 @@ import { useAuth } from './hooks/useAuth';
 import { useGroups } from './hooks/useGroups';
 import { useGroupDetail } from './hooks/useGroupDetail';
 import { useHomeSummary } from './hooks/useHomeSummary';
+import { useSheetSync } from './hooks/useSheetSync';
 import type { SimplifiedDebt } from './types/balance';
 
 import { Button } from './components/common/Button';
@@ -34,6 +35,7 @@ import { EditProfileModal } from './components/auth/EditProfileModal';
 import { usePwaInstall } from './hooks/usePwaInstall';
 import { InstallAppModal } from './components/pwa/InstallAppModal';
 import { OfflineIndicator } from './components/pwa/OfflineIndicator';
+import { NotificationSettingsModal } from './components/notifications/NotificationSettingsModal';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -91,6 +93,7 @@ function SpreadSpendsInner() {
     | null
   >(null);
   const [isMemberBalancesModalOpen, setIsMemberBalancesModalOpen] = useState(false);
+  const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
 
   const isAnyModalOpen =
     isCreateGroupOpen ||
@@ -101,6 +104,7 @@ function SpreadSpendsInner() {
     isEditProfileOpen ||
     isInstallModalOpen ||
     isMemberBalancesModalOpen ||
+    isNotificationModalOpen ||
     Boolean(selectedDebtToSettle) ||
     Boolean(editingExpense) ||
     Boolean(editingSettlement) ||
@@ -171,8 +175,10 @@ function SpreadSpendsInner() {
     refetch: refetchGroup,
     addExpense,
     updateExpense,
+    deleteExpense,
     addSettlement,
     updateSettlement,
+    deleteSettlement,
     proposeInvite,
     approveInvite,
     isApprovingInvite,
@@ -180,6 +186,19 @@ function SpreadSpendsInner() {
     isUpdatingDescription,
     updateMemberName,
   } = useGroupDetail(selectedGroupId);
+
+  const {
+    recentNotification,
+    clearNotification,
+    lastSyncTime,
+    isPushEnabled,
+    notificationPermission,
+    enableNotifications,
+    sendTestNotification,
+    triggerManualSync,
+    isPushSupported,
+  } = useSheetSync(selectedGroupId, user?.email);
+
 
   // Derive live transaction for history modal from freshest expenses/settlements
   const currentViewingTransaction = useMemo(() => {
@@ -303,6 +322,8 @@ function SpreadSpendsInner() {
               totalYouAreOwed={totalYouAreOwed}
               totalYouOwe={totalYouOwe}
               currency={homeCurrency}
+              isPushEnabled={isPushEnabled}
+              onOpenNotifications={() => setIsNotificationModalOpen(true)}
               onSelectGroup={handleSelectGroup}
               onOpenCreateGroup={() => setIsCreateGroupOpen(true)}
               onOpenImportModal={() => setIsOpenGroupModalOpen(true)}
@@ -355,6 +376,9 @@ function SpreadSpendsInner() {
                   setIsSettleUpOpen(true);
                 }}
                 onOpenInvite={() => setIsInviteModalOpen(true)}
+                isPushEnabled={isPushEnabled}
+                onOpenNotificationSettings={() => setIsNotificationModalOpen(true)}
+                onToggleNotifications={() => setIsNotificationModalOpen(true)}
               />
 
               <GroupTabsContainer
@@ -396,7 +420,13 @@ function SpreadSpendsInner() {
                     }}
                     onSettleDebt={handleSettleDebt}
                     onEditExpense={(exp) => setEditingExpense(exp)}
+                    onDeleteExpense={async (exp) => {
+                      await deleteExpense({ expenseId: exp.id, editorEmail: user?.email });
+                    }}
                     onEditSettlement={(set) => setEditingSettlement(set)}
+                    onDeleteSettlement={async (set) => {
+                      await deleteSettlement({ settlementId: set.id, editorEmail: user?.email });
+                    }}
                     onViewHistory={(item) => setViewingHistoryTransaction(item)}
                   />
                 )}
@@ -576,6 +606,23 @@ function SpreadSpendsInner() {
         />
       )}
 
+      {/* Real-time Sync & Notifications Settings Modal */}
+      {user && (
+        <NotificationSettingsModal
+          isOpen={isNotificationModalOpen}
+          onClose={() => setIsNotificationModalOpen(false)}
+          groupId={selectedGroupId || groups[0]?.id}
+          groupName={group?.name || 'All Groups'}
+          isPushEnabled={isPushEnabled}
+          notificationPermission={notificationPermission}
+          isPushSupported={isPushSupported}
+          lastSyncTime={lastSyncTime}
+          onEnableNotifications={() => enableNotifications(groups.map((g) => g.id))}
+          onSendTestNotification={() => sendTestNotification(selectedGroupId || groups[0]?.id)}
+          onManualSync={triggerManualSync}
+        />
+      )}
+
       {/* PWA Install Modal for Android & iOS */}
       <InstallAppModal
         isOpen={isInstallModalOpen}
@@ -585,6 +632,26 @@ function SpreadSpendsInner() {
         canPromptDirectly={canPromptDirectly}
         onTriggerInstall={triggerInstall}
       />
+
+      {/* Real-time Sheet Sync Notification Toast */}
+      {recentNotification && (
+        <aside
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 max-w-md w-[90%] bg-slate-900/95 dark:bg-slate-800/95 text-white backdrop-blur-md px-4 py-3 rounded-2xl shadow-xl border border-slate-700/50 flex items-center justify-between gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200"
+        >
+          <div className="flex items-center gap-2.5 text-xs sm:text-sm font-medium min-w-0">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+            <span className="truncate">{recentNotification}</span>
+          </div>
+          <button
+            onClick={clearNotification}
+            className="text-xs text-slate-300 hover:text-white px-2 py-1 rounded-md bg-slate-800 dark:bg-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 shrink-0 cursor-pointer transition-colors"
+          >
+            Dismiss
+          </button>
+        </aside>
+      )}
     </div>
   );
 }

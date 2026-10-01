@@ -1,6 +1,6 @@
 import { CategoryIcon } from '../common/CategoryIcon';
 import { UserAvatar } from '../common/UserAvatar';
-import { HandCoins, Pencil, History } from 'lucide-react';
+import { HandCoins, Pencil, History, Trash2 } from 'lucide-react';
 import type { Expense, Settlement } from '../../types/transaction';
 import type { Member } from '../../types/group';
 import { formatCurrency } from '../../core/splitCalculator';
@@ -16,6 +16,7 @@ export interface TransactionItemProps {
   currency: string;
   members?: Member[];
   onEdit?: (item: UnifiedTransactionItem) => void;
+  onDelete?: (item: UnifiedTransactionItem) => void;
   onViewHistory?: (item: UnifiedTransactionItem) => void;
 }
 
@@ -25,6 +26,7 @@ export function TransactionItem({
   currency,
   members = [],
   onEdit,
+  onDelete,
   onViewHistory,
 }: TransactionItemProps) {
 
@@ -110,7 +112,7 @@ export function TransactionItem({
             </div>
           </div>
 
-          {(onEdit || (onViewHistory && hasHistory)) && (
+          {(onEdit || onDelete || (onViewHistory && hasHistory)) && (
             <div className="flex items-center gap-1 border-l border-slate-100 dark:border-slate-800 pl-2">
               {onEdit && (
                 <button
@@ -124,6 +126,22 @@ export function TransactionItem({
                   aria-label="Edit settlement"
                 >
                   <Pencil className="w-3.5 h-3.5" />
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (window.confirm('Are you sure you want to delete this settlement?')) {
+                      onDelete(item);
+                    }
+                  }}
+                  className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
+                  title="Delete settlement"
+                  aria-label="Delete settlement"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
                 </button>
               )}
               {onViewHistory && hasHistory && (
@@ -243,7 +261,7 @@ export function TransactionItem({
           </div>
         </div>
 
-        {(onEdit || (onViewHistory && hasHistory)) && (
+        {(onEdit || onDelete || (onViewHistory && hasHistory)) && (
           <div className="flex items-center gap-1 border-l border-slate-100 dark:border-slate-800 pl-2">
             {onEdit && (
               <button
@@ -257,6 +275,22 @@ export function TransactionItem({
                 aria-label="Edit expense"
               >
                 <Pencil className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (window.confirm('Are you sure you want to delete this expense?')) {
+                    onDelete(item);
+                  }
+                }}
+                className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
+                title="Delete expense"
+                aria-label="Delete expense"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             )}
             {onViewHistory && hasHistory && (

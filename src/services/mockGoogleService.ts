@@ -6,6 +6,7 @@ import {
   deserializeMembers,
   deserializePendingInvites,
   deserializeSettlements,
+  deserializeExpenses,
   deserializeMultiTabExpenses,
   getMemberTabName,
   generateAllExpensesFormula,
@@ -520,6 +521,81 @@ class MockGoogleService {
     }
 
     setTab[rowIndex] = serializeSettlementRow(settlement);
+    this.saveToStorage();
+  }
+
+  /**
+   * Deletes an expense by marking its status as DELETED.
+   */
+  public async deleteExpense(sheetId: string, expenseId: string, editorEmail?: string): Promise<void> {
+    const sheet = this.sheets[sheetId];
+    if (!sheet) throw new Error('Sheet not found');
+
+    let updated = false;
+    for (const [tabName, rows] of Object.entries(sheet.tabs)) {
+      if (tabName.startsWith('Exp_') || tabName === SHEET_TABS.EXPENSES) {
+        const rowIndex = rows.findIndex((r, idx) => idx > 0 && r[0] === expenseId);
+        if (rowIndex !== -1) {
+          const expense = deserializeExpenses([rows[0], rows[rowIndex]])[0];
+          if (expense) {
+            expense.status = 'DELETED';
+            if (editorEmail) {
+              const history = expense.history || [];
+              history.push({
+                id: `hist_del_${Date.now()}`,
+                editedAt: new Date().toISOString(),
+                editedBy: editorEmail,
+                summary: 'Deleted expense',
+                changes: [{ field: 'status', label: 'Status', oldValue: 'ACTIVE', newValue: 'DELETED' }],
+              });
+              expense.history = history;
+            }
+            rows[rowIndex] = serializeExpenseRow(expense);
+            updated = true;
+            break;
+          }
+        }
+      }
+    }
+
+    if (!updated) {
+      throw new Error(`Expense with ID ${expenseId} not found in sheet`);
+    }
+
+    this.saveToStorage();
+  }
+
+  /**
+   * Deletes a settlement by marking its status as DELETED.
+   */
+  public async deleteSettlement(sheetId: string, settlementId: string, editorEmail?: string): Promise<void> {
+    const sheet = this.sheets[sheetId];
+    if (!sheet) throw new Error('Sheet not found');
+
+    const setTab = sheet.tabs[SHEET_TABS.SETTLEMENTS] || [];
+    const rowIndex = setTab.findIndex((r, idx) => idx > 0 && r[0] === settlementId);
+    if (rowIndex === -1) {
+      throw new Error(`Settlement with ID ${settlementId} not found in sheet`);
+    }
+
+    const settlements = deserializeSettlements([setTab[0], setTab[rowIndex]]);
+    const settlement = settlements[0];
+    if (settlement) {
+      settlement.status = 'DELETED';
+      if (editorEmail) {
+        const history = settlement.history || [];
+        history.push({
+          id: `hist_del_${Date.now()}`,
+          editedAt: new Date().toISOString(),
+          editedBy: editorEmail,
+          summary: 'Deleted settlement',
+          changes: [{ field: 'status', label: 'Status', oldValue: 'ACTIVE', newValue: 'DELETED' }],
+        });
+        settlement.history = history;
+      }
+      setTab[rowIndex] = serializeSettlementRow(settlement);
+    }
+
     this.saveToStorage();
   }
 

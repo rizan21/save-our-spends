@@ -1,10 +1,11 @@
 export function registerServiceWorker() {
   if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
+    const doRegister = () => {
       navigator.serviceWorker
         .register('/sw.js')
         .then((reg) => {
-          // Check for updates on navigation
+          // Check for immediate updates
+          reg.update().catch(() => {});
           reg.onupdatefound = () => {
             const installingWorker = reg.installing;
             if (installingWorker) {
@@ -23,6 +24,12 @@ export function registerServiceWorker() {
         .catch((error) => {
           console.error('Service worker registration failed:', error);
         });
-    });
+    };
+
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      doRegister();
+    } else {
+      window.addEventListener('load', doRegister);
+    }
   }
 }

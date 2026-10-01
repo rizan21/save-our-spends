@@ -16,7 +16,9 @@ export interface TransactionListProps {
   onOpenAddExpense: () => void;
   onSettleDebt?: (debt: SimplifiedDebt) => void;
   onEditExpense?: (expense: Expense) => void;
+  onDeleteExpense?: (expense: Expense) => void;
   onEditSettlement?: (settlement: Settlement) => void;
+  onDeleteSettlement?: (settlement: Settlement) => void;
   onViewHistory?: (item: { type: 'EXPENSE'; data: Expense } | { type: 'SETTLEMENT'; data: Settlement }) => void;
 }
 
@@ -30,7 +32,9 @@ export function TransactionList({
   onOpenAddExpense,
   onSettleDebt: _onSettleDebt,
   onEditExpense,
+  onDeleteExpense,
   onEditSettlement,
+  onDeleteSettlement,
   onViewHistory,
 }: TransactionListProps) {
   const [filter, setFilter] = useState<'all' | 'expenses' | 'settlements'>('all');
@@ -132,6 +136,13 @@ export function TransactionList({
                   onEditExpense?.(unifiedItem.data);
                 } else {
                   onEditSettlement?.(unifiedItem.data);
+                }
+              }}
+              onDelete={(unifiedItem) => {
+                if (unifiedItem.type === 'EXPENSE') {
+                  onDeleteExpense?.(unifiedItem.data);
+                } else {
+                  onDeleteSettlement?.(unifiedItem.data);
                 }
               }}
               onViewHistory={onViewHistory}

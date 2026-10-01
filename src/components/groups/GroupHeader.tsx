@@ -10,6 +10,8 @@ import {
   Users,
   ShieldAlert,
   LayoutDashboard,
+  Bell,
+  BellOff,
 } from 'lucide-react';
 import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
@@ -29,6 +31,9 @@ export interface GroupHeaderProps {
   onOpenAddExpense: () => void;
   onOpenSettleUp: () => void;
   onOpenInvite: () => void;
+  isPushEnabled?: boolean;
+  onToggleNotifications?: () => void;
+  onOpenNotificationSettings?: () => void;
 }
 
 export function GroupHeader({
@@ -41,6 +46,9 @@ export function GroupHeader({
   onOpenAddExpense,
   onOpenSettleUp,
   onOpenInvite,
+  isPushEnabled = false,
+  onToggleNotifications,
+  onOpenNotificationSettings,
 }: GroupHeaderProps) {
   const isOwner = group.ownerEmail === currentUserEmail;
   const currency = financialSummary?.currency || group.currency || 'USD';
@@ -154,6 +162,31 @@ export function GroupHeader({
               <ExternalLink className="w-3.5 h-3.5" />
               <span>Sheet</span>
             </a>
+          )}
+          {(onOpenNotificationSettings || onToggleNotifications) && (
+            <button
+              type="button"
+              onClick={onOpenNotificationSettings || onToggleNotifications}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-xl transition-all shadow-xs shrink-0 min-h-[38px] sm:min-h-[34px] cursor-pointer border ${
+                isPushEnabled
+                  ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+                  : 'bg-white dark:bg-slate-850 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+              title={isPushEnabled ? 'Push notifications active — click to test or configure' : 'Enable push notifications and real-time sync'}
+            >
+              {isPushEnabled ? (
+                <>
+                  <Bell className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 fill-emerald-500/20" />
+                  <span>Notify</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                </>
+              ) : (
+                <>
+                  <BellOff className="w-3.5 h-3.5" />
+                  <span>Notify</span>
+                </>
+              )}
+            </button>
           )}
         </div>
       </div>

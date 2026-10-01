@@ -1,0 +1,16 @@
+{
+  "name": "spread-spends-worker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cloudflare Worker relay for Spread-Spends Web Push notifications and real-time sheet sync",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "generate-keys": "bun run src/scripts/generateKeys.ts"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241004.0",
+    "wrangler": "^3.80.0"
+  }
+}
