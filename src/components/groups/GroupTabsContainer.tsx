@@ -6,7 +6,7 @@ export interface GroupTabsContainerProps {
   slideDirection: 'left' | 'right' | null;
   dragOffset: number;
   isDragging: boolean;
-  touchHandlers: {
+  touchHandlers?: {
     onTouchStart: (e: React.TouchEvent) => void;
     onTouchMove: (e: React.TouchEvent) => void;
     onTouchEnd: (e: React.TouchEvent) => void;
@@ -46,9 +46,9 @@ export function GroupTabsContainer({
       id={`tabpanel-${activeTab}`}
       aria-labelledby={`tab-${activeTab}`}
       tabIndex={0}
-      className={`touch-pan-y overflow-x-clip focus:outline-hidden ${getAnimationClass()} ${className}`}
+      className={`touch-pan-y overflow-x-clip focus:outline-hidden min-h-[50vh] flex-1 ${getAnimationClass()} ${className}`}
       style={containerStyle}
-      {...touchHandlers}
+      {...(touchHandlers || {})}
     >
       {children}
     </div>

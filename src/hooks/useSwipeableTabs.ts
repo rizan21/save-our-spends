@@ -32,6 +32,7 @@ export interface UseSwipeableTabsOptions {
   onTabChange?: (tab: GroupTab) => void;
   threshold?: number;
   velocityThreshold?: number;
+  enabled?: boolean;
 }
 
 export function useSwipeableTabs({
@@ -40,6 +41,7 @@ export function useSwipeableTabs({
   onTabChange,
   threshold = 45,
   velocityThreshold = 0.3,
+  enabled = true,
 }: UseSwipeableTabsOptions = {}) {
   const [internalTab, setInternalTab] = useState<GroupTab>(initialTab);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
@@ -94,41 +96,42 @@ export function useSwipeableTabs({
     return () => clearTimeout(timer);
   }, [slideDirection, activeTab]);
 
-  const onTouchStart = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length !== 1) return;
-
-    // Do not intercept if touch began inside an explicitly exempt element (e.g. horizontally scrollable elements)
-    const target = e.target as HTMLElement | null;
-    if (target?.closest('.no-swipe, [data-no-swipe="true"]')) {
-      return;
+  // Common gesture processing logic for both window-level and element-level touch
+  const handleTouchStartCommon = useCallback((clientX: number, clientY: number, target: HTMLElement | null) => {
+    // Do not intercept if touch began inside an exempt element (modals, inputs, tablist)
+    if (
+      target?.closest(
+        '[role="dialog"], [aria-modal="true"], .modal, input, textarea, select, [contenteditable="true"], [role="tablist"], .no-swipe, [data-no-swipe="true"]'
+      )
+    ) {
+      return false;
     }
 
-    const touch = e.touches[0];
     touchStartRef.current = {
-      x: touch.clientX,
-      y: touch.clientY,
+      x: clientX,
+      y: clientY,
       time: Date.now(),
     };
     isSwipingRef.current = false;
     isCancelledRef.current = false;
     currentOffsetRef.current = 0;
     setDragOffset(0);
+    return true;
   }, []);
 
-  const onTouchMove = useCallback(
-    (e: React.TouchEvent) => {
-      if (!touchStartRef.current || isCancelledRef.current || e.touches.length !== 1) return;
+  const handleTouchMoveCommon = useCallback(
+    (clientX: number, clientY: number, cancelable: boolean, preventDefault?: () => void) => {
+      if (!touchStartRef.current || isCancelledRef.current) return;
 
-      const touch = e.touches[0];
-      const dx = touch.clientX - touchStartRef.current.x;
-      const dy = touch.clientY - touchStartRef.current.y;
+      const dx = clientX - touchStartRef.current.x;
+      const dy = clientY - touchStartRef.current.y;
       const absDx = Math.abs(dx);
       const absDy = Math.abs(dy);
 
       // Lock gesture once movement exceeds minimal jitter threshold (10px)
       if (!isSwipingRef.current) {
         if (absDy > 10 && absDy >= absDx) {
-          // Vertical scrolling takes priority; disarm swipe for this touch session
+          // Vertical scrolling takes priority; cancel swipe for this session
           isCancelledRef.current = true;
           return;
         }
@@ -140,6 +143,10 @@ export function useSwipeableTabs({
       }
 
       if (isSwipingRef.current) {
+        if (cancelable && preventDefault) {
+          preventDefault();
+        }
+
         const atStart = activeTab === GROUP_TABS[0] && dx > 0;
         const atEnd = activeTab === GROUP_TABS[GROUP_TABS.length - 1] && dx < 0;
 
@@ -152,15 +159,14 @@ export function useSwipeableTabs({
     [activeTab]
   );
 
-  const onTouchEnd = useCallback(
-    (e: React.TouchEvent) => {
+  const handleTouchEndCommon = useCallback(
+    (clientX?: number) => {
       if (!touchStartRef.current) return;
 
       const wasSwiping = isSwipingRef.current;
       const start = touchStartRef.current;
       const dt = Math.max(1, Date.now() - start.time);
-      const touch = e.changedTouches[0];
-      const dx = touch ? touch.clientX - start.x : currentOffsetRef.current;
+      const dx = clientX !== undefined ? clientX - start.x : currentOffsetRef.current;
       const velocity = Math.abs(dx) / dt;
 
       touchStartRef.current = null;
@@ -186,7 +192,7 @@ export function useSwipeableTabs({
     [threshold, velocityThreshold, goToNextTab, goToPrevTab]
   );
 
-  const onTouchCancel = useCallback(() => {
+  const handleTouchCancelCommon = useCallback(() => {
     touchStartRef.current = null;
     isSwipingRef.current = false;
     isCancelledRef.current = false;
@@ -194,6 +200,83 @@ export function useSwipeableTabs({
     setIsDragging(false);
     setDragOffset(0);
   }, []);
+
+  // Global window touch listeners: enables swiping from anywhere on the screen
+  // (e.g. outside cards, page margins/padding, header, empty space below lists)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !enabled) return;
+
+    const onWinTouchStart = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      handleTouchStartCommon(e.touches[0].clientX, e.touches[0].clientY, e.target as HTMLElement | null);
+    };
+
+    const onWinTouchMove = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      handleTouchMoveCommon(
+        e.touches[0].clientX,
+        e.touches[0].clientY,
+        e.cancelable,
+        () => e.preventDefault()
+      );
+    };
+
+    const onWinTouchEnd = (e: TouchEvent) => {
+      const touch = e.changedTouches[0];
+      handleTouchEndCommon(touch ? touch.clientX : undefined);
+    };
+
+    const onWinTouchCancel = () => {
+      handleTouchCancelCommon();
+    };
+
+    window.addEventListener('touchstart', onWinTouchStart, { passive: true });
+    window.addEventListener('touchmove', onWinTouchMove, { passive: false });
+    window.addEventListener('touchend', onWinTouchEnd, { passive: true });
+    window.addEventListener('touchcancel', onWinTouchCancel, { passive: true });
+
+    return () => {
+      window.removeEventListener('touchstart', onWinTouchStart);
+      window.removeEventListener('touchmove', onWinTouchMove);
+      window.removeEventListener('touchend', onWinTouchEnd);
+      window.removeEventListener('touchcancel', onWinTouchCancel);
+    };
+  }, [
+    enabled,
+    handleTouchStartCommon,
+    handleTouchMoveCommon,
+    handleTouchEndCommon,
+    handleTouchCancelCommon,
+  ]);
+
+  // Synthetic React touch handlers for optional component attachment
+  const onTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      handleTouchStartCommon(e.touches[0].clientX, e.touches[0].clientY, e.target as HTMLElement | null);
+    },
+    [handleTouchStartCommon]
+  );
+
+  const onTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (e.touches.length !== 1) return;
+      handleTouchMoveCommon(e.touches[0].clientX, e.touches[0].clientY, false);
+    },
+    [handleTouchMoveCommon]
+  );
+
+  const onTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      const touch = e.changedTouches[0];
+      handleTouchEndCommon(touch ? touch.clientX : undefined);
+    },
+    [handleTouchEndCommon]
+  );
+
+  const onTouchCancel = useCallback(() => {
+    handleTouchCancelCommon();
+  }, [handleTouchCancelCommon]);
 
   return {
     activeTab,

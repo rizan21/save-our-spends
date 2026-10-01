@@ -75,17 +75,6 @@ function SpreadSpendsInner() {
     return match ? decodeURIComponent(match[1]) : null;
   });
 
-  const {
-    activeTab,
-    slideDirection,
-    dragOffset,
-    isDragging,
-    setTab,
-    touchHandlers,
-  } = useSwipeableTabs({
-    initialTab: 'overview',
-  });
-
   // Modal visibility states
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const [isOpenGroupModalOpen, setIsOpenGroupModalOpen] = useState(false);
@@ -101,6 +90,33 @@ function SpreadSpendsInner() {
     | { type: 'SETTLEMENT'; data: Settlement }
     | null
   >(null);
+  const [isMemberBalancesModalOpen, setIsMemberBalancesModalOpen] = useState(false);
+
+  const isAnyModalOpen =
+    isCreateGroupOpen ||
+    isOpenGroupModalOpen ||
+    isAddExpenseOpen ||
+    isSettleUpOpen ||
+    isInviteModalOpen ||
+    isEditProfileOpen ||
+    isInstallModalOpen ||
+    isMemberBalancesModalOpen ||
+    Boolean(selectedDebtToSettle) ||
+    Boolean(editingExpense) ||
+    Boolean(editingSettlement) ||
+    Boolean(viewingHistoryTransaction);
+
+  const {
+    activeTab,
+    slideDirection,
+    dragOffset,
+    isDragging,
+    setTab,
+    touchHandlers,
+  } = useSwipeableTabs({
+    initialTab: 'overview',
+    enabled: Boolean(selectedGroupId) && !isAnyModalOpen,
+  });
 
   // Keep URL hash in sync with selected group
   useEffect(() => {
@@ -115,6 +131,7 @@ function SpreadSpendsInner() {
 
   const handleSelectGroup = (groupId: string) => {
     setSelectedGroupId(groupId);
+    setIsMemberBalancesModalOpen(false);
     setTab('overview');
     window.location.hash = `#group=${encodeURIComponent(groupId)}`;
   };
@@ -324,7 +341,7 @@ function SpreadSpendsInner() {
             </div>
           ) : (
             /* ================= Group Detail View ================= */
-            <div className="space-y-6">
+            <div className="space-y-6 flex-1 flex flex-col min-h-[calc(100vh-140px)]">
               <GroupHeader
                 group={group}
                 currentUserEmail={user?.email || ''}
@@ -346,6 +363,7 @@ function SpreadSpendsInner() {
                 dragOffset={dragOffset}
                 isDragging={isDragging}
                 touchHandlers={touchHandlers}
+                className="flex-1 flex flex-col"
               >
                 {/* TAB: Overview */}
                 {activeTab === 'overview' && (
@@ -392,6 +410,9 @@ function SpreadSpendsInner() {
                       currentUserPicture={user?.picture}
                       members={group.members}
                       currency={financialSummary?.currency || group.currency}
+                      isModalOpen={isMemberBalancesModalOpen}
+                      onOpenModal={() => setIsMemberBalancesModalOpen(true)}
+                      onCloseModal={() => setIsMemberBalancesModalOpen(false)}
                     />
                     <MemberSpendings
                       members={group.members}

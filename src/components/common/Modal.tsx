@@ -10,6 +10,7 @@ export interface ModalProps {
   children: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl';
   closeOnBack?: boolean;
+  showCloseButton?: boolean;
 }
 
 export function Modal({
@@ -20,6 +21,7 @@ export function Modal({
   children,
   maxWidth = 'md',
   closeOnBack = true,
+  showCloseButton = true,
 }: ModalProps) {
   const modalId = useId();
   const onCloseRef = useRef(onClose);
@@ -76,12 +78,15 @@ export function Modal({
               {title && <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h3>}
               {description && <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{description}</p>}
             </div>
-            <button
-              onClick={onClose}
-              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg p-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            {showCloseButton && (
+              <button
+                onClick={onClose}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg p-1 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                aria-label="Close modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
           </div>
         )}
 

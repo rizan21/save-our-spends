@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { TransactionItem } from './TransactionItem';
 import { Button } from '../common/Button';
-import { UserAvatar } from '../common/UserAvatar';
-import { Receipt, Plus, HandCoins } from 'lucide-react';
+import { Receipt, Plus } from 'lucide-react';
 import type { Expense, Settlement } from '../../types/transaction';
 import type { SimplifiedDebt } from '../../types/balance';
 import type { Member } from '../../types/group';
-import { formatCurrency } from '../../core/splitCalculator';
 
 export interface TransactionListProps {
   expenses: Expense[];
@@ -28,9 +26,9 @@ export function TransactionList({
   currentUserEmail,
   currency,
   members = [],
-  simplifiedDebts = [],
+  simplifiedDebts: _simplifiedDebts = [],
   onOpenAddExpense,
-  onSettleDebt,
+  onSettleDebt: _onSettleDebt,
   onEditExpense,
   onEditSettlement,
   onViewHistory,
@@ -64,91 +62,6 @@ export function TransactionList({
 
   return (
     <div className="space-y-4">
-      {/* Active Settlements Widget for this group */}
-      {simplifiedDebts && simplifiedDebts.length > 0 && (
-        <div className="bg-white dark:bg-slate-900 border border-emerald-200/90 dark:border-emerald-800/60 rounded-2xl p-4 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                <HandCoins className="w-4 h-4" />
-              </div>
-              <div>
-                <h4 className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">
-                  Active Settlements ({simplifiedDebts.length})
-                </h4>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Payments required to settle all debts in this group.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            {simplifiedDebts.map((debt, idx) => {
-              const isPayer = debt.fromEmail === currentUserEmail;
-              const isPayee = debt.toEmail === currentUserEmail;
-              const isMyDebt = isPayer || isPayee;
-
-              return (
-                <div
-                  key={idx}
-                  className={`p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 transition-all ${
-                    isMyDebt
-                      ? 'border-emerald-200 dark:border-emerald-800/60 bg-emerald-50/40 dark:bg-emerald-950/20 shadow-xs'
-                      : 'border-slate-200/70 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/40'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 text-xs flex-wrap">
-                    <div className="flex items-center gap-1 font-bold text-slate-900 dark:text-white">
-                      <UserAvatar
-                        name={debt.fromName}
-                        picture={members.find((m) => m.email.toLowerCase() === debt.fromEmail.toLowerCase())?.picture}
-                        size="xs"
-                      />
-                      <span>{isPayer ? 'You' : debt.fromName}</span>
-                    </div>
-                    <span className="text-slate-400 dark:text-slate-500">owes</span>
-                    <div className="flex items-center gap-1 font-bold text-slate-900 dark:text-white">
-                      <UserAvatar
-                        name={debt.toName}
-                        picture={members.find((m) => m.email.toLowerCase() === debt.toEmail.toLowerCase())?.picture}
-                        size="xs"
-                      />
-                      <span>{isPayee ? 'You' : debt.toName}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
-                    <span
-                      className={`text-sm font-extrabold ${
-                        isPayee
-                          ? 'text-emerald-600 dark:text-emerald-400'
-                          : isPayer
-                          ? 'text-rose-600 dark:text-rose-400'
-                          : 'text-slate-900 dark:text-white'
-                      }`}
-                    >
-                      {formatCurrency(debt.amount, debt.currency || currency)}
-                    </span>
-                    {onSettleDebt && (
-                      <Button
-                        size="sm"
-                        variant={isMyDebt ? 'primary' : 'outline'}
-                        onClick={() => onSettleDebt(debt)}
-                        className="py-1 px-3 text-xs gap-1 shadow-xs"
-                      >
-                        <HandCoins className="w-3.5 h-3.5" />
-                        <span>Settle</span>
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       {/* Feed Filters */}
       <div className="flex items-center justify-between">
         <div className="flex gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs font-medium">
