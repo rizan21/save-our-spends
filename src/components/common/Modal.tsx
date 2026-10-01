@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useId, useRef } from 'react';
 import { X } from 'lucide-react';
+import { pushModal } from '../../core/modalHistory';
 
 export interface ModalProps {
   isOpen: boolean;
@@ -8,6 +9,7 @@ export interface ModalProps {
   description?: string;
   children: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl';
+  closeOnBack?: boolean;
 }
 
 export function Modal({
@@ -17,7 +19,20 @@ export function Modal({
   description,
   children,
   maxWidth = 'md',
+  closeOnBack = true,
 }: ModalProps) {
+  const modalId = useId();
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  // Intercept browser Back button / mobile back gesture to close modal instead of navigating page back
+  useEffect(() => {
+    if (!isOpen || !closeOnBack) return;
+    return pushModal(modalId, () => onCloseRef.current());
+  }, [isOpen, closeOnBack, modalId]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
