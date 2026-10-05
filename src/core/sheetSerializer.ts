@@ -182,6 +182,24 @@ export function deserializePendingInvites(rows: string[][]): PendingInvite[] {
 
 /* ==================== Expenses ==================== */
 
+/**
+ * Normalizes a date cell from Google Sheets.
+ * If Google Sheets returns a numeric serial day number (e.g. "46300" or "46296"),
+ * it converts it to standard ISO "YYYY-MM-DD" format.
+ */
+export function parseSheetDate(raw: string | undefined): string {
+  const trimmed = (raw ?? '').trim();
+  if (!trimmed) return '';
+  if (/^\d{5}(\.\d+)?$/.test(trimmed)) {
+    const serial = parseFloat(trimmed);
+    const dt = new Date((serial - 25569) * 86400 * 1000);
+    if (!isNaN(dt.getTime())) {
+      return dt.toISOString().slice(0, 10);
+    }
+  }
+  return trimmed;
+}
+
 export function serializeExpenseRow(exp: Expense): string[] {
   return [
     exp.id,
@@ -246,7 +264,7 @@ export function deserializeExpenses(rows: string[][]): Expense[] {
 
     const expense: Expense = {
       id: r[0].trim(),
-      date: (r[1] ?? '').trim(),
+      date: parseSheetDate(r[1]),
       description: (r[2] ?? '').trim(),
       category: (r[3] as ExpenseCategory) || 'general',
       amount: parseFloat(r[4]) || 0,
@@ -320,7 +338,7 @@ export function deserializeSettlements(rows: string[][]): Settlement[] {
 
     const settlement: Settlement = {
       id: r[0].trim(),
-      date: (r[1] ?? '').trim(),
+      date: parseSheetDate(r[1]),
       payerEmail: (r[2] ?? '').trim(),
       payerName: (r[3] ?? '').trim(),
       payeeEmail: (r[4] ?? '').trim(),

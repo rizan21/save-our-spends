@@ -13,6 +13,8 @@ import {
   getMemberTabName,
   generateAllExpensesFormula,
   deserializeMultiTabExpenses,
+  parseSheetDate,
+  HEADERS,
 } from '../core/sheetSerializer';
 import type { GroupConfig, Member, PendingInvite } from '../types/group';
 import type { Expense, Settlement } from '../types/transaction';
@@ -258,5 +260,86 @@ describe('sheetSerializer - Roundtrip conversions', () => {
     // Bob's dinner happened at 20:00, Alice's breakfast at 08:00 -> Bob's is first
     expect(aggregated[0].id).toBe('exp-bob-1');
     expect(aggregated[1].id).toBe('exp-alice-1');
+  });
+
+  test('parseSheetDate normalizes Google Sheets serial date numbers to YYYY-MM-DD', () => {
+    // 46300 is 2026-10-05
+    expect(parseSheetDate('46300')).toBe('2026-10-05');
+    // 46296 is 2026-10-01
+    expect(parseSheetDate('46296')).toBe('2026-10-01');
+    // Standard ISO string is preserved
+    expect(parseSheetDate('2026-10-05')).toBe('2026-10-05');
+    // Empty or undefined
+    expect(parseSheetDate('')).toBe('');
+    expect(parseSheetDate(undefined)).toBe('');
+  });
+
+  test('deserializeExpenses converts serial date numbers from Google Sheets unformatted values', () => {
+    const rawRows = [
+      HEADERS.EXPENSES,
+      [
+        'exp-serial-1',
+        '46300', // Serial date for 2026-10-05
+        'Lunch',
+        'food',
+        '25.0',
+        'USD',
+        JSON.stringify({ 'alice@test.com': 25 }),
+        'EQUAL',
+        JSON.stringify({ 'alice@test.com': 25 }),
+        '',
+        'alice@test.com',
+        '2026-10-05T12:00:00.000Z',
+        'ACTIVE',
+        '[]',
+      ],
+      [
+        'exp-serial-2',
+        '46296', // Serial date for 2026-10-01
+        'Coffee',
+        'food',
+        '5.0',
+        'USD',
+        JSON.stringify({ 'bob@test.com': 5 }),
+        'EQUAL',
+        JSON.stringify({ 'bob@test.com': 5 }),
+        '',
+        'bob@test.com',
+        '2026-10-01T09:00:00.000Z',
+        'ACTIVE',
+        '[]',
+      ],
+    ];
+
+    const expenses = deserializeExpenses(rawRows);
+    expect(expenses.length).toBe(2);
+    expect(expenses[0].date).toBe('2026-10-05');
+    expect(expenses[1].date).toBe('2026-10-01');
+  });
+
+  test('deserializeSettlements converts serial date numbers from Google Sheets unformatted values', () => {
+    const rawRows = [
+      HEADERS.SETTLEMENTS,
+      [
+        'set-serial-1',
+        '46300', // Serial date for 2026-10-05
+        'bob@test.com',
+        'Bob',
+        'alice@test.com',
+        'Alice',
+        '50',
+        'USD',
+        'UPI',
+        '',
+        'bob@test.com',
+        '2026-10-05T15:00:00.000Z',
+        'ACTIVE',
+        '[]',
+      ],
+    ];
+
+    const settlements = deserializeSettlements(rawRows);
+    expect(settlements.length).toBe(1);
+    expect(settlements[0].date).toBe('2026-10-05');
   });
 });

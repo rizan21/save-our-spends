@@ -183,24 +183,24 @@ describe('TransactionItem & History Modal Click & Edit Flow', () => {
     expect(timelineContent.props.className).toContain('pl-6 space-y-6');
   });
 
-  test('formatTransactionDateTime formats date as DD MMM, YYYY and time as HH:MM', async () => {
+  test('formatTransactionDateTime formats date as DD MMM, YYYY and time as HH:MM:SS', async () => {
     const { formatTransactionDateTime, combineDateAndTime, extractTimeFromTimestamp } = await import('../core/dateTime');
 
     // 1. Direct format
-    const dt = formatTransactionDateTime('2026-09-22', '2026-09-22T14:30:00.000Z');
+    const dt = formatTransactionDateTime('2026-09-22', '2026-09-22T14:30:45.000Z');
     expect(dt.date).toBe('22 Sep, 2026');
-    expect(dt.time).toMatch(/^\d{2}:\d{2}$/);
+    expect(dt.time).toMatch(/^\d{2}:\d{2}:\d{2}$/);
     expect(dt.full).toContain('22 Sep, 2026 • ');
 
     // 2. Combine and extract
-    const combinedIso = combineDateAndTime('2026-10-05', '16:45');
+    const combinedIso = combineDateAndTime('2026-10-05', '16:45:30');
     const extractedTime = extractTimeFromTimestamp(combinedIso);
-    expect(extractedTime).toBe('16:45');
+    expect(extractedTime).toBe('16:45:30');
 
     const combinedDt = formatTransactionDateTime('2026-10-05', combinedIso);
     expect(combinedDt.date).toBe('05 Oct, 2026');
-    expect(combinedDt.time).toBe('16:45');
-    expect(combinedDt.full).toBe('05 Oct, 2026 • 16:45');
+    expect(combinedDt.time).toBe('16:45:30');
+    expect(combinedDt.full).toBe('05 Oct, 2026 • 16:45:30');
 
     // 3. Serial date handling (e.g. from Google Sheets)
     const serialDt = formatTransactionDateTime('46288');

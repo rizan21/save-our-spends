@@ -209,18 +209,18 @@ describe('historyTracker - Diff and Audit Engine', () => {
     // Expense time change
     const originalExpense: Expense = {
       ...baseExpense,
-      createdAt: combineDateAndTime('2026-09-20', '14:00'),
+      createdAt: combineDateAndTime('2026-09-20', '14:00:00'),
     };
     const updatedExpense: Expense = {
       ...originalExpense,
-      createdAt: combineDateAndTime('2026-09-20', '19:30'),
+      createdAt: combineDateAndTime('2026-09-20', '19:30:00'),
     };
     const expDiff = computeExpenseDiff(originalExpense, updatedExpense, 'alice@test.com', 'Alice Dev', members);
     expect(expDiff).not.toBeNull();
     const expTimeChange = expDiff!.changes.find((c) => c.field === 'time');
     expect(expTimeChange).toBeDefined();
-    expect(expTimeChange!.oldValue).toBe('14:00');
-    expect(expTimeChange!.newValue).toBe('19:30');
+    expect(expTimeChange!.oldValue).toBe('14:00:00');
+    expect(expTimeChange!.newValue).toBe('19:30:00');
 
     // Settlement time change
     const originalSettlement: Settlement = {
@@ -234,18 +234,18 @@ describe('historyTracker - Diff and Audit Engine', () => {
       currency: 'USD',
       paymentMethod: 'Cash',
       recordedBy: 'bob@test.com',
-      createdAt: combineDateAndTime('2026-09-22', '09:15'),
+      createdAt: combineDateAndTime('2026-09-22', '09:15:00'),
       status: 'ACTIVE',
     };
     const updatedSettlement: Settlement = {
       ...originalSettlement,
-      createdAt: combineDateAndTime('2026-09-22', '11:45'),
+      createdAt: combineDateAndTime('2026-09-22', '11:45:00'),
     };
     const setDiff = computeSettlementDiff(originalSettlement, updatedSettlement, 'alice@test.com', 'Alice Dev', members);
     expect(setDiff).not.toBeNull();
     const setTimeChange = setDiff!.changes.find((c) => c.field === 'time');
     expect(setTimeChange).toBeDefined();
-    expect(setTimeChange!.oldValue).toBe('09:15');
-    expect(setTimeChange!.newValue).toBe('11:45');
+    expect(setTimeChange!.oldValue).toBe('09:15:00');
+    expect(setTimeChange!.newValue).toBe('11:45:00');
   });
 });

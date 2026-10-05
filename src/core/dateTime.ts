@@ -51,7 +51,7 @@ export function formatTransactionDateTime(
 
   const formattedDate = month ? `${day} ${month}, ${year}` : dateStr || '';
 
-  // 2. Format Time (HH:MM) from createdAtStr or dateStr
+  // 2. Format Time (HH:MM:SS) from createdAtStr or dateStr
   let formattedTime = '';
   const timeSource = createdAtStr || (dateStr && dateStr.includes('T') ? dateStr : null);
   if (timeSource) {
@@ -60,16 +60,17 @@ export function formatTransactionDateTime(
       if (!isNaN(dt.getTime())) {
         const hh = String(dt.getHours()).padStart(2, '0');
         const mm = String(dt.getMinutes()).padStart(2, '0');
-        formattedTime = `${hh}:${mm}`;
+        const ss = String(dt.getSeconds()).padStart(2, '0');
+        formattedTime = `${hh}:${mm}:${ss}`;
       }
     } catch {
       formattedTime = '';
     }
   }
 
-  // If time could not be parsed from timestamp, default to "12:00"
+  // If time could not be parsed from timestamp, default to "12:00:00"
   if (!formattedTime) {
-    formattedTime = '12:00';
+    formattedTime = '12:00:00';
   }
 
   const full = `${formattedDate} • ${formattedTime}`;
@@ -82,30 +83,30 @@ export function formatTransactionDateTime(
 }
 
 /**
- * Combines a date (YYYY-MM-DD) and a time (HH:MM) into an ISO string.
- * Uses local time components so that local getHours()/getMinutes() will match.
+ * Combines a date (YYYY-MM-DD) and a time (HH:MM or HH:MM:SS) into an ISO string.
+ * Uses local time components so that local getHours()/getMinutes()/getSeconds() will match.
  */
 export function combineDateAndTime(dateStr: string, timeStr?: string): string {
-  const time = timeStr && /^\d{1,2}:\d{2}$/.test(timeStr.trim()) ? timeStr.trim() : '12:00';
-  const [hhStr, mmStr] = time.split(':');
-  const hh = parseInt(hhStr, 10);
-  const mm = parseInt(mmStr, 10);
+  const now = new Date();
+  const parts = (timeStr || '').trim().split(':');
+  const hh = parts[0] !== undefined && parts[0] !== '' ? parseInt(parts[0], 10) : now.getHours();
+  const mm = parts[1] !== undefined && parts[1] !== '' ? parseInt(parts[1], 10) : now.getMinutes();
+  const ss = parts[2] !== undefined && parts[2] !== '' ? parseInt(parts[2], 10) : now.getSeconds();
 
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
     const [y, m, d] = dateStr.split('-').map((s) => parseInt(s, 10));
-    const dt = new Date(y, m - 1, d, hh, mm, 0, 0);
+    const dt = new Date(y, m - 1, d, hh, mm, ss, 0);
     if (!isNaN(dt.getTime())) {
       return dt.toISOString();
     }
   }
 
-  const now = new Date();
-  now.setHours(hh, mm, 0, 0);
+  now.setHours(hh, mm, ss, 0);
   return now.toISOString();
 }
 
 /**
- * Extracts "HH:MM" 24-hour time string from a timestamp or falls back to current time.
+ * Extracts "HH:MM:SS" 24-hour time string from a timestamp or falls back to current time.
  */
 export function extractTimeFromTimestamp(createdAtStr?: string): string {
   if (createdAtStr) {
@@ -114,12 +115,13 @@ export function extractTimeFromTimestamp(createdAtStr?: string): string {
       if (!isNaN(dt.getTime())) {
         const hh = String(dt.getHours()).padStart(2, '0');
         const mm = String(dt.getMinutes()).padStart(2, '0');
-        return `${hh}:${mm}`;
+        const ss = String(dt.getSeconds()).padStart(2, '0');
+        return `${hh}:${mm}:${ss}`;
       }
     } catch {
       // fallback
     }
   }
   const now = new Date();
-  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
 }

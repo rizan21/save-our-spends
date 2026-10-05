@@ -205,6 +205,17 @@ export class GroupService {
       driveFileUrl: `https://docs.google.com/spreadsheets/d/${sheetId}/edit`,
     };
 
+    // Background auto-heal for existing spreadsheets (strips single quote from formula & formats Date columns)
+    if (members.length > 0) {
+      googleSheetsService
+        .updateAllExpensesFormula(
+          token,
+          sheetId,
+          members.map((m) => m.email)
+        )
+        .catch(() => {});
+    }
+
     return { group, expenses, settlements };
   }
 

@@ -108,11 +108,14 @@ export class GoogleSheetsService {
             startRow: 0,
             startColumn: 0,
             rowData: tab.rows.map((row) => ({
-              values: row.map((cell) => ({
-                userEnteredValue: {
-                  stringValue: typeof cell === 'string' ? cell : String(cell),
-                },
-              })),
+              values: row.map((cell) => {
+                const str = typeof cell === 'string' ? cell : String(cell);
+                return {
+                  userEnteredValue: str.startsWith('=')
+                    ? { formulaValue: str }
+                    : { stringValue: str },
+                };
+              }),
             })),
           },
         ],
@@ -135,6 +138,25 @@ export class GoogleSheetsService {
 
     const data = await res.json();
     const sheetId = data.spreadsheetId;
+
+    // Format Column B (Date) as DATE (yyyy-mm-dd) on All_Expenses, Settlements, and member tabs
+    const dateTabSheets = (data.sheets || [])
+      .filter((s: { properties?: { sheetId?: number; title?: string } }) => {
+        const t = s.properties?.title;
+        return (
+          t === SHEET_TABS.ALL_EXPENSES ||
+          t === SHEET_TABS.SETTLEMENTS ||
+          (t && t.startsWith('Exp_'))
+        );
+      })
+      .map((s: { properties: { sheetId: number; gridProperties?: { rowCount?: number } } }) => ({
+        sheetId: s.properties.sheetId,
+        rowCount: s.properties.gridProperties?.rowCount || 50,
+      }));
+
+    if (dateTabSheets.length > 0) {
+      await this.formatDateColumns(token, sheetId, dateTabSheets).catch(() => {});
+    }
 
     // Update group_id in config
     config.groupId = sheetId;
@@ -331,11 +353,113 @@ export class GoogleSheetsService {
 
     // Populate header row
     await this.updateSheetRange(token, spreadsheetId, `${tabName}!A1:N1`, [HEADERS.EXPENSES]);
+
+    // Format Column B (Date) as DATE on the new tab
+    const replyData = await res.json().catch(() => ({}));
+    const newSheet = replyData?.replies?.[0]?.addSheet;
+    if (newSheet?.properties?.sheetId !== undefined) {
+      await this.formatDateColumns(token, spreadsheetId, [
+        {
+          sheetId: newSheet.properties.sheetId,
+          rowCount: newSheet.properties.gridProperties?.rowCount || 50,
+        },
+      ]).catch(() => {});
+    }
+
     return tabName;
   }
 
   /**
-   * Updates the VSTACK formula on the master All_Expenses tab
+   * Applies DATE number formatting (yyyy-mm-dd) to Column B (date column)
+   * on the specified tabs in the Google Sheet.
+   */
+  public async formatDateColumns(
+    token: string,
+    spreadsheetId: string,
+    sheets: Array<{ sheetId: number; rowCount?: number }>
+  ): Promise<void> {
+    if (sheets.length === 0) return;
+    const requests = sheets.map(({ sheetId, rowCount }) => ({
+      repeatCell: {
+        range: {
+          sheetId,
+          startRowIndex: 1, // Skip header row
+          endRowIndex: Math.max(rowCount || 50, 50),
+          startColumnIndex: 1, // Column B (Date)
+          endColumnIndex: 2,
+        },
+        cell: {
+          userEnteredFormat: {
+            numberFormat: {
+              type: 'DATE',
+              pattern: 'yyyy-mm-dd',
+            },
+          },
+        },
+        fields: 'userEnteredFormat.numberFormat',
+      },
+    }));
+
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ requests }),
+    });
+
+    if (!res.ok) {
+      const err = await res.text().catch(() => '');
+      console.warn('formatDateColumns batchUpdate failed:', res.status, err);
+    }
+  }
+
+  /**
+   * Ensures Column B (Date) is formatted as DATE (yyyy-mm-dd) across all relevant tabs.
+   * Auto-heals existing spreadsheets without modifying underlying data.
+   */
+  public async ensureTabsDateFormatting(
+    token: string,
+    spreadsheetId: string
+  ): Promise<void> {
+    const metaRes = await fetch(
+      `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}?fields=sheets.properties`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/json',
+        },
+      }
+    );
+    if (!metaRes.ok) {
+      const errText = await metaRes.text().catch(() => '');
+      console.warn('Failed to fetch spreadsheet properties for date formatting:', metaRes.status, errText);
+      return;
+    }
+    const meta = await metaRes.json().catch(() => ({}));
+    const targetSheets = (meta.sheets || [])
+      .filter((s: { properties?: { sheetId?: number; title?: string } }) => {
+        const t = s.properties?.title;
+        return (
+          t === SHEET_TABS.ALL_EXPENSES ||
+          t === SHEET_TABS.SETTLEMENTS ||
+          (t && t.startsWith('Exp_'))
+        );
+      })
+      .map((s: { properties: { sheetId: number; gridProperties?: { rowCount?: number } } }) => ({
+        sheetId: s.properties.sheetId,
+        rowCount: s.properties.gridProperties?.rowCount || 50,
+      }));
+
+    if (targetSheets.length > 0) {
+      await this.formatDateColumns(token, spreadsheetId, targetSheets);
+    }
+  }
+
+  /**
+   * Updates the VSTACK formula on the master All_Expenses tab and ensures date formatting.
    */
   public async updateAllExpensesFormula(
     token: string,
@@ -345,6 +469,7 @@ export class GoogleSheetsService {
     const formula = generateAllExpensesFormula(memberEmails);
     if (!formula) return;
     await this.updateSheetRange(token, spreadsheetId, `${SHEET_TABS.ALL_EXPENSES}!A2:A2`, [[formula]]);
+    await this.ensureTabsDateFormatting(token, spreadsheetId).catch(() => {});
   }
 
   /**

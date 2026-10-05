@@ -111,6 +111,7 @@ export function AddExpenseModal({
   const [category, setCategory] = useState<ExpenseCategory>(() => initialExpense?.category || 'food');
   const [date, setDate] = useState(() => initialExpense?.date || new Date().toISOString().split('T')[0]);
   const [time, setTime] = useState(() => extractTimeFromTimestamp(initialExpense?.createdAt));
+  const [isTimeCustomized, setIsTimeCustomized] = useState(false);
   const [notes, setNotes] = useState(() => initialExpense?.notes || '');
 
   // Default payer fallback
@@ -516,7 +517,9 @@ export function AddExpenseModal({
     setIsSubmitting(true);
     setSubmitError(null);
 
-    const createdAt = combineDateAndTime(date, time);
+    const createdAt = !initialExpense && !isTimeCustomized
+      ? new Date().toISOString()
+      : combineDateAndTime(date, time);
 
     if (initialExpense) {
       const updatedExpense: Expense = {
@@ -749,7 +752,10 @@ export function AddExpenseModal({
                 <input
                   type="date"
                   value={date}
-                  onChange={(e) => setDate(e.target.value)}
+                  onChange={(e) => {
+                    setDate(e.target.value);
+                    setIsTimeCustomized(true);
+                  }}
                   className="w-full px-3 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   required
                 />
@@ -762,8 +768,12 @@ export function AddExpenseModal({
                 </label>
                 <input
                   type="time"
+                  step="1"
                   value={time}
-                  onChange={(e) => setTime(e.target.value)}
+                  onChange={(e) => {
+                    setTime(e.target.value);
+                    setIsTimeCustomized(true);
+                  }}
                   className="w-full px-3 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   required
                 />

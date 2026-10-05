@@ -51,6 +51,7 @@ export function SettleUpModal({
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(() => initialSettlement?.paymentMethod || 'UPI');
   const [date, setDate] = useState(() => initialSettlement?.date || new Date().toISOString().split('T')[0]);
   const [time, setTime] = useState(() => extractTimeFromTimestamp(initialSettlement?.createdAt));
+  const [isTimeCustomized, setIsTimeCustomized] = useState(false);
   const [notes, setNotes] = useState(() => initialSettlement?.notes || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +78,9 @@ export function SettleUpModal({
 
     const payer = members.find((m) => m.email === payerEmail);
     const payee = members.find((m) => m.email === payeeEmail);
-    const createdAt = combineDateAndTime(date, time);
+    const createdAt = !initialSettlement && !isTimeCustomized
+      ? new Date().toISOString()
+      : combineDateAndTime(date, time);
 
     if (initialSettlement) {
       const updatedSettlement: Settlement = {
@@ -284,7 +287,10 @@ export function SettleUpModal({
             <input
               type="date"
               value={date}
-              onChange={(e) => setDate(e.target.value)}
+              onChange={(e) => {
+                setDate(e.target.value);
+                setIsTimeCustomized(true);
+              }}
               className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               required
             />
@@ -297,8 +303,12 @@ export function SettleUpModal({
             </label>
             <input
               type="time"
+              step="1"
               value={time}
-              onChange={(e) => setTime(e.target.value)}
+              onChange={(e) => {
+                setTime(e.target.value);
+                setIsTimeCustomized(true);
+              }}
               className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 rounded-xl focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
               required
             />
