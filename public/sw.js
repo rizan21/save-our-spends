@@ -1,4 +1,4 @@
-const CACHE_NAME = 'spread-spends-v1';
+const CACHE_NAME = 'spread-spends-v2';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
@@ -39,6 +39,15 @@ self.addEventListener('fetch', (event) => {
 
   // Only handle GET requests
   if (request.method !== 'GET') return;
+
+  // Do not intercept Vite dev server internal assets or HMR
+  if (
+    url.pathname.startsWith('/@') ||
+    url.pathname.startsWith('/src/') ||
+    url.pathname.startsWith('/node_modules/')
+  ) {
+    return;
+  }
 
   // Ignore cross-origin Google API and auth requests in service worker cache
   if (
@@ -87,13 +96,17 @@ self.addEventListener('fetch', (event) => {
           return cachedResponse;
         }
 
-        return fetch(request).then((networkResponse) => {
-          if (networkResponse && networkResponse.status === 200) {
-            const clone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-          return networkResponse;
-        });
+        return fetch(request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              const clone = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+            }
+            return networkResponse;
+          })
+          .catch(() => {
+            return new Response('', { status: 408, statusText: 'Network request failed' });
+          });
       })
     );
   }

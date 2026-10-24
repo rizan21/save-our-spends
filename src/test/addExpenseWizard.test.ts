@@ -120,6 +120,23 @@ describe('Add Expense Multi-Page Wizard Flow', () => {
     expect(result.splits['carol@example.com']).toBe(15);
   });
 
+  test('Page 3 split: Shares split supports decimal shares and zero shares', () => {
+    const totalAmount = 100;
+
+    const result = calculateSharesSplit(totalAmount, {
+      'alice@example.com': 0.5,
+      'bob@example.com': 1.5,
+      'carol@example.com': 0,
+    });
+    expect(result.isValid).toBe(true);
+    // 0.5 / 2 = 25%, 1.5 / 2 = 75%, 0 = 0%
+    expect(result.splits['alice@example.com']).toBe(25);
+    expect(result.splits['bob@example.com']).toBe(75);
+    expect(result.splits['carol@example.com']).toBe(0);
+    const sum = Object.values(result.splits).reduce((a, b) => a + b, 0);
+    expect(roundToCents(sum)).toBe(totalAmount);
+  });
+
   test('Page 3 net impact conservation: sum of net differences is always zero', () => {
     const totalAmount = 120;
     const paidBy = {

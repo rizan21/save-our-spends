@@ -23,6 +23,55 @@
             document.documentElement.style.colorScheme = 'light';
           }
         } catch (e) {}
+
+        window.addEventListener('error', function(event) {
+          var errBox = document.getElementById('emergency-error-box');
+          if (!errBox) {
+            errBox = document.createElement('div');
+            errBox.id = 'emergency-error-box';
+            errBox.style = 'position:fixed;inset:0;background:#090d16;color:#f87171;padding:24px;font-family:system-ui,sans-serif;z-index:999999;overflow-y:auto;display:flex;flex-direction:column;gap:16px;';
+            document.body.appendChild(errBox);
+          }
+          var msg = event.message || (event.target && event.target.src ? 'Failed to load script: ' + event.target.src : 'Script loading or execution error');
+          errBox.innerHTML = '<div style="font-size:18px;font-weight:bold;color:#ef4444;">Application Error</div>' +
+            '<div style="font-size:13px;color:#cbd5e1;background:#1e293b;padding:12px;border-radius:8px;white-space:pre-wrap;font-family:monospace;">' + msg + '</div>' +
+            '<div style="display:flex;gap:12px;margin-top:8px;">' +
+            '<button onclick="clearAndReload()" style="padding:10px 16px;background:#10b981;color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Clear Cache & Reload</button>' +
+            '<button onclick="window.location.reload()" style="padding:10px 16px;background:#334155;color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Retry</button>' +
+            '</div>';
+        }, true);
+
+        window.addEventListener('unhandledrejection', function(event) {
+          var errBox = document.getElementById('emergency-error-box');
+          if (!errBox) {
+            errBox = document.createElement('div');
+            errBox.id = 'emergency-error-box';
+            errBox.style = 'position:fixed;inset:0;background:#090d16;color:#f87171;padding:24px;font-family:system-ui,sans-serif;z-index:999999;overflow-y:auto;display:flex;flex-direction:column;gap:16px;';
+            document.body.appendChild(errBox);
+          }
+          var reason = event.reason ? (event.reason.stack || event.reason.message || String(event.reason)) : 'Unhandled rejection';
+          errBox.innerHTML = '<div style="font-size:18px;font-weight:bold;color:#ef4444;">Unhandled Promise Rejection</div>' +
+            '<div style="font-size:13px;color:#cbd5e1;background:#1e293b;padding:12px;border-radius:8px;white-space:pre-wrap;font-family:monospace;">' + reason + '</div>' +
+            '<div style="display:flex;gap:12px;margin-top:8px;">' +
+            '<button onclick="clearAndReload()" style="padding:10px 16px;background:#10b981;color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Clear Cache & Reload</button>' +
+            '<button onclick="window.location.reload()" style="padding:10px 16px;background:#334155;color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Retry</button>' +
+            '</div>';
+        });
+
+        window.clearAndReload = function() {
+          if ('caches' in window) {
+            caches.keys().then(function(names) {
+              names.forEach(function(name) { caches.delete(name); });
+            });
+          }
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              regs.forEach(function(r) { r.unregister(); });
+            });
+          }
+          try { sessionStorage.clear(); } catch(e) {}
+          window.location.reload(true);
+        };
       })();
     </script>
     
@@ -39,7 +88,13 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body class="bg-slate-50 text-slate-900 antialiased selection:bg-emerald-100 selection:text-emerald-900 dark:bg-slate-950 dark:text-slate-100 dark:selection:bg-emerald-900/50 dark:selection:text-emerald-200">
-    <div id="root"></div>
+    <div id="root">
+      <div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:system-ui,sans-serif;color:#94a3b8;">
+        <div style="width:36px;height:36px;border:3px solid #10b981;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+        <div style="font-size:14px;font-weight:500;letter-spacing:0.01em;">Loading Spread-Spends...</div>
+        <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

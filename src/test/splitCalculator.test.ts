@@ -90,6 +90,54 @@ describe('splitCalculator - Math & Precision', () => {
     expect(roundToCents(sum)).toBe(100);
   });
 
+  test('calculateSharesSplit supports decimal shares and zero shares', () => {
+    // Decimal shares: 0.5 and 1.5 of $100 -> $25 and $75
+    const decimals = calculateSharesSplit(100, {
+      'alice@test.com': 0.5,
+      'bob@test.com': 1.5,
+    });
+    expect(decimals.isValid).toBe(true);
+    expect(decimals.splits['alice@test.com']).toBe(25);
+    expect(decimals.splits['bob@test.com']).toBe(75);
+
+    // Uneven decimal shares with penny conservation: 0.33 and 0.67 of $10
+    const unevenDecimals = calculateSharesSplit(10, {
+      'alice@test.com': 0.33,
+      'bob@test.com': 0.67,
+    });
+    expect(unevenDecimals.isValid).toBe(true);
+    expect(unevenDecimals.splits['alice@test.com']).toBe(3.3);
+    expect(unevenDecimals.splits['bob@test.com']).toBe(6.7);
+    expect(roundToCents(unevenDecimals.splits['alice@test.com'] + unevenDecimals.splits['bob@test.com'])).toBe(10);
+
+    // Zero shares: Alice 0 shares gets $0, Bob & Charlie split $90
+    const withZero = calculateSharesSplit(90, {
+      'alice@test.com': 0,
+      'bob@test.com': 1,
+      'charlie@test.com': 2,
+    });
+    expect(withZero.isValid).toBe(true);
+    expect(withZero.splits['alice@test.com']).toBe(0);
+    expect(withZero.splits['bob@test.com']).toBe(30);
+    expect(withZero.splits['charlie@test.com']).toBe(60);
+
+    // All zero shares fails validation
+    const allZero = calculateSharesSplit(50, {
+      'alice@test.com': 0,
+      'bob@test.com': 0,
+    });
+    expect(allZero.isValid).toBe(false);
+    expect(allZero.error).toBe('Total shares must be greater than zero');
+
+    // Negative shares fails validation
+    const negative = calculateSharesSplit(50, {
+      'alice@test.com': -0.5,
+      'bob@test.com': 1.5,
+    });
+    expect(negative.isValid).toBe(false);
+    expect(negative.error).toBe('Shares must be non-negative numbers');
+  });
+
   test('validatePaidBy verifies multi-payer total against expense amount', () => {
     const valid = validatePaidBy(150, {
       'alice@test.com': 100,

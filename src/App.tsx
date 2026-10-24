@@ -228,7 +228,9 @@ export function App() {
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
-        <SpreadSpendsInner />
+        <ErrorBoundary>
+          <SpreadSpendsInner />
+        </ErrorBoundary>
       </QueryClientProvider>
     </ThemeProvider>
   );

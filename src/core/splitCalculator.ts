@@ -147,6 +147,16 @@ export function calculateSharesSplit(
   totalAmount: number,
   shares: Record<string, number>
 ): SplitResult {
+  for (const [, shareCount] of Object.entries(shares)) {
+    if (isNaN(shareCount) || shareCount < 0) {
+      return {
+        splits: {},
+        isValid: false,
+        error: 'Shares must be non-negative numbers',
+      };
+    }
+  }
+
   const totalShares = Object.values(shares).reduce((a, b) => a + b, 0);
   if (totalShares <= 0) {
     return {
@@ -159,8 +169,13 @@ export function calculateSharesSplit(
   const totalCents = Math.round(totalAmount * 100);
   const rawSplits: Array<{ email: string; baseCents: number; fraction: number }> = [];
   let allocatedCents = 0;
+  const splits: Record<string, number> = {};
 
   for (const [email, shareCount] of Object.entries(shares)) {
+    if (shareCount <= 0) {
+      splits[email] = 0;
+      continue;
+    }
     const exactCents = (totalCents * shareCount) / totalShares;
     const baseCents = Math.floor(exactCents);
     const fraction = exactCents - baseCents;
@@ -171,7 +186,6 @@ export function calculateSharesSplit(
   rawSplits.sort((a, b) => b.fraction - a.fraction);
   let remainderCents = totalCents - allocatedCents;
 
-  const splits: Record<string, number> = {};
   for (const item of rawSplits) {
     const extra = remainderCents > 0 ? 1 : 0;
     splits[item.email] = (item.baseCents + extra) / 100;

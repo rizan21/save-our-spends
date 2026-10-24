@@ -71,7 +71,7 @@ export function MemberList({
   const [discrepancies, setDiscrepancies] = useState<DriveDiscrepancy[] | null>(null);
   const [remediatingEmail, setRemediatingEmail] = useState<string | null>(null);
 
-  const activeMembers = members.filter((m) => m.status === 'ACTIVE');
+  const activeMembers = members.filter((m) => m.status !== 'INACTIVE');
   const inactiveMembers = members.filter((m) => m.status === 'INACTIVE');
 
   const handleRemoveMember = async (m: Member) => {

@@ -1,5 +1,15 @@
 export function registerServiceWorker() {
   if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+    if (import.meta.env.DEV) {
+      // In development mode, unregister any existing service worker to prevent stale caching
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const registration of registrations) {
+          registration.unregister();
+        }
+      });
+      return;
+    }
+
     const doRegister = () => {
       navigator.serviceWorker
         .register('/sw.js')

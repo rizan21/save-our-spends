@@ -131,7 +131,7 @@ export function AddExpenseModal({
   // Filter members: active contributors or members who are participants of this historical expense
   const activeOrParticipantMembers = useMemo(() => {
     return members.filter((m) => {
-      if (m.status === 'ACTIVE') return true;
+      if (m.status !== 'INACTIVE') return true;
       if (!initialExpense) return false;
       return (
         (initialExpense.paidBy && initialExpense.paidBy[m.email] !== undefined) ||
@@ -298,7 +298,11 @@ export function AddExpenseModal({
 
     if (splitType === 'SHARES') {
       const parsed = Object.fromEntries(
-        activeOrParticipantMembers.map((m) => [m.email, parseInt(shareInputs[m.email] || '1', 10) || 1])
+        activeOrParticipantMembers.map((m) => {
+          const raw = shareInputs[m.email];
+          const parsedVal = raw !== undefined && raw.trim() !== '' ? parseFloat(raw) : 0;
+          return [m.email, isNaN(parsedVal) || parsedVal < 0 ? 0 : parsedVal];
+        })
       );
       return calculateSharesSplit(totalAmount, parsed);
     }
@@ -326,10 +330,12 @@ export function AddExpenseModal({
 
   // Shares count
   const totalSharesCount = useMemo(() => {
-    return activeOrParticipantMembers.reduce((acc, m) => {
-      const s = parseInt(shareInputs[m.email] || '1', 10);
+    const sum = activeOrParticipantMembers.reduce((acc, m) => {
+      const raw = shareInputs[m.email];
+      const s = raw !== undefined && raw.trim() !== '' ? parseFloat(raw) : 0;
       return acc + (isNaN(s) || s < 0 ? 0 : s);
     }, 0);
+    return Math.round(sum * 10000) / 10000;
   }, [activeOrParticipantMembers, shareInputs]);
 
   // Payer summary description
@@ -494,7 +500,16 @@ export function AddExpenseModal({
   };
 
   // Helper: reset shares
-  const handleResetShares = () => {
+  const handleResetSharesToZero = () => {
+    const newShares: Record<string, string> = {};
+    for (const m of activeOrParticipantMembers) {
+      newShares[m.email] = '0';
+    }
+    setShareInputs(newShares);
+    setStepError(null);
+  };
+
+  const handleResetSharesToOne = () => {
     const newShares: Record<string, string> = {};
     for (const m of activeOrParticipantMembers) {
       newShares[m.email] = '1';
@@ -544,6 +559,15 @@ export function AddExpenseModal({
         paidBy: payerValidation.paidBy,
         splitType,
         splits: splitResult.splits,
+        splitMeta: splitType === 'SHARES'
+          ? Object.fromEntries(
+              activeOrParticipantMembers.map((m) => {
+                const raw = shareInputs[m.email];
+                const parsedVal = raw !== undefined && raw.trim() !== '' ? parseFloat(raw) : 0;
+                return [m.email, isNaN(parsedVal) || parsedVal < 0 ? 0 : parsedVal];
+              })
+            )
+          : undefined,
         notes: notes.trim() || undefined,
       };
 
@@ -602,6 +626,15 @@ export function AddExpenseModal({
       paidBy: payerValidation.paidBy,
       splitType,
       splits: splitResult.splits,
+      splitMeta: splitType === 'SHARES'
+        ? Object.fromEntries(
+            activeOrParticipantMembers.map((m) => {
+              const raw = shareInputs[m.email];
+              const parsedVal = raw !== undefined && raw.trim() !== '' ? parseFloat(raw) : 0;
+              return [m.email, isNaN(parsedVal) || parsedVal < 0 ? 0 : parsedVal];
+            })
+          )
+        : undefined,
       notes: notes.trim() || undefined,
       createdBy: currentUserEmail,
       createdAt,
@@ -1382,20 +1415,29 @@ export function AddExpenseModal({
                     <span className="font-semibold text-slate-700 dark:text-slate-200">
                       Total: {totalSharesCount} share{totalSharesCount !== 1 ? 's' : ''}
                     </span>
-                    <button
-                      type="button"
-                      onClick={handleResetShares}
-                      className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 underline hover:opacity-80 cursor-pointer shrink-0 ml-2"
-                    >
-                      Reset to 1 each
-                    </button>
+                    <div className="flex items-center gap-2 shrink-0 ml-2">
+                      <button
+                        type="button"
+                        onClick={handleResetSharesToZero}
+                        className="text-[11px] font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 underline cursor-pointer shrink-0"
+                      >
+                        Reset to 0
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleResetSharesToOne}
+                        className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 underline hover:opacity-80 cursor-pointer shrink-0"
+                      >
+                        Set 1 each
+                      </button>
+                    </div>
                   </div>
 
                   {/* Member Rows */}
                   <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
                     {activeOrParticipantMembers.map((m) => {
                       const share = splitResult.splits[m.email] || 0;
-                      const val = shareInputs[m.email] || '1';
+                      const val = shareInputs[m.email] ?? '0';
 
                       return (
                         <SplitMemberRow key={m.email} member={m} currentUserEmail={currentUserEmail}>
@@ -1403,14 +1445,21 @@ export function AddExpenseModal({
                             <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-2 py-1">
                               <input
                                 type="number"
-                                step="1"
+                                step="any"
                                 min="0"
-                                placeholder="1"
+                                placeholder="0"
                                 value={val}
-                                onChange={(e) =>
-                                  setShareInputs({ ...shareInputs, [m.email]: e.target.value })
-                                }
-                                className="w-12 text-center bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none"
+                                onFocus={(e) => {
+                                  if (e.target.value === '0') {
+                                    e.target.select();
+                                  }
+                                }}
+                                onChange={(e) => {
+                                  const v = e.target.value;
+                                  if (v.startsWith('-')) return;
+                                  setShareInputs({ ...shareInputs, [m.email]: v });
+                                }}
+                                className="w-14 text-center bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none"
                               />
                               <span className="text-slate-400 dark:text-slate-500">shares</span>
                             </div>

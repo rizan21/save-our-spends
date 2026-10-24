@@ -29,6 +29,20 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   handleReset = () => {
     this.setState({ hasError: false, error: null });
     window.location.hash = '';
+    window.location.reload();
+  };
+
+  handleClearAndReload = () => {
+    if (typeof window !== 'undefined') {
+      if ('caches' in window) {
+        caches.keys().then((names) => names.forEach((n) => caches.delete(n)));
+      }
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then((regs) => regs.forEach((r) => r.unregister()));
+      }
+      window.location.hash = '';
+      window.location.reload();
+    }
   };
 
   render() {
@@ -47,10 +61,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             <p className="text-sm text-slate-500 dark:text-slate-400">
               {this.state.error?.message || 'An unexpected rendering error occurred.'}
             </p>
-            <div className="pt-2 flex justify-center gap-3">
+            <div className="pt-2 flex flex-wrap justify-center gap-3">
               <Button onClick={this.handleReset} className="flex items-center gap-2">
                 <RefreshCw className="w-4 h-4" />
                 Return to Groups
+              </Button>
+              <Button variant="outline" onClick={this.handleClearAndReload}>
+                Clear Cache & Reload
               </Button>
             </div>
           </div>
