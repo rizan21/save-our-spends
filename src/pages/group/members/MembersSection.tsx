@@ -13,7 +13,7 @@ export interface MembersSectionProps {
   currentUserEmail?: string;
   currentUserPicture?: string;
   isOwner?: boolean;
-  onOpenInviteModal?: () => void;
+  onOpenInviteModal?: (initialEmail?: string) => void;
   onOpenEditProfile?: () => void;
   onApproveInvite?: (inviteId: string) => Promise<unknown>;
   isApprovingInvite?: boolean;
@@ -135,7 +135,7 @@ export function MembersSection(props: MembersSectionProps) {
         currentUserName={currentUser?.name}
         currentUserPicture={currentUserPicture}
         isOwner={isOwner}
-        onOpenInviteModal={props.onOpenInviteModal || (() => context?.openInviteModal())}
+        onOpenInviteModal={props.onOpenInviteModal || ((email?: string) => context?.openInviteModal(email))}
         onApproveInvite={
           props.onApproveInvite ||
           (async (inviteId: string) => {

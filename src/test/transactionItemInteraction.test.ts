@@ -134,15 +134,41 @@ describe('TransactionItem & History Modal Click & Edit Flow', () => {
 
     // Inside the modal body, the footer action triggers edit
     const modalBody = modalElement!.props.children;
-    const footerActions = modalBody.props.children[2]; // Footer container
-    const rightGroup = footerActions.props.children[1]; // Right button group (Edit + Close)
-    const editBtn = rightGroup.props.children[0]; // Edit button
+    const activeChildren = (modalBody.props.children as Array<{ props?: { children?: unknown } }>).filter(Boolean);
+    const footerActions = activeChildren[activeChildren.length - 1] as any; // Footer container
+    const rightGroup = footerActions.props.children[1] as any; // Right button group (Edit + Close)
+    const editBtn = rightGroup.props.children[0] as any; // Edit button
 
     expect(editBtn).not.toBeNull();
     // Simulate clicking "Edit" in history modal
     editBtn.props.onClick();
     expect(modalClosed).toBe(true);
     expect(editOpened).toBe(true);
+  });
+
+  test('TransactionHistoryModal renders warning banner when transaction involves inactive member', () => {
+    const membersWithInactive: Member[] = [
+      ...members.slice(0, 1),
+      { ...members[1], status: 'INACTIVE' },
+    ];
+
+    const modalElement = TransactionHistoryModal({
+      isOpen: true,
+      onClose: () => {},
+      transaction: { type: 'EXPENSE', data: sampleExpense },
+      members: membersWithInactive,
+      currency: 'USD',
+    });
+
+    expect(modalElement).not.toBeNull();
+    const modalBody = modalElement!.props.children;
+    const activeChildren = (modalBody.props.children as Array<{ props?: { children?: unknown } }>).filter(Boolean);
+    const banner = activeChildren.find(
+      (c) =>
+        c?.props?.children &&
+        JSON.stringify(c.props.children).includes('Historical Record Notice')
+    );
+    expect(banner).toBeDefined();
   });
 
   test('TransactionHistoryModal renders audit timeline when history is present', () => {

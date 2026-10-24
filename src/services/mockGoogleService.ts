@@ -1,5 +1,5 @@
 import type { GoogleDriveFile, GoogleUser } from '../types/google';
-import type { Group, GroupConfig, Member, PendingInvite } from '../types/group';
+import type { DriveDiscrepancy, Group, GroupConfig, Member, PendingInvite } from '../types/group';
 import type { Expense, Settlement } from '../types/transaction';
 import {
   deserializeGroupConfig,
@@ -723,6 +723,105 @@ class MockGoogleService {
     target.name = newName;
     sheet.tabs[SHEET_TABS.MEMBERS] = serializeMembers(members);
     this.saveToStorage();
+  }
+
+  /**
+   * Soft-deletes a member in mock store: marks status 'INACTIVE' and removes from sharedWith.
+   */
+  public async softDeleteMember(sheetId: string, memberEmail: string): Promise<void> {
+    const sheet = this.sheets[sheetId];
+    if (!sheet) throw new Error('Sheet not found');
+    const members = deserializeMembers(sheet.tabs[SHEET_TABS.MEMBERS] || []);
+    const target = members.find((m) => m.email.toLowerCase() === memberEmail.toLowerCase());
+    if (!target) throw new Error(`Member ${memberEmail} not found`);
+    if (target.role === 'OWNER') throw new Error('Cannot remove the group owner');
+
+    target.status = 'INACTIVE';
+    sheet.tabs[SHEET_TABS.MEMBERS] = serializeMembers(members);
+    sheet.sharedWith = sheet.sharedWith.filter((e) => e.toLowerCase() !== memberEmail.toLowerCase());
+    this.saveToStorage();
+  }
+
+  /**
+   * Restores an inactive member in mock store: marks status 'ACTIVE' and restores to sharedWith.
+   */
+  public async restoreMember(sheetId: string, memberEmail: string): Promise<void> {
+    const sheet = this.sheets[sheetId];
+    if (!sheet) throw new Error('Sheet not found');
+    const members = deserializeMembers(sheet.tabs[SHEET_TABS.MEMBERS] || []);
+    const target = members.find((m) => m.email.toLowerCase() === memberEmail.toLowerCase());
+    if (!target) throw new Error(`Member ${memberEmail} not found`);
+
+    target.status = 'ACTIVE';
+    sheet.tabs[SHEET_TABS.MEMBERS] = serializeMembers(members);
+    if (!sheet.sharedWith.some((e) => e.toLowerCase() === memberEmail.toLowerCase())) {
+      sheet.sharedWith.push(memberEmail);
+    }
+    this.saveToStorage();
+  }
+
+  /**
+   * Audits mock permissions comparing sheet members against sharedWith.
+   */
+  public getMockSheet(sheetId: string): MockSpreadsheet | undefined {
+    return this.sheets[sheetId];
+  }
+
+  public async auditDrivePermissions(sheetId: string): Promise<DriveDiscrepancy[]> {
+    const sheet = this.sheets[sheetId];
+    if (!sheet) return [];
+    const members = deserializeMembers(sheet.tabs[SHEET_TABS.MEMBERS] || []);
+    const discrepancies: DriveDiscrepancy[] = [];
+
+    for (const m of members) {
+      const hasDrive = sheet.sharedWith.some((e) => e.toLowerCase() === m.email.toLowerCase());
+      if (m.status === 'ACTIVE' && m.role !== 'OWNER' && !hasDrive) {
+        discrepancies.push({ email: m.email, name: m.name, type: 'MISSING_DRIVE_PERMISSION' });
+      } else if (m.status === 'INACTIVE' && hasDrive) {
+        discrepancies.push({
+          email: m.email,
+          name: m.name,
+          type: 'INACTIVE_HAS_WRITE_ACCESS',
+          permissionId: `mock-perm-${m.email}`,
+        });
+      }
+    }
+
+    // Check sharedWith users not present in sheet
+    for (const email of sheet.sharedWith) {
+      if (email.toLowerCase() === sheet.ownerEmail.toLowerCase()) continue;
+      const inSheet = members.some((m) => m.email.toLowerCase() === email.toLowerCase());
+      if (!inSheet) {
+        discrepancies.push({
+          email,
+          name: email.split('@')[0],
+          type: 'DRIVE_USER_NOT_IN_SHEET',
+          permissionId: `mock-perm-${email}`,
+        });
+      }
+    }
+
+    return discrepancies;
+  }
+
+  public async removePermission(sheetId: string, permissionId: string): Promise<void> {
+    const sheet = this.sheets[sheetId];
+    if (!sheet) return;
+    const emailPrefix = 'mock-perm-';
+    if (permissionId.startsWith(emailPrefix)) {
+      const email = permissionId.slice(emailPrefix.length);
+      sheet.sharedWith = sheet.sharedWith.filter((e) => e.toLowerCase() !== email.toLowerCase());
+      this.saveToStorage();
+    }
+  }
+
+  public async shareSpreadsheetWithUser(sheetId: string, email: string): Promise<void> {
+    const sheet = this.sheets[sheetId];
+    if (!sheet) return;
+    if (!sheet.sharedWith.some((e) => e.toLowerCase() === email.toLowerCase())) {
+      sheet.sharedWith.push(email);
+      this.saveToStorage();
+    }
   }
 }
 

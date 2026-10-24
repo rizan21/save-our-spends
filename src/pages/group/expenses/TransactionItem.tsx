@@ -33,6 +33,8 @@ export function TransactionItem({
     const isPayee = s.payeeEmail === currentUserEmail;
     const payerMember = members.find((m) => m.email.toLowerCase() === s.payerEmail.toLowerCase());
     const payeeMember = members.find((m) => m.email.toLowerCase() === s.payeeEmail.toLowerCase());
+    const isPayerInactive = payerMember?.status === 'INACTIVE';
+    const isPayeeInactive = payeeMember?.status === 'INACTIVE';
 
     const handleCardClick = () => {
       onViewHistory?.(item);
@@ -61,10 +63,32 @@ export function TransactionItem({
             <HandCoins className="w-5 h-5" />
           </div>
           <div className="min-w-0">
-            <div className="font-semibold text-slate-800 dark:text-slate-100 text-sm truncate flex items-center gap-1.5">
-              <UserAvatar name={s.payerName} picture={payerMember?.picture} size="xs" />
+            <div className="font-semibold text-slate-800 dark:text-slate-100 text-sm truncate flex items-center gap-1.5 flex-wrap">
+              <div className="flex items-center gap-1 truncate">
+                <UserAvatar
+                  name={s.payerName}
+                  picture={payerMember?.picture}
+                  size="xs"
+                  isInactive={isPayerInactive}
+                />
+                <span className="truncate">{s.payerName}</span>
+                {isPayerInactive && (
+                  <span className="text-[10px] text-slate-400 font-normal">(Removed)</span>
+                )}
+              </div>
               <span className="text-slate-400 dark:text-slate-500 font-normal">paid</span>
-              <UserAvatar name={s.payeeName} picture={payeeMember?.picture} size="xs" />
+              <div className="flex items-center gap-1 truncate">
+                <UserAvatar
+                  name={s.payeeName}
+                  picture={payeeMember?.picture}
+                  size="xs"
+                  isInactive={isPayeeInactive}
+                />
+                <span className="truncate">{s.payeeName}</span>
+                {isPayeeInactive && (
+                  <span className="text-[10px] text-slate-400 font-normal">(Removed)</span>
+                )}
+              </div>
             </div>
             <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
               <span className="font-semibold text-slate-700 dark:text-slate-300">
@@ -91,6 +115,13 @@ export function TransactionItem({
   const userNet = userPaid - userOwed;
   const isInvolved = userPaid > 0.005 || userOwed > 0.005;
   const isPositive = userNet > 0.005;
+
+  const hasInactiveParticipant = members.some(
+    (m) =>
+      m.status === 'INACTIVE' &&
+      ((exp.paidBy && exp.paidBy[m.email] !== undefined) ||
+        (exp.splits && exp.splits[m.email] !== undefined))
+  );
 
   const handleCardClick = () => {
     onViewHistory?.(item);
@@ -122,6 +153,11 @@ export function TransactionItem({
           </div>
           <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
             <span className="font-semibold text-slate-700 dark:text-slate-300">{dt.date}</span>
+            {hasInactiveParticipant && (
+              <span className="text-[10px] text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 rounded font-medium">
+                (Includes Removed Member)
+              </span>
+            )}
           </div>
         </div>
       </div>

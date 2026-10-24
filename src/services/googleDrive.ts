@@ -59,14 +59,14 @@ export async function grantPermission(
 }
 
 /**
- * Retrieves permissions for a file, including members' Google account photoLinks.
+ * Retrieves permissions for a file, including permission ID, role, type, and Google account photoLinks.
  */
 export async function getFilePermissions(
   token: string,
   fileId: string
-): Promise<Array<{ emailAddress?: string; photoLink?: string; displayName?: string }>> {
+): Promise<Array<{ id: string; emailAddress?: string; role: string; type: string; photoLink?: string; displayName?: string }>> {
   try {
-    const fields = encodeURIComponent('permissions(emailAddress, photoLink, displayName)');
+    const fields = encodeURIComponent('permissions(id, emailAddress, role, type, photoLink, displayName)');
     const url = `https://www.googleapis.com/drive/v3/files/${fileId}/permissions?fields=${fields}`;
     const res = await fetch(url, {
       headers: {
@@ -82,8 +82,32 @@ export async function getFilePermissions(
   }
 }
 
+/**
+ * Revokes / deletes a permission on a file by permissionId.
+ * HTTP 404 is treated idempotently as success.
+ */
+export async function removePermission(
+  token: string,
+  fileId: string,
+  permissionId: string
+): Promise<void> {
+  const url = `https://www.googleapis.com/drive/v3/files/${fileId}/permissions/${permissionId}`;
+  const res = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok && res.status !== 404) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || `Failed to remove permission: ${res.statusText}`);
+  }
+}
+
 export const googleDriveService = {
   listSpreadSpendsFiles,
   grantPermission,
   getFilePermissions,
+  removePermission,
 };

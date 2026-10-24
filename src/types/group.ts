@@ -13,6 +13,19 @@ export interface Member {
 
 export type InviteStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
+export type DriveDiscrepancyType =
+  | 'MISSING_DRIVE_PERMISSION'
+  | 'INACTIVE_HAS_WRITE_ACCESS'
+  | 'DRIVE_USER_NOT_IN_SHEET'
+  | 'READ_ONLY_ACCESS';
+
+export interface DriveDiscrepancy {
+  email: string;
+  name?: string;
+  type: DriveDiscrepancyType;
+  permissionId?: string;
+}
+
 export interface PendingInvite {
   id: string;
   invitedEmail: string;

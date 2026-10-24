@@ -269,4 +269,86 @@ describe('groupService - Unified Facade Lifecycle', () => {
     expect(modified.history).toBeDefined();
     expect(modified.history!.length).toBe(1);
   });
+
+  test('softDeleteMember marks member INACTIVE and removes from Drive sharing', async () => {
+    const groups = await groupService.listGroups('alice.dev@gmail.com');
+    const groupId = groups[0].id;
+    const initial = await groupService.loadGroup(groupId);
+
+    const bob = initial.group.members.find((m) => m.email === 'bob.traveler@gmail.com');
+    expect(bob?.status).toBe('ACTIVE');
+
+    await groupService.softDeleteMember(groupId, 'bob.traveler@gmail.com');
+
+    const updated = await groupService.loadGroup(groupId);
+    const updatedBob = updated.group.members.find((m) => m.email === 'bob.traveler@gmail.com');
+    expect(updatedBob?.status).toBe('INACTIVE');
+
+    // Historical expenses still exist and retain Bob
+    expect(updated.expenses.length).toBe(initial.expenses.length);
+    const beachVilla = updated.expenses.find((e) => e.id === 'exp-beach-villa');
+    expect(beachVilla?.splits['bob.traveler@gmail.com']).toBeDefined();
+
+    // Inactive members are still retained in debt simplification and balances
+    const summary = calculateBalances(
+      updated.group.members,
+      updated.expenses,
+      updated.settlements,
+      updated.group.currency
+    );
+    expect(summary.balances['bob.traveler@gmail.com']).toBeDefined();
+  });
+
+  test('restoreMember reactivates an INACTIVE member and re-grants Drive permissions', async () => {
+    const groups = await groupService.listGroups('alice.dev@gmail.com');
+    const groupId = groups[0].id;
+
+    // First soft-delete Bob
+    await groupService.softDeleteMember(groupId, 'bob.traveler@gmail.com');
+    let data = await groupService.loadGroup(groupId);
+    expect(data.group.members.find((m) => m.email === 'bob.traveler@gmail.com')?.status).toBe('INACTIVE');
+
+    // Now restore Bob
+    await groupService.restoreMember(groupId, 'bob.traveler@gmail.com');
+    data = await groupService.loadGroup(groupId);
+    expect(data.group.members.find((m) => m.email === 'bob.traveler@gmail.com')?.status).toBe('ACTIVE');
+  });
+
+  test('auditDrivePermissions identifies discrepancies accurately', async () => {
+    const groups = await groupService.listGroups('alice.dev@gmail.com');
+    const groupId = groups[0].id;
+
+    // Baseline: No discrepancies when in sync
+    let audit = await groupService.auditDrivePermissions(groupId);
+    expect(audit.length).toBe(0);
+
+    // Case 1: Active member missing Drive permission
+    // Remove Bob from sharedWith directly in mock
+    const sheet = mockGoogleService.getMockSheet(groupId)!;
+    sheet.sharedWith = sheet.sharedWith.filter((e) => e !== 'bob.traveler@gmail.com');
+
+    audit = await groupService.auditDrivePermissions(groupId);
+    expect(audit.length).toBe(1);
+    expect(audit[0].type).toBe('MISSING_DRIVE_PERMISSION');
+    expect(audit[0].email).toBe('bob.traveler@gmail.com');
+
+    // Remediate by restoring permission
+    await groupService.grantDriveWriterPermission(groupId, 'bob.traveler@gmail.com');
+    audit = await groupService.auditDrivePermissions(groupId);
+    expect(audit.length).toBe(0);
+
+    // Case 2: Inactive member has write access
+    await groupService.softDeleteMember(groupId, 'bob.traveler@gmail.com');
+    // Simulate lagging Drive permission where Bob was not removed from sharedWith
+    sheet.sharedWith.push('bob.traveler@gmail.com');
+
+    audit = await groupService.auditDrivePermissions(groupId);
+    expect(audit.some((d) => d.type === 'INACTIVE_HAS_WRITE_ACCESS' && d.email === 'bob.traveler@gmail.com')).toBe(true);
+
+    // Remediate by revoking
+    const disc = audit.find((d) => d.type === 'INACTIVE_HAS_WRITE_ACCESS')!;
+    await groupService.revokeDrivePermission(groupId, disc.permissionId!);
+    audit = await groupService.auditDrivePermissions(groupId);
+    expect(audit.filter((d) => d.email === 'bob.traveler@gmail.com').length).toBe(0);
+  });
 });

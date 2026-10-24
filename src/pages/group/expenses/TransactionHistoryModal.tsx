@@ -14,6 +14,7 @@ import {
   ChevronDown,
   History,
   Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 
 export interface TransactionHistoryModalProps {
@@ -62,23 +63,30 @@ export function TransactionHistoryModal({
     }
   };
 
+  const formatMemberName = (email: string) => {
+    const m = getMember(email);
+    const base = m?.name || email.split('@')[0];
+    return m?.status === 'INACTIVE' ? `${base} (Removed)` : base;
+  };
+
+  const involvesInactiveMember = isExpense
+    ? Object.keys({ ...(data as Expense).paidBy, ...(data as Expense).splits }).some(
+        (email) => getMember(email)?.status === 'INACTIVE'
+      )
+    : getMember((data as Settlement).payerEmail)?.status === 'INACTIVE' ||
+      getMember((data as Settlement).payeeEmail)?.status === 'INACTIVE';
+
   const txCurrency = data.currency || currency;
   const paidByFormatted = isExpense
     ? Object.entries((data as Expense).paidBy)
         .filter(([, amt]) => amt > 0)
-        .map(
-          ([email, amt]) =>
-            `${getMember(email)?.name || email.split('@')[0]} (${formatCurrency(amt, txCurrency)})`
-        )
+        .map(([email, amt]) => `${formatMemberName(email)} (${formatCurrency(amt, txCurrency)})`)
         .join(', ')
     : '';
   const splitsFormatted = isExpense
     ? Object.entries((data as Expense).splits)
         .filter(([, amt]) => amt > 0)
-        .map(
-          ([email, amt]) =>
-            `${getMember(email)?.name || email.split('@')[0]} (${formatCurrency(amt, txCurrency)})`
-        )
+        .map(([email, amt]) => `${formatMemberName(email)} (${formatCurrency(amt, txCurrency)})`)
         .join(', ')
     : '';
 
@@ -186,6 +194,7 @@ export function TransactionHistoryModal({
                             name={displayName}
                             picture={editor?.picture}
                             size="xs"
+                            isInactive={editor?.status === 'INACTIVE'}
                           />
                           <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
                             {displayName}
@@ -239,6 +248,7 @@ export function TransactionHistoryModal({
                       name={creatorName}
                       picture={creatorMember?.picture}
                       size="xs"
+                      isInactive={creatorMember?.status === 'INACTIVE'}
                     />
                     <span className="text-slate-600 dark:text-slate-300">
                       Originally created by <strong className="text-slate-900 dark:text-white">{creatorName}</strong>
@@ -253,6 +263,16 @@ export function TransactionHistoryModal({
           )}
         </div>
 
+        {/* Inactive Member Warning Banner */}
+        {involvesInactiveMember && (
+          <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 rounded-xl text-amber-800 dark:text-amber-300 text-xs flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+            <span>
+              ⚠️ Historical Record Notice: This transaction involves a departed member. Altering or deleting it will recalculate historical balances.
+            </span>
+          </div>
+        )}
+
         {/* Modal Actions */}
         <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
           <div>
@@ -261,7 +281,10 @@ export function TransactionHistoryModal({
                 variant="danger"
                 onClick={async () => {
                   const label = isExpense ? 'expense' : 'settlement';
-                  if (window.confirm(`Are you sure you want to delete this ${label}?`)) {
+                  const msg = involvesInactiveMember
+                    ? `Warning: This ${label} involves a removed member. Deleting it will recalculate historical balances and might irreversibly alter transactions. Are you sure you want to delete this ${label}?`
+                    : `Are you sure you want to delete this ${label}?`;
+                  if (window.confirm(msg)) {
                     await onDelete();
                     onClose();
                   }
@@ -279,6 +302,14 @@ export function TransactionHistoryModal({
               <Button
                 variant="primary"
                 onClick={() => {
+                  if (
+                    involvesInactiveMember &&
+                    !window.confirm(
+                      'Warning: Editing a transaction with a removed member might irreversibly alter historical balances. Do you wish to proceed?'
+                    )
+                  ) {
+                    return;
+                  }
                   onClose();
                   onOpenEdit();
                 }}

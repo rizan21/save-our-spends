@@ -388,6 +388,78 @@ export function useGroupDetail(groupId: string | null) {
     },
   });
 
+  // 10. Optimistic Soft-Delete Member
+  const softDeleteMemberMutation = useMutation({
+    mutationFn: async (memberEmail: string) => {
+      if (!groupId) throw new Error('No group selected');
+      await groupService.softDeleteMember(groupId, memberEmail);
+      return memberEmail;
+    },
+    onMutate: async (memberEmail: string) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<GroupDataPayload>(queryKey);
+
+      if (previous) {
+        const updatedMembers = previous.group.members.map((m) =>
+          m.email.toLowerCase() === memberEmail.toLowerCase() ? { ...m, status: 'INACTIVE' as const } : m
+        );
+        queryClient.setQueryData<GroupDataPayload>(queryKey, {
+          ...previous,
+          group: {
+            ...previous.group,
+            members: updatedMembers,
+          },
+        });
+      }
+
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData<GroupDataPayload>(queryKey, context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
+  // 11. Optimistic Restore Member
+  const restoreMemberMutation = useMutation({
+    mutationFn: async (memberEmail: string) => {
+      if (!groupId) throw new Error('No group selected');
+      await groupService.restoreMember(groupId, memberEmail);
+      return memberEmail;
+    },
+    onMutate: async (memberEmail: string) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<GroupDataPayload>(queryKey);
+
+      if (previous) {
+        const updatedMembers = previous.group.members.map((m) =>
+          m.email.toLowerCase() === memberEmail.toLowerCase() ? { ...m, status: 'ACTIVE' as const } : m
+        );
+        queryClient.setQueryData<GroupDataPayload>(queryKey, {
+          ...previous,
+          group: {
+            ...previous.group,
+            members: updatedMembers,
+          },
+        });
+      }
+
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData<GroupDataPayload>(queryKey, context.previous);
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey });
+    },
+  });
+
   return {
     group: groupQuery.data?.group || null,
     expenses: groupQuery.data?.expenses || [],
@@ -418,5 +490,9 @@ export function useGroupDetail(groupId: string | null) {
     isUpdatingDescription: updateDescriptionMutation.isPending,
     updateMemberName: updateMemberNameMutation.mutateAsync,
     isUpdatingMemberName: updateMemberNameMutation.isPending,
+    softDeleteMember: softDeleteMemberMutation.mutateAsync,
+    isSoftDeletingMember: softDeleteMemberMutation.isPending,
+    restoreMember: restoreMemberMutation.mutateAsync,
+    isRestoringMember: restoreMemberMutation.isPending,
   };
 }

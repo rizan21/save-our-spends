@@ -76,12 +76,25 @@ function SplitMemberRow({
   children: React.ReactNode;
 }) {
   const isMe = member.email === currentUserEmail;
+  const isInactive = member.status === 'INACTIVE';
   return (
     <div className="flex items-center justify-between gap-2 p-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs">
       <div className="flex items-center gap-2 min-w-0 truncate">
-        <UserAvatar name={member.name || member.email} picture={member.picture} size="xs" />
-        <span className="text-slate-700 dark:text-slate-200 truncate">
-          {member.name || member.email} {isMe ? '(You)' : ''}
+        <UserAvatar
+          name={member.name || member.email}
+          picture={member.picture}
+          size="xs"
+          isInactive={isInactive}
+        />
+        <span className="text-slate-700 dark:text-slate-200 truncate flex items-center gap-1.5">
+          <span>
+            {member.name || member.email} {isMe ? '(You)' : ''}
+          </span>
+          {isInactive && (
+            <span className="text-[10px] text-slate-500 bg-slate-100 dark:bg-slate-700/60 px-1 py-0.2 rounded font-normal">
+              (Removed)
+            </span>
+          )}
         </span>
       </div>
       {children}
@@ -115,13 +128,25 @@ export function AddExpenseModal({
   const [notes, setNotes] = useState(() => initialExpense?.notes || '');
   const [showNotes, setShowNotes] = useState(() => Boolean(initialExpense?.notes));
 
+  // Filter members: active contributors or members who are participants of this historical expense
+  const activeOrParticipantMembers = useMemo(() => {
+    return members.filter((m) => {
+      if (m.status === 'ACTIVE') return true;
+      if (!initialExpense) return false;
+      return (
+        (initialExpense.paidBy && initialExpense.paidBy[m.email] !== undefined) ||
+        (initialExpense.splits && initialExpense.splits[m.email] !== undefined)
+      );
+    });
+  }, [members, initialExpense]);
+
   // Default payer fallback
   const defaultPayerEmail = useMemo(() => {
-    if (members.some((m) => m.email === currentUserEmail)) {
+    if (activeOrParticipantMembers.some((m) => m.email === currentUserEmail)) {
       return currentUserEmail;
     }
-    return members[0]?.email || '';
-  }, [members, currentUserEmail]);
+    return activeOrParticipantMembers[0]?.email || '';
+  }, [activeOrParticipantMembers, currentUserEmail]);
 
   // Step 2: Payer State
   const [isMultiPayer, setIsMultiPayer] = useState(() => !!initialExpense && Object.keys(initialExpense.paidBy).length > 1);
@@ -148,7 +173,7 @@ export function AddExpenseModal({
       const splitKeys = Object.keys(initialExpense.splits);
       if (splitKeys.length > 0) return splitKeys;
     }
-    return members.map((m) => m.email);
+    return activeOrParticipantMembers.map((m) => m.email);
   });
   const [exactInputs, setExactInputs] = useState<Record<string, string>>(() => {
     if (initialExpense?.splitType === 'EXACT') {
@@ -228,7 +253,7 @@ export function AddExpenseModal({
     }
 
     const paidBy: Record<string, number> = {};
-    for (const m of members) {
+    for (const m of activeOrParticipantMembers) {
       const val = parseFloat(multiPayerAmounts[m.email] || '0') || 0;
       if (val > 0) paidBy[m.email] = roundToCents(val);
     }
@@ -240,7 +265,7 @@ export function AddExpenseModal({
       difference: val.difference,
       paidBy,
     };
-  }, [isMultiPayer, singlePayerEmail, multiPayerAmounts, totalAmount, members]);
+  }, [isMultiPayer, singlePayerEmail, multiPayerAmounts, totalAmount, activeOrParticipantMembers]);
 
   const isStep2Valid = isStep1Valid && payerValidation.isValid;
 
@@ -259,27 +284,27 @@ export function AddExpenseModal({
 
     if (splitType === 'EXACT') {
       const parsed = Object.fromEntries(
-        members.map((m) => [m.email, parseFloat(exactInputs[m.email] || '0') || 0])
+        activeOrParticipantMembers.map((m) => [m.email, parseFloat(exactInputs[m.email] || '0') || 0])
       );
       return calculateExactSplit(totalAmount, parsed);
     }
 
     if (splitType === 'PERCENTAGE') {
       const parsed = Object.fromEntries(
-        members.map((m) => [m.email, parseFloat(percentageInputs[m.email] || '0') || 0])
+        activeOrParticipantMembers.map((m) => [m.email, parseFloat(percentageInputs[m.email] || '0') || 0])
       );
       return calculatePercentageSplit(totalAmount, parsed);
     }
 
     if (splitType === 'SHARES') {
       const parsed = Object.fromEntries(
-        members.map((m) => [m.email, parseInt(shareInputs[m.email] || '1', 10) || 1])
+        activeOrParticipantMembers.map((m) => [m.email, parseInt(shareInputs[m.email] || '1', 10) || 1])
       );
       return calculateSharesSplit(totalAmount, parsed);
     }
 
     return { splits: {}, isValid: false, error: 'Invalid split method' };
-  }, [totalAmount, splitType, includedMembers, exactInputs, percentageInputs, shareInputs, members]);
+  }, [totalAmount, splitType, includedMembers, exactInputs, percentageInputs, shareInputs, activeOrParticipantMembers]);
 
   // Exact split totals
   const sumExact = useMemo(() => {
@@ -301,11 +326,11 @@ export function AddExpenseModal({
 
   // Shares count
   const totalSharesCount = useMemo(() => {
-    return members.reduce((acc, m) => {
+    return activeOrParticipantMembers.reduce((acc, m) => {
       const s = parseInt(shareInputs[m.email] || '1', 10);
       return acc + (isNaN(s) || s < 0 ? 0 : s);
     }, 0);
-  }, [members, shareInputs]);
+  }, [activeOrParticipantMembers, shareInputs]);
 
   // Payer summary description
   const payerSummary = useMemo(() => {
@@ -400,8 +425,8 @@ export function AddExpenseModal({
 
   // Helper: split payers equally
   const handleSplitPayersEqually = () => {
-    if (totalAmount <= 0 || members.length === 0) return;
-    const split = calculateEqualSplit(totalAmount, members.map((m) => m.email));
+    if (totalAmount <= 0 || activeOrParticipantMembers.length === 0) return;
+    const split = calculateEqualSplit(totalAmount, activeOrParticipantMembers.map((m) => m.email));
     const newAmounts: Record<string, string> = {};
     for (const [email, amount] of Object.entries(split.splits)) {
       newAmounts[email] = amount.toFixed(2);
@@ -421,10 +446,10 @@ export function AddExpenseModal({
   };
 
   const handleToggleAllMembers = () => {
-    if (includedMembers.length === members.length) {
+    if (includedMembers.length === activeOrParticipantMembers.length) {
       setIncludedMembers([defaultPayerEmail]);
     } else {
-      setIncludedMembers(members.map((m) => m.email));
+      setIncludedMembers(activeOrParticipantMembers.map((m) => m.email));
     }
   };
 
@@ -443,8 +468,8 @@ export function AddExpenseModal({
 
   // Helper: split exact equally
   const handleSplitExactEqually = () => {
-    if (totalAmount <= 0 || members.length === 0) return;
-    const split = calculateEqualSplit(totalAmount, members.map((m) => m.email));
+    if (totalAmount <= 0 || activeOrParticipantMembers.length === 0) return;
+    const split = calculateEqualSplit(totalAmount, activeOrParticipantMembers.map((m) => m.email));
     const newAmounts: Record<string, string> = {};
     for (const [email, amount] of Object.entries(split.splits)) {
       newAmounts[email] = amount.toFixed(2);
@@ -455,12 +480,12 @@ export function AddExpenseModal({
 
   // Helper: split percentage equally
   const handleSplitPercentageEqually = () => {
-    if (members.length === 0) return;
-    const n = members.length;
+    if (activeOrParticipantMembers.length === 0) return;
+    const n = activeOrParticipantMembers.length;
     const base = Math.floor((100 / n) * 10) / 10;
     const remainder = roundToCents(100 - base * n);
     const newPcts: Record<string, string> = {};
-    members.forEach((m, idx) => {
+    activeOrParticipantMembers.forEach((m, idx) => {
       const val = idx === 0 ? roundToCents(base + remainder) : base;
       newPcts[m.email] = val.toString();
     });
@@ -471,7 +496,7 @@ export function AddExpenseModal({
   // Helper: reset shares
   const handleResetShares = () => {
     const newShares: Record<string, string> = {};
-    for (const m of members) {
+    for (const m of activeOrParticipantMembers) {
       newShares[m.email] = '1';
     }
     setShareInputs(newShares);
@@ -532,6 +557,26 @@ export function AddExpenseModal({
 
       if (diff) {
         updatedExpense.history = [...(initialExpense.history || []), diff];
+      }
+
+      // Check if transaction involves any inactive member
+      const involvesInactive = members.some(
+        (m) =>
+          m.status === 'INACTIVE' &&
+          (initialExpense.paidBy[m.email] !== undefined ||
+            initialExpense.splits[m.email] !== undefined ||
+            updatedExpense.paidBy[m.email] !== undefined ||
+            updatedExpense.splits[m.email] !== undefined)
+      );
+
+      if (involvesInactive) {
+        const proceed = window.confirm(
+          'Warning: Editing a transaction with a removed member might irreversibly change historical balances. Are you sure you want to proceed and save this edit?'
+        );
+        if (!proceed) {
+          setIsSubmitting(false);
+          return;
+        }
       }
 
       try {
@@ -891,7 +936,7 @@ export function AddExpenseModal({
             {/* Single Payer View */}
             {!isMultiPayer ? (
               <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
-                {members.map((m) => {
+                {activeOrParticipantMembers.map((m) => {
                   const isSelected = singlePayerEmail === m.email;
                   const isMe = m.email === currentUserEmail;
 
@@ -910,10 +955,20 @@ export function AddExpenseModal({
                       }`}
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <UserAvatar name={m.name || m.email} picture={m.picture} size="sm" />
+                        <UserAvatar
+                          name={m.name || m.email}
+                          picture={m.picture}
+                          size="sm"
+                          isInactive={m.status === 'INACTIVE'}
+                        />
                         <div className="min-w-0">
                           <div className="text-xs font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 truncate">
                             <span>{m.name || m.email}</span>
+                            {m.status === 'INACTIVE' && (
+                              <span className="text-[10px] text-slate-500 bg-slate-100 dark:bg-slate-700/60 px-1.5 py-0.2 rounded font-normal">
+                                (Removed)
+                              </span>
+                            )}
                             {isMe && (
                               <span className="text-[10px] text-emerald-700 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950 px-1.5 py-0.2 rounded font-bold">
                                 You
@@ -988,7 +1043,7 @@ export function AddExpenseModal({
 
                 {/* Member Input Rows */}
                 <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                  {members.map((m) => {
+                  {activeOrParticipantMembers.map((m) => {
                     const val = multiPayerAmounts[m.email] || '';
 
                     return (
@@ -1122,11 +1177,11 @@ export function AddExpenseModal({
                       onClick={handleToggleAllMembers}
                       className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
                     >
-                      {includedMembers.length === members.length ? 'Deselect all' : 'Select all'}
+                      {includedMembers.length === activeOrParticipantMembers.length ? 'Deselect all' : 'Select all'}
                     </button>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto pr-1">
-                    {members.map((m) => {
+                    {activeOrParticipantMembers.map((m) => {
                       const isChecked = includedMembers.includes(m.email);
                       const share = splitResult.splits[m.email];
                       const isMe = m.email === currentUserEmail;
@@ -1152,9 +1207,19 @@ export function AddExpenseModal({
                             >
                               {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
                             </div>
-                            <UserAvatar name={m.name || m.email} picture={m.picture} size="xs" />
-                            <span className="truncate">
-                              {m.name || m.email} {isMe ? '(You)' : ''}
+                            <UserAvatar
+                              name={m.name || m.email}
+                              picture={m.picture}
+                              size="xs"
+                              isInactive={m.status === 'INACTIVE'}
+                            />
+                            <span className="truncate flex items-center gap-1">
+                              <span>
+                                {m.name || m.email} {isMe ? '(You)' : ''}
+                              </span>
+                              {m.status === 'INACTIVE' && (
+                                <span className="text-[10px] text-slate-400 font-normal">(Removed)</span>
+                              )}
                             </span>
                           </div>
                           {isChecked && share !== undefined && (
@@ -1204,7 +1269,7 @@ export function AddExpenseModal({
 
                   {/* Member Rows */}
                   <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
-                    {members.map((m) => {
+                    {activeOrParticipantMembers.map((m) => {
                       const val = exactInputs[m.email] || '';
 
                       return (
@@ -1273,7 +1338,7 @@ export function AddExpenseModal({
 
                   {/* Member Rows */}
                   <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
-                    {members.map((m) => {
+                    {activeOrParticipantMembers.map((m) => {
                       const share = splitResult.splits[m.email] || 0;
                       const val = percentageInputs[m.email] || '';
 
@@ -1328,7 +1393,7 @@ export function AddExpenseModal({
 
                   {/* Member Rows */}
                   <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
-                    {members.map((m) => {
+                    {activeOrParticipantMembers.map((m) => {
                       const share = splitResult.splits[m.email] || 0;
                       const val = shareInputs[m.email] || '1';
 

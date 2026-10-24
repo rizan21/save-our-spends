@@ -5,6 +5,7 @@ export interface UserAvatarProps {
   picture?: string | null;
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
+  isInactive?: boolean;
 }
 
 const sizeClasses = {
@@ -38,11 +39,13 @@ export function UserAvatar({
   picture,
   size = 'md',
   className = '',
+  isInactive = false,
 }: UserAvatarProps) {
   const [imageError, setImageError] = useState(false);
 
   const sizeClass = sizeClasses[size] || sizeClasses.md;
   const initial = (name ? name.trim().charAt(0) : '?').toUpperCase();
+  const inactiveClass = isInactive ? 'grayscale opacity-60' : '';
 
   if (picture && !imageError) {
     return (
@@ -52,7 +55,7 @@ export function UserAvatar({
         alt={name || 'User profile'}
         referrerPolicy="no-referrer"
         onError={() => setImageError(true)}
-        className={`${sizeClass} rounded-full object-cover border border-slate-200/80 dark:border-slate-700 shadow-2xs shrink-0 ${className}`}
+        className={`${sizeClass} rounded-full object-cover border border-slate-200/80 dark:border-slate-700 shadow-2xs shrink-0 ${inactiveClass} ${className}`}
       />
     );
   }
@@ -61,7 +64,7 @@ export function UserAvatar({
 
   return (
     <div
-      className={`${sizeClass} rounded-full font-bold flex items-center justify-center border shrink-0 ${colorClass} ${className}`}
+      className={`${sizeClass} rounded-full font-bold flex items-center justify-center border shrink-0 ${colorClass} ${inactiveClass} ${className}`}
       aria-label={name}
     >
       {initial}

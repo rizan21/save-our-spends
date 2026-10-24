@@ -27,10 +27,14 @@ export interface GroupContextValue {
   updateDescription: (description: string) => Promise<unknown>;
   isUpdatingDescription: boolean;
   updateMemberName: (params: { email: string; newName: string }) => Promise<unknown>;
+  softDeleteMember: (memberEmail: string) => Promise<unknown>;
+  isSoftDeletingMember: boolean;
+  restoreMember: (memberEmail: string) => Promise<unknown>;
+  isRestoringMember: boolean;
   // Action triggers
   openAddExpense: () => void;
   openSettleUp: (debt?: SimplifiedDebt | null) => void;
-  openInviteModal: () => void;
+  openInviteModal: (initialEmail?: string) => void;
   openEditProfile?: () => void;
   viewTransactionHistory: (item: { type: 'EXPENSE'; data: Expense } | { type: 'SETTLEMENT'; data: Settlement }) => void;
   openEditExpense: (expense: Expense) => void;

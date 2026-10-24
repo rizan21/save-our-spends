@@ -54,6 +54,10 @@ export function GroupDetailPage({
     updateDescription,
     isUpdatingDescription,
     updateMemberName,
+    softDeleteMember,
+    isSoftDeletingMember,
+    restoreMember,
+    isRestoringMember,
   } = useGroupDetail(groupId);
 
   // Modal visibility states
@@ -63,6 +67,7 @@ export function GroupDetailPage({
     initialDebtToSettle
   );
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [inviteInitialEmail, setInviteInitialEmail] = useState('');
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [editingSettlement, setEditingSettlement] = useState<Settlement | null>(null);
   const [viewingHistoryTransaction, setViewingHistoryTransaction] = useState<
@@ -162,12 +167,19 @@ export function GroupDetailPage({
       updateDescription,
       isUpdatingDescription,
       updateMemberName,
+      softDeleteMember,
+      isSoftDeletingMember,
+      restoreMember,
+      isRestoringMember,
       openAddExpense: () => {
         setEditingExpense(null);
         setIsAddExpenseOpen(true);
       },
       openSettleUp: handleOpenSettleUp,
-      openInviteModal: () => setIsInviteModalOpen(true),
+      openInviteModal: (email?: string) => {
+        setInviteInitialEmail(email || '');
+        setIsInviteModalOpen(true);
+      },
       openEditProfile: onOpenEditProfile,
       viewTransactionHistory: (item) => setViewingHistoryTransaction(item),
       openEditExpense: (exp) => setEditingExpense(exp),
@@ -194,6 +206,10 @@ export function GroupDetailPage({
     updateDescription,
     isUpdatingDescription,
     updateMemberName,
+    softDeleteMember,
+    isSoftDeletingMember,
+    restoreMember,
+    isRestoringMember,
     handleOpenSettleUp,
     onOpenEditProfile,
   ]);
@@ -367,13 +383,17 @@ export function GroupDetailPage({
       {isInviteModalOpen && (
         <InviteMemberModal
           isOpen={isInviteModalOpen}
-          onClose={() => setIsInviteModalOpen(false)}
+          onClose={() => {
+            setIsInviteModalOpen(false);
+            setInviteInitialEmail('');
+          }}
           isOwner={isOwner}
           existingMembers={group.members}
           pendingInvites={group.pendingInvites}
           currentUserEmail={currentUser?.email || ''}
           currentUserName={currentUser?.name || currentUser?.email || ''}
           onInvite={handleInviteSubmit}
+          initialEmail={inviteInitialEmail}
         />
       )}
     </GroupProvider>

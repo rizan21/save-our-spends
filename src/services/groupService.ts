@@ -1,5 +1,5 @@
 import type { GoogleDriveFile } from '../types/google';
-import type { Group, PendingInvite } from '../types/group';
+import type { DriveDiscrepancy, Group, PendingInvite } from '../types/group';
 import type { Expense, Settlement } from '../types/transaction';
 import { googleAuthService } from './googleAuth';
 import { googleDriveService } from './googleDrive';
@@ -472,6 +472,131 @@ export class GroupService {
     } catch (err) {
       console.warn('Failed to provision member tab or update master formula:', err);
     }
+  }
+
+  /**
+   * Soft-deletes a member: marks status 'INACTIVE' in Members tab and revokes Drive permission.
+   */
+  public async softDeleteMember(sheetId: string, memberEmail: string): Promise<void> {
+    if (googleAuthService.getIsDemoMode()) {
+      return await mockGoogleService.softDeleteMember(sheetId, memberEmail);
+    }
+    const token = this.getAuthToken();
+    const memberRows = await googleSheetsService.readTab(token, sheetId, SHEET_TABS.MEMBERS);
+    const members = deserializeMembers(memberRows);
+    const target = members.find((m) => m.email.toLowerCase() === memberEmail.toLowerCase());
+    if (!target) throw new Error(`Member ${memberEmail} not found`);
+    if (target.role === 'OWNER') throw new Error('Cannot remove the group owner');
+
+    target.status = 'INACTIVE';
+    await googleSheetsService.updateSheetRange(
+      token,
+      sheetId,
+      `${SHEET_TABS.MEMBERS}!A1:G${members.length + 1}`,
+      serializeMembers(members)
+    );
+
+    // Best-effort Drive permission revocation
+    try {
+      const perms = await googleDriveService.getFilePermissions(token, sheetId);
+      const targetPerm = perms.find((p) => p.emailAddress?.toLowerCase() === memberEmail.toLowerCase());
+      if (targetPerm?.id) {
+        await googleDriveService.removePermission(token, sheetId, targetPerm.id);
+      }
+    } catch (err) {
+      console.warn(`Drive permission revocation failed for ${memberEmail}:`, err);
+    }
+  }
+
+  /**
+   * Restores an inactive member to active status and restores Drive writer permission.
+   */
+  public async restoreMember(sheetId: string, memberEmail: string): Promise<void> {
+    if (googleAuthService.getIsDemoMode()) {
+      return await mockGoogleService.restoreMember(sheetId, memberEmail);
+    }
+    const token = this.getAuthToken();
+    const memberRows = await googleSheetsService.readTab(token, sheetId, SHEET_TABS.MEMBERS);
+    const members = deserializeMembers(memberRows);
+    const target = members.find((m) => m.email.toLowerCase() === memberEmail.toLowerCase());
+    if (!target) throw new Error(`Member ${memberEmail} not found`);
+
+    target.status = 'ACTIVE';
+    await googleSheetsService.updateSheetRange(
+      token,
+      sheetId,
+      `${SHEET_TABS.MEMBERS}!A1:G${members.length + 1}`,
+      serializeMembers(members)
+    );
+
+    await googleDriveService.grantPermission(token, sheetId, memberEmail, 'writer');
+  }
+
+  /**
+   * Read-only advisory audit comparing Google Drive permissions against sheet members.
+   */
+  public async auditDrivePermissions(sheetId: string): Promise<DriveDiscrepancy[]> {
+    if (googleAuthService.getIsDemoMode()) {
+      return await mockGoogleService.auditDrivePermissions(sheetId);
+    }
+    const token = this.getAuthToken();
+    const [memberRows, drivePerms] = await Promise.all([
+      googleSheetsService.readTab(token, sheetId, SHEET_TABS.MEMBERS),
+      googleDriveService.getFilePermissions(token, sheetId),
+    ]);
+
+    const members = deserializeMembers(memberRows);
+    const discrepancies: DriveDiscrepancy[] = [];
+
+    // Check sheet members against Drive
+    for (const m of members) {
+      const perm = drivePerms.find((p) => p.emailAddress?.toLowerCase() === m.email.toLowerCase());
+      if (m.status === 'ACTIVE' && m.role !== 'OWNER') {
+        if (!perm) {
+          discrepancies.push({ email: m.email, name: m.name, type: 'MISSING_DRIVE_PERMISSION' });
+        } else if (perm.role === 'reader') {
+          discrepancies.push({ email: m.email, name: m.name, type: 'READ_ONLY_ACCESS', permissionId: perm.id });
+        }
+      } else if (m.status === 'INACTIVE') {
+        if (perm && (perm.role === 'writer' || perm.role === 'owner')) {
+          discrepancies.push({ email: m.email, name: m.name, type: 'INACTIVE_HAS_WRITE_ACCESS', permissionId: perm.id });
+        }
+      }
+    }
+
+    // Check Drive editors not present in sheet
+    for (const perm of drivePerms) {
+      if (!perm.emailAddress) continue;
+      const inSheet = members.some((m) => m.email.toLowerCase() === perm.emailAddress!.toLowerCase());
+      if (!inSheet && perm.role !== 'owner') {
+        discrepancies.push({
+          email: perm.emailAddress,
+          name: perm.displayName,
+          type: 'DRIVE_USER_NOT_IN_SHEET',
+          permissionId: perm.id,
+        });
+      }
+    }
+
+    return discrepancies;
+  }
+
+  public async revokeDrivePermission(sheetId: string, permissionId: string): Promise<void> {
+    if (googleAuthService.getIsDemoMode()) {
+      await mockGoogleService.removePermission(sheetId, permissionId);
+      return;
+    }
+    const token = this.getAuthToken();
+    await googleDriveService.removePermission(token, sheetId, permissionId);
+  }
+
+  public async grantDriveWriterPermission(sheetId: string, email: string): Promise<void> {
+    if (googleAuthService.getIsDemoMode()) {
+      await mockGoogleService.shareSpreadsheetWithUser(sheetId, email);
+      return;
+    }
+    const token = this.getAuthToken();
+    await googleDriveService.grantPermission(token, sheetId, email, 'writer');
   }
 }
 

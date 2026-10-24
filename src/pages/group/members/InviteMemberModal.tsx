@@ -13,6 +13,7 @@ export interface InviteMemberModalProps {
   currentUserEmail: string;
   currentUserName: string;
   onInvite: (email: string) => Promise<unknown>;
+  initialEmail?: string;
 }
 
 export function InviteMemberModal({
@@ -22,10 +23,17 @@ export function InviteMemberModal({
   existingMembers,
   pendingInvites,
   onInvite,
+  initialEmail = '',
 }: InviteMemberModalProps) {
-  const [email, setEmail] = useState('');
+  const [prevInitialEmail, setPrevInitialEmail] = useState(initialEmail);
+  const [email, setEmail] = useState(initialEmail);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  if (initialEmail !== prevInitialEmail) {
+    setPrevInitialEmail(initialEmail);
+    setEmail(initialEmail);
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +44,7 @@ export function InviteMemberModal({
       return;
     }
 
-    if (existingMembers.some((m) => m.email.toLowerCase() === targetEmail)) {
+    if (existingMembers.some((m) => m.email.toLowerCase() === targetEmail && m.status === 'ACTIVE')) {
       setError('This user is already an active member of the group');
       return;
     }
