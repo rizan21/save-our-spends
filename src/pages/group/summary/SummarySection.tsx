@@ -2,6 +2,7 @@ import type { Group } from '../../../types/group';
 import type { Expense } from '../../../types/transaction';
 import type { GroupFinancialSummary } from '../../../types/balance';
 import { CategoryPieChart } from './CategoryPieChart';
+import { GroupInfoCard } from './GroupInfoCard';
 import { useGroupContext } from '../GroupContext';
 
 export interface SummarySectionProps {
@@ -28,11 +29,14 @@ export function SummarySection(props: SummarySectionProps) {
   const currency = financialSummary?.currency || group.currency || 'INR';
 
   return (
-    <CategoryPieChart
-      expenses={expenses}
-      currency={currency}
-      onOpenAddExpense={onOpenAddExpense}
-    />
+    <div className="space-y-6">
+      <GroupInfoCard group={group} />
+      <CategoryPieChart
+        expenses={expenses}
+        currency={currency}
+        onOpenAddExpense={onOpenAddExpense}
+      />
+    </div>
   );
 }
 

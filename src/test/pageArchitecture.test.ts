@@ -117,6 +117,46 @@ describe('Modular Page & Sub-Page Architecture', () => {
     expect(html).toContain('Transport');
   });
 
+  test('SummarySection renders immutable group metadata card with description, created date, and owner', () => {
+    const groupWithDesc: Group = {
+      ...mockGroup,
+      description: 'Annual family road trip vacation across western national parks',
+      createdAt: '2026-05-01T10:00:00Z',
+    };
+
+    const html = renderToStaticMarkup(
+      React.createElement(SummarySection, {
+        group: groupWithDesc,
+        expenses: mockExpenses,
+        financialSummary: mockFinancialSummary,
+        onNavigateToExpenses: () => {},
+        onOpenAddExpense: () => {},
+      })
+    );
+
+    expect(html).toContain('About Group');
+    expect(html).toContain('Annual family road trip vacation across western national parks');
+    expect(html).toContain('Created');
+    expect(html).toContain('May 1, 2026');
+    expect(html).toContain('Alice');
+    expect(html).toContain('Owner');
+  });
+
+  test('SummarySection renders fallback placeholder when group description is not provided', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(SummarySection, {
+        group: { ...mockGroup, description: undefined },
+        expenses: [],
+        financialSummary: null,
+      })
+    );
+
+    expect(html).toContain('About Group');
+    expect(html).toContain('No description provided.');
+    expect(html).toContain('Owner');
+    expect(html).toContain('Alice');
+  });
+
   test('BalancesSection renders member balances and spending consumption breakdown', () => {
     const html = renderToStaticMarkup(
       React.createElement(BalancesSection, {
