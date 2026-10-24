@@ -6,6 +6,7 @@ import { useSwipeableTabs, type GroupTab } from '../../hooks/useSwipeableTabs';
 import { GroupProvider, type GroupContextValue } from './GroupContext';
 import { GROUP_SECTIONS } from './groupSections';
 import { Button } from '../../components/common/Button';
+import { FloatingActionButton } from '../../components/common/FloatingActionButton';
 import { AlertCircle } from 'lucide-react';
 import type { GoogleUser } from '../../types/google';
 import type { Expense, Settlement } from '../../types/transaction';
@@ -257,11 +258,23 @@ export function GroupDetailPage({
           dragOffset={dragOffset}
           isDragging={isDragging}
           touchHandlers={touchHandlers}
-          className="flex-1 flex flex-col"
+          className="flex-1 flex flex-col pb-[calc(5rem+env(safe-area-inset-bottom))] sm:pb-24"
         >
           {activeSection ? activeSection.render() : null}
         </GroupTabsContainer>
       </div>
+
+      {/* Floating Action Button (FAB) */}
+      <FloatingActionButton
+        onClick={() => {
+          setEditingExpense(null);
+          setIsAddExpenseOpen(true);
+        }}
+        ariaLabel="Add expense"
+        tooltipText="Add expense"
+        tabIndex={isAnyModalOpen ? -1 : 0}
+        aria-hidden={isAnyModalOpen}
+      />
 
       {/* Add / Edit Expense Modal */}
       {(isAddExpenseOpen || !!editingExpense) && (
