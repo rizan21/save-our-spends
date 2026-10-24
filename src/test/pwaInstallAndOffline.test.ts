@@ -1,14 +1,6 @@
-import { describe, test, expect, mock } from 'bun:test';
+import { describe, test, expect } from 'bun:test';
 import fs from 'fs';
 import path from 'path';
-
-const inMemoryStore = new Map<string, unknown>();
-mock.module('idb-keyval', () => ({
-  get: async (key: string) => inMemoryStore.get(key),
-  set: async (key: string, val: unknown) => {
-    inMemoryStore.set(key, val);
-  },
-}));
 
 import {
   cacheGroups,

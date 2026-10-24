@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'bun:test';
-import { TransactionItem } from '../components/transactions/TransactionItem';
-import { TransactionHistoryModal } from '../components/transactions/TransactionHistoryModal';
+import { TransactionItem } from '../pages/group/expenses/TransactionItem';
+import { TransactionHistoryModal } from '../pages/group/expenses/TransactionHistoryModal';
 import type { Expense, Settlement } from '../types/transaction';
 import type { Member } from '../types/group';
 

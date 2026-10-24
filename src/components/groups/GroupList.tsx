@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Plus, Search, FolderPlus, RefreshCw, FolderDown, TrendingUp, TrendingDown, Table, LogIn, Bell, BellOff } from 'lucide-react';
-import { GroupCard } from './GroupCard';
+import { GroupCard } from '../../pages/groups/GroupCard';
 import { Button } from '../common/Button';
 import type { GoogleDriveFile } from '../../types/google';
 import type { ActiveSettlementItem } from '../../hooks/useHomeSummary';

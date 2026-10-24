@@ -49,12 +49,10 @@ export function formatChangeSummary(changes: ChangeDetail[]): string {
     const c = changes[0];
     return `Updated ${c.label} from ${c.oldValue} to ${c.newValue}`;
   }
-  if (changes.length === 2) {
-    return `Updated ${changes[0].label} and ${changes[1].label}`;
-  }
-  const labels = changes.map((c) => c.label);
-  const last = labels.pop();
-  return `Updated ${labels.join(', ')}, and ${last}`;
+  const formattedLabels = new Intl.ListFormat('en', { style: 'long', type: 'conjunction' }).format(
+    changes.map((c) => c.label)
+  );
+  return `Updated ${formattedLabels}`;
 }
 
 /**

@@ -1,8 +1,8 @@
 import { describe, test, expect } from 'bun:test';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { BalancesSummary } from '../components/settlements/BalancesSummary';
-import { TransactionList } from '../components/transactions/TransactionList';
+import { BalancesSummary } from '../pages/group/balances/BalancesSummary';
+import { TransactionList } from '../pages/group/expenses/TransactionList';
 import type { GroupFinancialSummary, SimplifiedDebt } from '../types/balance';
 import type { Member } from '../types/group';
 import type { Expense, Settlement } from '../types/transaction';
