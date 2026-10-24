@@ -339,6 +339,21 @@ export function GroupDetailPage({
               setEditingSettlement(item.data);
             }
           }}
+          onDelete={async () => {
+            const item = currentViewingTransaction;
+            if (item.type === 'EXPENSE') {
+              await deleteExpense({
+                expenseId: item.data.id,
+                editorEmail: currentUser?.email,
+              });
+            } else {
+              await deleteSettlement({
+                settlementId: item.data.id,
+                editorEmail: currentUser?.email,
+              });
+            }
+            setViewingHistoryTransaction(null);
+          }}
         />
       )}
 

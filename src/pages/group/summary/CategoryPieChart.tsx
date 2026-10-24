@@ -36,6 +36,7 @@ export function CategoryPieChart({
   // Filter active expenses
   const activeExpenses = expenses.filter((e) => e.status === 'ACTIVE');
   const totalSpend = activeExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const avgExpense = activeExpenses.length > 0 ? totalSpend / activeExpenses.length : 0;
 
   // Group by category
   const categoryMap = new Map<ExpenseCategory, { amount: number; count: number }>();
@@ -99,9 +100,6 @@ export function CategoryPieChart({
           </div>
           <div className="space-y-1">
             <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">No expenses logged yet</p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-              Add your first group expense to see spending distribution and insights broken down by category.
-            </p>
           </div>
           {onOpenAddExpense && (
             <div className="pt-2">
@@ -118,15 +116,9 @@ export function CategoryPieChart({
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xs space-y-5 sm:space-y-6">
-      <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-        <div className="flex items-center gap-2">
-          <PieChartIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-          <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Spending by Category</h2>
-        </div>
-        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-          {categoryBreakdown.length} {categoryBreakdown.length === 1 ? 'category' : 'categories'} •{' '}
-          {activeExpenses.length} {activeExpenses.length === 1 ? 'expense' : 'expenses'}
-        </span>
+      <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+        <PieChartIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+        <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Spending by Category</h2>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 items-center">
@@ -193,15 +185,12 @@ export function CategoryPieChart({
                     {formatCurrency(totalSpend, currency)}
                   </span>
                   <span className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    {activeExpenses.length} {activeExpenses.length === 1 ? 'expense' : 'expenses'}
+                    Avg {formatCurrency(avgExpense, currency)}
                   </span>
                 </>
               )}
             </div>
           </div>
-          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2 text-center">
-            Tap or hover over a slice to inspect details
-          </p>
         </div>
 
         {/* Category Breakdown Table / Cards */}

@@ -61,6 +61,9 @@ export function TransactionList({
     }
   }
 
+  const activeExpensesCount = expenses.filter((e) => e.status !== 'DELETED').length;
+  const activeSettlementsCount = settlements.filter((s) => s.status !== 'DELETED').length;
+
   // Sort descending by date, then by created time
   items.sort((a, b) => b.date.localeCompare(a.date));
 
@@ -77,7 +80,7 @@ export function TransactionList({
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            All ({expenses.length + settlements.length})
+            All ({activeExpensesCount + activeSettlementsCount})
           </button>
           <button
             onClick={() => setFilter('expenses')}
@@ -87,7 +90,7 @@ export function TransactionList({
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            Expenses ({expenses.length})
+            Expenses ({activeExpensesCount})
           </button>
           <button
             onClick={() => setFilter('settlements')}
@@ -97,7 +100,7 @@ export function TransactionList({
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            Settlements ({settlements.length})
+            Settlements ({activeSettlementsCount})
           </button>
         </div>
       </div>

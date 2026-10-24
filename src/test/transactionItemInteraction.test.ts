@@ -135,10 +135,11 @@ describe('TransactionItem & History Modal Click & Edit Flow', () => {
     // Inside the modal body, the footer action triggers edit
     const modalBody = modalElement!.props.children;
     const footerActions = modalBody.props.children[2]; // Footer container
-    const editBtn = footerActions.props.children[1]; // Edit button
+    const rightGroup = footerActions.props.children[1]; // Right button group (Edit + Close)
+    const editBtn = rightGroup.props.children[0]; // Edit button
 
     expect(editBtn).not.toBeNull();
-    // Simulate clicking "Edit Transaction" in history modal
+    // Simulate clicking "Edit" in history modal
     editBtn.props.onClick();
     expect(modalClosed).toBe(true);
     expect(editOpened).toBe(true);
@@ -180,7 +181,7 @@ describe('TransactionItem & History Modal Click & Edit Flow', () => {
     const timelineSection = modalBody.props.children[1];
     const timelineContent = timelineSection.props.children[1];
     // With 1 edit, the timeline container with revision nodes is rendered
-    expect(timelineContent.props.className).toContain('pl-6 space-y-6');
+    expect(timelineContent.props.className).toContain('pl-6 space-y-4');
   });
 
   test('formatTransactionDateTime formats date as DD MMM, YYYY and time as HH:MM:SS', async () => {

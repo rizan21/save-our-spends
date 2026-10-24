@@ -1,14 +1,12 @@
-import React, { useState } from 'react';
-import { Table, Key, CheckCircle2, ShieldCheck, ExternalLink, AlertCircle, ArrowRight, Download } from 'lucide-react';
-import { Button } from '../common/Button';
+import { Table, AlertCircle, Download } from 'lucide-react';
 import { ThemeToggle } from '../common/ThemeToggle';
 
 export interface LoginScreenProps {
   onLogin: () => Promise<unknown>;
   isLoading: boolean;
   error: string | null;
-  clientId: string;
-  onSaveClientId: (id: string) => void;
+  clientId?: string;
+  onSaveClientId?: (id: string) => void;
   showInstallButton?: boolean;
   onOpenInstall?: () => void;
 }
@@ -17,25 +15,9 @@ export function LoginScreen({
   onLogin,
   isLoading,
   error,
-  clientId,
-  onSaveClientId,
   showInstallButton,
   onOpenInstall,
 }: LoginScreenProps) {
-  const [showConfig, setShowConfig] = useState(!clientId);
-  const [clientIdInput, setClientIdInput] = useState(clientId);
-  const [savedSuccess, setSavedSuccess] = useState(false);
-
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSaveClientId(clientIdInput.trim());
-    setSavedSuccess(true);
-    setTimeout(() => {
-      setSavedSuccess(false);
-      if (clientIdInput.trim()) setShowConfig(false);
-    }, 1500);
-  };
-
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-center items-center p-4 sm:p-6 text-slate-800 dark:text-slate-100 relative transition-colors">
       {/* Top Right Theme Toggle */}
@@ -52,9 +34,6 @@ export function LoginScreen({
           </div>
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Spread-Spends</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Expense sharing powered natively by your Google Sheets
-            </p>
           </div>
         </div>
 
@@ -67,7 +46,7 @@ export function LoginScreen({
         )}
 
         {/* Primary Action: Google Sign In */}
-        <div className="space-y-3">
+        <div>
           <button
             type="button"
             onClick={onLogin}
@@ -97,84 +76,9 @@ export function LoginScreen({
               {isLoading ? 'Connecting to Google...' : 'Sign in with Google'}
             </span>
           </button>
-
-          <p className="text-[11px] text-center text-slate-400 dark:text-slate-500">
-            Sign in with your Google account to create and access your group spreadsheets.
-          </p>
         </div>
 
-        {/* Collapsible Client ID Config Box */}
-        <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-500 dark:text-slate-400 font-medium">Google OAuth Client ID</span>
-            <button
-              type="button"
-              onClick={() => setShowConfig(!showConfig)}
-              className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 font-semibold cursor-pointer"
-            >
-              {showConfig ? 'Hide' : clientId ? 'Edit ID' : 'Configure'}
-            </button>
-          </div>
-
-          {showConfig && (
-            <form onSubmit={handleSave} className="mt-3 space-y-2.5">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Paste Google Client ID here..."
-                  value={clientIdInput}
-                  onChange={(e) => setClientIdInput(e.target.value)}
-                  className="w-full pl-8 pr-3 py-2 text-xs font-mono bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500"
-                />
-                <Key className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
-              </div>
-
-              <div className="flex items-center justify-between">
-                {savedSuccess ? (
-                  <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> Saved!
-                  </span>
-                ) : (
-                  <a
-                    href="https://console.cloud.google.com/apis/credentials"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[11px] text-slate-400 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-1"
-                  >
-                    Google Cloud Console <ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
-                <Button size="sm" type="submit" variant="secondary" className="py-1 text-xs">
-                  Save ID
-                </Button>
-              </div>
-            </form>
-          )}
-        </div>
-
-        {/* Value Propositions */}
-        <div className="bg-slate-50 dark:bg-slate-850 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 space-y-2.5 text-xs">
-          <div className="flex items-center gap-2 font-semibold text-slate-700 dark:text-slate-300">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            Why Google Sheets?
-          </div>
-          <ul className="space-y-1.5 text-slate-500 dark:text-slate-400 text-[11px]">
-            <li className="flex items-center gap-1.5">
-              <ArrowRight className="w-3 h-3 text-emerald-500 shrink-0" />
-              <span>Groups live in <strong className="text-slate-700 dark:text-slate-300">your Google Drive</strong>, not our servers.</span>
-            </li>
-            <li className="flex items-center gap-1.5">
-              <ArrowRight className="w-3 h-3 text-emerald-500 shrink-0" />
-              <span>Invite members by email to grant Drive edit access.</span>
-            </li>
-            <li className="flex items-center gap-1.5">
-              <ArrowRight className="w-3 h-3 text-emerald-500 shrink-0" />
-              <span>Export to spreadsheet/CSV anytime with formulas included.</span>
-            </li>
-          </ul>
-        </div>
-
-        {/* Install for Offline Viewing Prompt */}
+        {/* Install App Prompt */}
         {showInstallButton && onOpenInstall && (
           <div className="pt-1 text-center">
             <button
@@ -183,7 +87,7 @@ export function LoginScreen({
               className="inline-flex items-center gap-2 text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:text-emerald-800 dark:hover:text-emerald-200 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100/80 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800/80 px-3.5 py-2 rounded-xl transition-all cursor-pointer shadow-xs"
             >
               <Download className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>Install app for offline viewing</span>
+              <span>Install App</span>
             </button>
           </div>
         )}

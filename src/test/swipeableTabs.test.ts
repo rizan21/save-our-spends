@@ -8,20 +8,20 @@ import {
 } from '../hooks/useSwipeableTabs';
 
 describe('Swipeable Tabs - Tab Traversal & Gesture Logic', () => {
-  test('GROUP_TABS matches the exact required tab order: overview, expenses, balances, members', () => {
-    expect(GROUP_TABS).toEqual(['overview', 'expenses', 'balances', 'members']);
+  test('GROUP_TABS matches the exact required tab order: overview, expenses, balances, settings', () => {
+    expect(GROUP_TABS).toEqual(['overview', 'expenses', 'balances', 'settings']);
     expect(GROUP_TABS.length).toBe(4);
   });
 
   test('getNextTab traverses correctly and stops cleanly at boundary', () => {
     expect(getNextTab('overview')).toBe('expenses');
     expect(getNextTab('expenses')).toBe('balances');
-    expect(getNextTab('balances')).toBe('members');
-    expect(getNextTab('members')).toBeNull();
+    expect(getNextTab('balances')).toBe('settings');
+    expect(getNextTab('settings')).toBeNull();
   });
 
   test('getPrevTab traverses backwards correctly and stops cleanly at boundary', () => {
-    expect(getPrevTab('members')).toBe('balances');
+    expect(getPrevTab('settings')).toBe('balances');
     expect(getPrevTab('balances')).toBe('expenses');
     expect(getPrevTab('expenses')).toBe('overview');
     expect(getPrevTab('overview')).toBeNull();
@@ -31,14 +31,14 @@ describe('Swipeable Tabs - Tab Traversal & Gesture Logic', () => {
     // Advancing forward (sliding leftward)
     expect(getSlideDirection('overview', 'expenses')).toBe('left');
     expect(getSlideDirection('overview', 'balances')).toBe('left');
-    expect(getSlideDirection('overview', 'members')).toBe('left');
+    expect(getSlideDirection('overview', 'settings')).toBe('left');
     expect(getSlideDirection('expenses', 'balances')).toBe('left');
-    expect(getSlideDirection('balances', 'members')).toBe('left');
+    expect(getSlideDirection('balances', 'settings')).toBe('left');
 
     // Retreating backward (sliding rightward)
-    expect(getSlideDirection('members', 'balances')).toBe('right');
-    expect(getSlideDirection('members', 'expenses')).toBe('right');
-    expect(getSlideDirection('members', 'overview')).toBe('right');
+    expect(getSlideDirection('settings', 'balances')).toBe('right');
+    expect(getSlideDirection('settings', 'expenses')).toBe('right');
+    expect(getSlideDirection('settings', 'overview')).toBe('right');
     expect(getSlideDirection('balances', 'expenses')).toBe('right');
     expect(getSlideDirection('expenses', 'overview')).toBe('right');
 
@@ -110,8 +110,8 @@ describe('Swipeable Tabs - Tab Traversal & Gesture Logic', () => {
     const atFirstTab = evaluateGesture(65, 0, 100, 'overview');
     expect(atFirstTab.action).toBe('none');
 
-    // Edge boundary: swiping left on members cannot go next
-    const atLastTab = evaluateGesture(-65, 0, 100, 'members');
+    // Edge boundary: swiping left on settings cannot go next
+    const atLastTab = evaluateGesture(-65, 0, 100, 'settings');
     expect(atLastTab.action).toBe('none');
   });
 
@@ -130,6 +130,6 @@ describe('Swipeable Tabs - Tab Traversal & Gesture Logic', () => {
 
     // Rubber-band damping at extremities
     expect(calculateDragOffset('overview', 40)).toBe(10); // 40 * 0.25
-    expect(calculateDragOffset('members', -40)).toBe(-10); // -40 * 0.25
+    expect(calculateDragOffset('settings', -40)).toBe(-10); // -40 * 0.25
   });
 });

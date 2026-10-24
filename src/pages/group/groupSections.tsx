@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Receipt, Scale, Users, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Receipt, Scale, Settings, type LucideIcon } from 'lucide-react';
 import type { GroupTab } from '../../hooks/useSwipeableTabs';
 import { SummarySection } from './summary/SummarySection';
 import { ExpensesSection } from './expenses/ExpensesSection';
@@ -31,7 +31,7 @@ export const GROUP_SECTIONS: GroupSectionConfig[] = [
   },
   {
     id: 'balances',
-    label: 'Balances & Settle',
+    label: 'Balances',
     icon: Scale,
     render: () => (
       <div className="space-y-6">
@@ -41,9 +41,9 @@ export const GROUP_SECTIONS: GroupSectionConfig[] = [
     ),
   },
   {
-    id: 'members',
-    label: 'Members',
-    icon: Users,
+    id: 'settings',
+    label: 'Settings',
+    icon: Settings,
     render: () => <MembersSection />,
     getBadge: (context) => {
       const pendingCount = context.isOwner

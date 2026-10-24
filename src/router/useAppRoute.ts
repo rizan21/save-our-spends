@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { GroupTab } from '../hooks/useSwipeableTabs';
+import { GROUP_TABS, type GroupTab } from '../hooks/useSwipeableTabs';
 
 export type AppRoute =
   | { page: 'groups' }
@@ -10,7 +10,12 @@ function parseHash(hash: string): AppRoute {
   const params = new URLSearchParams(hash.slice(1));
   const groupId = params.get('group');
   if (groupId) {
-    const tab = (params.get('tab') as GroupTab) || undefined;
+    const rawTab = params.get('tab');
+    const normalizedTab = rawTab === 'members' ? 'settings' : rawTab;
+    const tab =
+      normalizedTab && (GROUP_TABS as readonly string[]).includes(normalizedTab)
+        ? (normalizedTab as GroupTab)
+        : undefined;
     return { page: 'group', groupId, tab };
   }
   return { page: 'groups' };

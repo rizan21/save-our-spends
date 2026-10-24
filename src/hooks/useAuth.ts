@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { GoogleUser } from '../types/google';
 import { googleAuthService } from '../services/googleAuth';
 
@@ -7,6 +7,24 @@ export function useAuth() {
   const [isDemoMode, setIsDemoMode] = useState<boolean>(() => googleAuthService.getIsDemoMode());
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (
+        event.key === 'spread_spends_user' ||
+        event.key === 'spread_spends_token' ||
+        (event.key && event.key.startsWith('spread_spends_user_name_'))
+      ) {
+        googleAuthService.reloadFromStorage();
+        setUser(googleAuthService.getCurrentUser());
+        setIsDemoMode(googleAuthService.getIsDemoMode());
+      }
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleStorage);
+      return () => window.removeEventListener('storage', handleStorage);
+    }
+  }, []);
 
 
   const login = useCallback(async () => {
@@ -37,8 +55,8 @@ export function useAuth() {
     setUser(googleAuthService.getCurrentUser());
   }, []);
 
-  const setCustomClientId = useCallback((clientId: string) => {
-    googleAuthService.setClientId(clientId);
+  const setCustomClientId = useCallback((_clientId: string) => {
+    // No-op: Client ID is configured via VITE_GOOGLE_CLIENT_ID
   }, []);
 
   const getCustomClientId = useCallback(() => {

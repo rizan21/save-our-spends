@@ -125,8 +125,8 @@ export class GroupService {
     for (const m of members) {
       const emailLower = m.email.toLowerCase();
       // Sync current user's Google picture if available
-      if (currentUser && currentUser.email.toLowerCase() === emailLower && currentUser.picture) {
-        if (m.picture !== currentUser.picture) {
+      if (currentUser && currentUser.email.toLowerCase() === emailLower) {
+        if (currentUser.picture && m.picture !== currentUser.picture) {
           m.picture = currentUser.picture;
           memberRowsNeedUpdate = true;
         }

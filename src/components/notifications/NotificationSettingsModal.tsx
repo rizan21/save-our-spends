@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
-import { Bell, BellOff, RefreshCw, Send, CheckCircle2, AlertTriangle, ShieldCheck, Zap } from 'lucide-react';
+import { Bell, BellOff, RefreshCw, CheckCircle2, AlertTriangle } from 'lucide-react';
 
 export interface NotificationSettingsModalProps {
   isOpen: boolean;
@@ -20,18 +20,14 @@ export interface NotificationSettingsModalProps {
 export function NotificationSettingsModal({
   isOpen,
   onClose,
-  groupId,
-  groupName,
   isPushEnabled,
   notificationPermission,
   isPushSupported,
   lastSyncTime,
   onEnableNotifications,
-  onSendTestNotification,
   onManualSync,
 }: NotificationSettingsModalProps) {
   const [isSubscribing, setIsSubscribing] = useState(false);
-  const [isSendingTest, setIsSendingTest] = useState(false);
   const [testResult, setTestResult] = useState<string | null>(null);
 
   const handleEnable = async () => {
@@ -51,21 +47,6 @@ export function NotificationSettingsModal({
     }
   };
 
-  const handleSendTest = async () => {
-    setIsSendingTest(true);
-    setTestResult(null);
-    try {
-      const ok = await onSendTestNotification();
-      if (ok) {
-        setTestResult('Test notification sent! Look for the system banner on your desktop or phone.');
-      } else {
-        setTestResult('Failed to dispatch test notification. Ensure device is registered and online.');
-      }
-    } finally {
-      setIsSendingTest(false);
-    }
-  };
-
   const handleSyncNow = () => {
     onManualSync();
     setTestResult('Sheet synchronized with latest data!');
@@ -77,8 +58,8 @@ export function NotificationSettingsModal({
   const isDenied = notificationPermission === 'denied';
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Real-Time Sync & Notifications">
-      <div className="space-y-5 text-sm">
+    <Modal isOpen={isOpen} onClose={onClose} title="Notifications & Sync">
+      <div className="space-y-4 text-sm">
         {/* Status Badge */}
         <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-850 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -105,13 +86,6 @@ export function NotificationSettingsModal({
                   ? 'Notifications Blocked'
                   : 'Notifications Off'}
               </h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                {isPushEnabled
-                  ? `Receiving instant alerts for "${groupName}"`
-                  : isDenied
-                  ? 'Blocked by browser permissions'
-                  : 'Enable to receive alerts when expenses change'}
-              </p>
             </div>
           </div>
 
@@ -141,22 +115,6 @@ export function NotificationSettingsModal({
           </div>
         )}
 
-        {/* Feature Highlights */}
-        <div className="space-y-2.5">
-          <div className="flex items-start gap-2.5 text-xs text-slate-600 dark:text-slate-400">
-            <Zap className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-            <span>
-              <strong className="text-slate-800 dark:text-slate-200">0ms Local Sync:</strong> Open tabs automatically synchronize without reloading whenever you or another member adds, edits, or deletes an expense.
-            </span>
-          </div>
-          <div className="flex items-start gap-2.5 text-xs text-slate-600 dark:text-slate-400">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-            <span>
-              <strong className="text-slate-800 dark:text-slate-200">Zero Financial Data on Relay:</strong> Push notifications are delivered via Cloudflare Workers without storing any financial figures or sheet tokens.
-            </span>
-          </div>
-        </div>
-
         {/* Result Feedback Banner */}
         {testResult && (
           <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center gap-2 text-xs text-emerald-800 dark:text-emerald-300">
@@ -178,42 +136,18 @@ export function NotificationSettingsModal({
             </Button>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <Button
-              variant="outline"
-              onClick={handleSendTest}
-              isLoading={isSendingTest}
-              disabled={!isPushSupported}
-              className="justify-center gap-2 text-xs"
-            >
-              <Send className="w-3.5 h-3.5" />
-              <span>Send Test Notification</span>
-            </Button>
-
-            <Button
-              variant="outline"
-              onClick={handleSyncNow}
-              className="justify-center gap-2 text-xs"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>Sync Sheet Now</span>
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            onClick={handleSyncNow}
+            className="w-full justify-center gap-2 text-xs"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Sync Sheet Now</span>
+          </Button>
 
           <p className="text-[11px] text-center text-slate-400 dark:text-slate-500">
             Last sheet sync: {lastSyncTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
           </p>
-
-          {groupId && (
-            <a
-              href={`https://spread-spends-worker.sos-bg.workers.dev/api/debug?groupId=${encodeURIComponent(groupId)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[11px] text-center text-slate-400 dark:text-slate-500 underline hover:text-slate-600 dark:hover:text-slate-300"
-            >
-              Verify subscriptions in KV (debug)
-            </a>
-          )}
         </div>
       </div>
     </Modal>

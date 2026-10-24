@@ -27,12 +27,6 @@ export function PendingApprovalsList({
         <span>Pending Invitations ({activePending.length})</span>
       </div>
 
-      <p className="text-xs text-amber-800 dark:text-amber-200/90 leading-relaxed">
-        {isOwner
-          ? 'As the Google Sheet owner, only you can grant edit permissions on this spreadsheet in Google Drive.'
-          : 'Invitations proposed by members are awaiting approval from the Google Sheet owner before edit permissions can be granted.'}
-      </p>
-
       <div className="divide-y divide-amber-200/60 dark:divide-amber-900/40 pt-1">
         {activePending.map((inv) => (
           <div

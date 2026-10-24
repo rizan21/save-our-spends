@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { Modal } from '../../../components/common/Modal';
 import { Button } from '../../../components/common/Button';
-import { UserAvatar } from '../../../components/common/UserAvatar';
 import type { Member } from '../../../types/group';
 import type { PaymentMethod, Settlement } from '../../../types/transaction';
 import type { SimplifiedDebt } from '../../../types/balance';
 import { computeSettlementDiff } from '../../../core/historyTracker';
 import { combineDateAndTime, extractTimeFromTimestamp } from '../../../core/dateTime';
-import { ArrowRight, Calendar, Clock, CreditCard, DollarSign, FileText } from 'lucide-react';
+import { Calendar, Clock, CreditCard, DollarSign, FileText } from 'lucide-react';
 
 export interface SettleUpModalProps {
   isOpen: boolean;
@@ -50,7 +49,7 @@ export function SettleUpModal({
   const [amountStr, setAmountStr] = useState(() => (initialSettlement ? initialSettlement.amount.toString() : prefillDebt ? prefillDebt.amount.toString() : ''));
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(() => initialSettlement?.paymentMethod || 'UPI');
   const [date, setDate] = useState(() => initialSettlement?.date || new Date().toISOString().split('T')[0]);
-  const [time, setTime] = useState(() => extractTimeFromTimestamp(initialSettlement?.createdAt));
+  const [time, setTime] = useState(() => extractTimeFromTimestamp(initialSettlement?.createdAt).slice(0, 5));
   const [isTimeCustomized, setIsTimeCustomized] = useState(false);
   const [notes, setNotes] = useState(() => initialSettlement?.notes || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -150,19 +149,11 @@ export function SettleUpModal({
     }
   };
 
-  const currentPayer = members.find((m) => m.email === payerEmail);
-  const currentPayee = members.find((m) => m.email === payeeEmail);
-
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
       title={initialSettlement ? 'Edit Settlement Payment' : 'Record a Payment'}
-      description={
-        initialSettlement
-          ? 'Modify details and record the change history for this settlement payment.'
-          : 'Record money paid between members to clear debts.'
-      }
       maxWidth="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -208,36 +199,6 @@ export function SettleUpModal({
             </select>
           </div>
         </div>
-
-        {/* Payer and Payee Summary Preview with Avatars */}
-        {currentPayer && currentPayee && (
-          <div className="p-2.5 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 rounded-xl flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <UserAvatar name={currentPayer.name} picture={currentPayer.picture} size="sm" />
-              <div className="min-w-0">
-                <div className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">
-                  {currentPayer.email === currentUserEmail ? 'You' : currentPayer.name}
-                </div>
-                <div className="text-[10px] text-slate-400 dark:text-slate-500">Payer</div>
-              </div>
-            </div>
-
-            <div className="text-slate-400 dark:text-slate-500 text-xs font-medium shrink-0 flex items-center gap-1">
-              <span>pays</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </div>
-
-            <div className="flex items-center gap-2 min-w-0 text-right justify-end">
-              <div className="min-w-0">
-                <div className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">
-                  {currentPayee.email === currentUserEmail ? 'You' : currentPayee.name}
-                </div>
-                <div className="text-[10px] text-slate-400 dark:text-slate-500">Recipient</div>
-              </div>
-              <UserAvatar name={currentPayee.name} picture={currentPayee.picture} size="sm" />
-            </div>
-          </div>
-        )}
 
         {/* Amount */}
         <div>
@@ -303,7 +264,6 @@ export function SettleUpModal({
             </label>
             <input
               type="time"
-              step="1"
               value={time}
               onChange={(e) => {
                 setTime(e.target.value);
@@ -335,7 +295,7 @@ export function SettleUpModal({
             Cancel
           </Button>
           <Button type="submit" isLoading={isSubmitting}>
-            {initialSettlement ? 'Save Changes' : 'Record Payment in Sheet'}
+            Save
           </Button>
         </div>
       </form>

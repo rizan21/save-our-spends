@@ -1,6 +1,5 @@
 import type { GoogleOAuthToken, GoogleUser } from '../types/google';
 
-const CLIENT_ID_STORAGE_KEY = 'spread_spends_google_client_id';
 const TOKEN_STORAGE_KEY = 'spread_spends_oauth_token';
 const USER_STORAGE_KEY = 'spread_spends_auth_user';
 const DEMO_MODE_STORAGE_KEY = 'spread_spends_demo_mode';
@@ -23,20 +22,33 @@ export class GoogleAuthService {
 
   constructor() {
     this.loadState();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', (event) => {
+        if (
+          event.key === USER_STORAGE_KEY ||
+          event.key === TOKEN_STORAGE_KEY ||
+          (event.key && event.key.startsWith('spread_spends_user_name_'))
+        ) {
+          this.loadState();
+        }
+      });
+    }
+  }
+
+  public reloadFromStorage(): void {
+    this.loadState();
   }
 
   private loadState() {
     if (typeof localStorage === 'undefined') return;
 
     try {
-      const demoVal = localStorage.getItem(DEMO_MODE_STORAGE_KEY);
-      const envDemo = import.meta.env.VITE_DEMO_MODE;
-      if (envDemo !== undefined) {
-        this.isDemoMode = envDemo === 'true';
-      } else if (demoVal !== null) {
-        this.isDemoMode = demoVal === 'true';
+      const envDemo = typeof import.meta !== 'undefined' ? import.meta.env?.VITE_DEMO_MODE : undefined;
+      if (envDemo === 'true') {
+        this.isDemoMode = true;
       } else {
         this.isDemoMode = false;
+        localStorage.removeItem(DEMO_MODE_STORAGE_KEY);
       }
 
       const savedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
@@ -76,17 +88,11 @@ export class GoogleAuthService {
   }
 
   public getClientId(): string {
-    if (typeof localStorage !== 'undefined') {
-      const customId = localStorage.getItem(CLIENT_ID_STORAGE_KEY);
-      if (customId) return customId;
-    }
-    return import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+    return (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GOOGLE_CLIENT_ID) || '';
   }
 
-  public setClientId(clientId: string) {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.setItem(CLIENT_ID_STORAGE_KEY, clientId);
-    }
+  public setClientId(_clientId: string) {
+    // No-op: Client ID is configured strictly via VITE_GOOGLE_CLIENT_ID environment variable
   }
 
   public getIsDemoMode(): boolean {
@@ -134,7 +140,12 @@ export class GoogleAuthService {
   public async initClient(): Promise<void> {
     if (typeof window === 'undefined') return;
     const clientId = this.getClientId();
-    if (!clientId) return;
+    if (!clientId) {
+      if (!this.isDemoMode) {
+        console.error('[Spread-Spends] Missing VITE_GOOGLE_CLIENT_ID environment variable. Provide VITE_GOOGLE_CLIENT_ID in your .env file.');
+      }
+      return;
+    }
 
     if (window.google?.accounts?.oauth2) {
       this.tokenClient = window.google.accounts.oauth2.initTokenClient({
@@ -149,7 +160,8 @@ export class GoogleAuthService {
    * Initiates Google Sign-In popup
    */
   public async requestLogin(): Promise<GoogleUser> {
-    if (this.isDemoMode) {
+    const isEnvDemo = typeof import.meta !== 'undefined' && import.meta.env?.VITE_DEMO_MODE === 'true';
+    if (this.isDemoMode && isEnvDemo) {
       const demoEmail = 'alice.dev@gmail.com';
       const defaultName = 'Alice Dev (Demo Owner)';
       const customName = this.getSavedCustomName(demoEmail);
@@ -162,9 +174,16 @@ export class GoogleAuthService {
       return this.user;
     }
 
+    // Google Sign-In button was clicked: exit demo mode and use Google OAuth
+    this.isDemoMode = false;
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem(DEMO_MODE_STORAGE_KEY);
+    }
+
     const clientId = this.getClientId();
     if (!clientId) {
-      throw new Error('Google OAuth Client ID is not configured. Please add it in Settings or activate Demo Mode.');
+      console.error('[Spread-Spends] Missing VITE_GOOGLE_CLIENT_ID environment variable. Provide VITE_GOOGLE_CLIENT_ID in your .env file.');
+      throw new Error('Missing VITE_GOOGLE_CLIENT_ID environment variable.');
     }
 
     if (!this.tokenClient) {
@@ -257,7 +276,11 @@ export class GoogleAuthService {
     };
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(this.user));
-      localStorage.setItem(`spread_spends_user_name_${this.user.email}`, trimmed);
+      if (this.user.googleName && trimmed === this.user.googleName) {
+        localStorage.removeItem(`spread_spends_user_name_${this.user.email}`);
+      } else {
+        localStorage.setItem(`spread_spends_user_name_${this.user.email}`, trimmed);
+      }
     }
     return this.user;
   }
@@ -284,9 +307,11 @@ export class GoogleAuthService {
   public logout() {
     this.token = null;
     this.user = null;
+    this.isDemoMode = false;
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem(TOKEN_STORAGE_KEY);
       localStorage.removeItem(USER_STORAGE_KEY);
+      localStorage.removeItem(DEMO_MODE_STORAGE_KEY);
     }
   }
 }

@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { Plus, Search, FolderPlus, RefreshCw, FolderDown, HandCoins, TrendingUp, TrendingDown, Table, LogIn, Bell, BellOff } from 'lucide-react';
+import { Plus, Search, FolderPlus, RefreshCw, FolderDown, TrendingUp, TrendingDown, Table, LogIn, Bell, BellOff } from 'lucide-react';
 import { GroupCard } from './GroupCard';
 import { Button } from '../common/Button';
-import { UserAvatar } from '../common/UserAvatar';
 import type { GoogleDriveFile } from '../../types/google';
 import type { ActiveSettlementItem } from '../../hooks/useHomeSummary';
 import type { SimplifiedDebt } from '../../types/balance';
@@ -34,7 +33,6 @@ export function GroupList({
   isLoading,
   isRefetching,
   groupBalances,
-  activeSettlements = [],
   totalYouAreOwed = 0,
   totalYouOwe = 0,
   currency = 'USD',
@@ -43,7 +41,6 @@ export function GroupList({
   onSelectGroup,
   onOpenCreateGroup,
   onOpenImportModal,
-  onSettleDebt,
   onRefresh,
   onLogin,
 }: GroupListProps) {
@@ -96,42 +93,35 @@ export function GroupList({
   return (
     <div className="space-y-6">
       {/* Top Banner & Primary Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Your Groups</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            Spreadsheets detected in your Google Drive or shared with your Google account.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight truncate">
+          Your Groups
+        </h2>
+        <div className="flex items-center gap-1.5 shrink-0">
           <Button
             variant="outline"
             size="sm"
             onClick={onRefresh}
             isLoading={isRefetching}
-            title="Scan Google Drive for new groups"
+            className="p-2"
+            title="Refresh groups"
+            aria-label="Refresh groups"
           >
             <RefreshCw className={`w-4 h-4 ${isRefetching ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">Refresh</span>
           </Button>
           {onOpenNotifications && (
             <Button
               variant="outline"
               size="sm"
               onClick={onOpenNotifications}
-              className="gap-1.5"
-              title={isPushEnabled ? 'Notifications active across your groups' : 'Configure push notifications & real-time sync'}
+              className="p-2"
+              title="Notifications & Sync"
+              aria-label="Notifications & Sync"
             >
               {isPushEnabled ? (
-                <>
-                  <Bell className="w-4 h-4 text-emerald-600 dark:text-emerald-400 fill-emerald-500/20" />
-                  <span className="hidden sm:inline">Sync On</span>
-                </>
+                <Bell className="w-4 h-4 text-emerald-600 dark:text-emerald-400 fill-emerald-500/20" />
               ) : (
-                <>
-                  <BellOff className="w-4 h-4 text-slate-400" />
-                  <span className="hidden sm:inline">Notify</span>
-                </>
+                <BellOff className="w-4 h-4 text-slate-400" />
               )}
             </Button>
           )}
@@ -140,126 +130,49 @@ export function GroupList({
               variant="outline"
               size="sm"
               onClick={onOpenImportModal}
-              className="gap-1.5"
-              title="Open a shared group via Google Drive Picker or link"
+              className="p-2"
+              title="Open shared group"
+              aria-label="Open shared group"
             >
               <FolderDown className="w-4 h-4" />
-              <span>Open Shared</span>
             </Button>
           )}
-          <Button size="sm" onClick={onOpenCreateGroup} className="gap-1.5 shadow-sm">
+          <Button size="sm" onClick={onOpenCreateGroup} className="gap-1 shadow-sm px-3">
             <Plus className="w-4 h-4" />
-            <span>New Group</span>
+            <span>New</span>
           </Button>
         </div>
       </div>
 
       {/* Overall Financial Balance Overview */}
       {(totalYouAreOwed > 0 || totalYouOwe > 0) && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="p-4 bg-white dark:bg-slate-900 border border-emerald-100 dark:border-emerald-950/80 rounded-2xl shadow-xs flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-              <TrendingUp className="w-5 h-5" />
+        <div className="grid grid-cols-2 gap-3">
+          <div className="p-3.5 bg-white dark:bg-slate-900 border border-emerald-100 dark:border-emerald-950/80 rounded-2xl shadow-xs flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <TrendingUp className="w-4 h-4" />
             </div>
-            <div>
-              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-                Total You Are Owed
+            <div className="min-w-0">
+              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block truncate">
+                Total Owed
               </span>
-              <span className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
+              <span className="text-base sm:text-xl font-extrabold text-emerald-600 dark:text-emerald-400 truncate block">
                 +{formatCurrency(totalYouAreOwed, currency)}
               </span>
             </div>
           </div>
 
-          <div className="p-4 bg-white dark:bg-slate-900 border border-rose-100 dark:border-rose-950/80 rounded-2xl shadow-xs flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-500 dark:text-rose-400 flex items-center justify-center shrink-0">
-              <TrendingDown className="w-5 h-5" />
+          <div className="p-3.5 bg-white dark:bg-slate-900 border border-rose-100 dark:border-rose-950/80 rounded-2xl shadow-xs flex items-center gap-3 min-w-0">
+            <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-500 dark:text-rose-400 flex items-center justify-center shrink-0">
+              <TrendingDown className="w-4 h-4" />
             </div>
-            <div>
-              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
-                Total You Owe
+            <div className="min-w-0">
+              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block truncate">
+                Total Owe
               </span>
-              <span className="text-xl font-extrabold text-rose-600 dark:text-rose-400">
+              <span className="text-base sm:text-xl font-extrabold text-rose-600 dark:text-rose-400 truncate block">
                 -{formatCurrency(totalYouOwe, currency)}
               </span>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Active Settlements Section */}
-      {activeSettlements.length > 0 && (
-        <div className="bg-white dark:bg-slate-900 border border-emerald-200/90 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-3.5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/60 flex items-center justify-center shrink-0">
-                <HandCoins className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="font-bold text-slate-900 dark:text-white text-sm">Active Settlements</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Outstanding balances awaiting payment across your groups.
-                </p>
-              </div>
-            </div>
-            <span className="px-2.5 py-0.5 bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-bold text-xs rounded-full">
-              {activeSettlements.length} active
-            </span>
-          </div>
-
-          <div className="space-y-2">
-            {activeSettlements.map((item, idx) => {
-              const isPayer = item.debt.fromEmail === currentUserEmail;
-              const isPayee = item.debt.toEmail === currentUserEmail;
-
-              return (
-                <div
-                  key={`${item.groupId}-${idx}`}
-                  className="p-3.5 bg-slate-50 dark:bg-slate-850 border border-slate-200/70 dark:border-slate-800 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 hover:border-emerald-200 dark:hover:border-emerald-800 transition-all"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span
-                      className={`w-2.5 h-2.5 rounded-full shrink-0 ${
-                        isPayee ? 'bg-emerald-500' : 'bg-rose-500'
-                      }`}
-                    />
-                    <div className="flex items-center gap-2 text-xs flex-wrap">
-                      <div className="flex items-center gap-1 font-bold text-slate-900 dark:text-white">
-                        <UserAvatar name={item.debt.fromName} picture={item.fromPicture} size="xs" />
-                        <span>{isPayer ? 'You' : item.debt.fromName}</span>
-                      </div>
-                      <span className="text-slate-400 dark:text-slate-500">owes</span>
-                      <div className="flex items-center gap-1 font-bold text-slate-900 dark:text-white">
-                        <UserAvatar name={item.debt.toName} picture={item.toPicture} size="xs" />
-                        <span>{isPayee ? 'you' : item.debt.toName}</span>
-                      </div>
-                      <span className="text-slate-300 dark:text-slate-600 mx-1">•</span>
-                      <span className="text-slate-500 dark:text-slate-400 font-semibold">{item.groupName}</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
-                    <span
-                      className={`text-sm font-extrabold ${
-                        isPayee ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
-                      }`}
-                    >
-                      {formatCurrency(item.debt.amount, item.debt.currency)}
-                    </span>
-                    {onSettleDebt && (
-                      <Button
-                        size="sm"
-                        onClick={() => onSettleDebt(item.groupId, item.debt)}
-                        className="py-1 px-3 text-xs gap-1.5 shadow-xs"
-                      >
-                        <HandCoins className="w-3.5 h-3.5" />
-                        <span>Settle</span>
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
           </div>
         </div>
       )}

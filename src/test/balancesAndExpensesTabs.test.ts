@@ -119,77 +119,35 @@ describe('Balances and Expenses Tab UI Refactoring', () => {
     expect(html).not.toContain('Active Settlements');
   });
 
-  test('BalancesSummary card points arrow right, removes hints, removes paid/share values, and opens clean popup without balance summary or total group spendings or all members label', () => {
-    // 1. Initial closed card state
+  test('BalancesSummary renders all member balances inline without popup modal or paid/share values', () => {
     const cardHtml = renderToStaticMarkup(
       React.createElement(BalancesSummary, {
         summary: mockFinancialSummary,
         currentUserEmail: 'alice@test.com',
         members,
         currency: 'USD',
-        isModalOpen: false,
       })
     );
 
-    // Card contains Member Balances title and right chevron
+    // Card contains Member Balances title and all members inline
     expect(cardHtml).toContain('Member Balances');
-    expect(cardHtml).toContain('lucide-chevron-right');
+    expect(cardHtml).not.toContain('role="dialog"');
+    expect(cardHtml).not.toContain('lucide-chevron-right');
 
-    // Shows user's balance and net status
+    // Shows all members with net positions
+    expect(cardHtml).toContain('Alice');
     expect(cardHtml).toContain('(You)');
-    expect(cardHtml).toContain('You get back');
     expect(cardHtml).toContain('+$50.00');
+    expect(cardHtml).toContain('Bob');
+    expect(cardHtml).toContain('-$25.00');
+    expect(cardHtml).toContain('Charlie');
 
-    // No text hints like (tap to see all) or (click title or tap ...)
-    expect(cardHtml).not.toContain('tap to see all');
-    expect(cardHtml).not.toContain('Click title or tap');
-
-    // No paid/share values under user names
+    // No paid/share values or redundant labels
     expect(cardHtml).not.toContain('Paid $');
     expect(cardHtml).not.toContain('Share $');
-
-    // No total spent on the member balances card
     expect(cardHtml).not.toContain('Total Spent');
-
-    // 2. Opened modal state: clean member balances popup
-    const modalHtml = renderToStaticMarkup(
-      React.createElement(BalancesSummary, {
-        summary: mockFinancialSummary,
-        currentUserEmail: 'alice@test.com',
-        members,
-        currency: 'USD',
-        isModalOpen: true,
-      })
-    );
-
-    // Modal is rendered with dialog semantics
-    expect(modalHtml).toContain('role="dialog"');
-    expect(modalHtml).toContain('Member Balances');
-
-    // Removed: cross button from header
-    expect(modalHtml).not.toContain('aria-label="Close modal"');
-    expect(modalHtml).not.toContain('lucide-x');
-    // Removed: balance summary banner
-    expect(modalHtml).not.toContain('Your Balance Summary');
-    // Removed: total group spendings in popup
-    expect(modalHtml).not.toContain('Total Group Spending');
-    // Removed: all members label
-    expect(modalHtml).not.toContain('All Members');
-
-    // Shows member list with net positions
-    expect(modalHtml).toContain('Alice');
-    expect(modalHtml).toContain('(You)');
-    expect(modalHtml).toContain('+$50.00');
-    expect(modalHtml).toContain('You get back');
-    expect(modalHtml).toContain('Bob');
-    expect(modalHtml).toContain('-$25.00');
-    expect(modalHtml).toContain('Owes');
-    expect(modalHtml).toContain('Charlie');
-    expect(modalHtml).toContain('Done');
-
-    // No paid/share values under names in modal either
-    expect(modalHtml).not.toContain('Paid $');
-    expect(modalHtml).not.toContain('Share $');
+    expect(cardHtml).not.toContain('You get back');
+    expect(cardHtml).not.toContain('You owe');
   });
 
   test('BalancesSummary correctly displays when user owes money', () => {
@@ -200,17 +158,15 @@ describe('Balances and Expenses Tab UI Refactoring', () => {
         currentUserEmail: 'bob@test.com',
         members,
         currency: 'USD',
-        isModalOpen: true,
       })
     );
 
     expect(html).toContain('Member Balances');
     expect(html).toContain('(You)');
-    expect(html).toContain('You owe');
     expect(html).toContain('-$25.00');
   });
 
-  test('BalancesSummary displays settled up when balance is zero', () => {
+  test('BalancesSummary displays settled when balance is zero', () => {
     const settledSummary: GroupFinancialSummary = {
       totalSpending: 0,
       currency: 'USD',
@@ -232,12 +188,10 @@ describe('Balances and Expenses Tab UI Refactoring', () => {
         currentUserEmail: 'alice@test.com',
         members,
         currency: 'USD',
-        isModalOpen: false,
       })
     );
 
     expect(html).toContain('Member Balances');
     expect(html).toContain('Settled');
-    expect(html).toContain('All settled up');
   });
 });

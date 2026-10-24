@@ -89,7 +89,7 @@ describe('Modular Page & Sub-Page Architecture', () => {
 
   test('GROUP_SECTIONS registry declares all 4 primary sub-page tabs with render handlers', () => {
     const sectionIds = GROUP_SECTIONS.map((s) => s.id);
-    expect(sectionIds).toEqual(['overview', 'expenses', 'balances', 'members']);
+    expect(sectionIds).toEqual(['overview', 'expenses', 'balances', 'settings']);
 
     for (const section of GROUP_SECTIONS) {
       expect(section.id).toBeDefined();
@@ -99,7 +99,7 @@ describe('Modular Page & Sub-Page Architecture', () => {
     }
   });
 
-  test('SummarySection renders group overview, stats, and description correctly', () => {
+  test('SummarySection renders category spending chart with average expense in center', () => {
     const html = renderToStaticMarkup(
       React.createElement(SummarySection, {
         group: mockGroup,
@@ -111,10 +111,10 @@ describe('Modular Page & Sub-Page Architecture', () => {
       })
     );
 
-    expect(html).toContain('Group Overview');
-    expect(html).toContain('Total Spending');
+    expect(html).toContain('Spending by Category');
     expect(html).toContain('$90.00');
-    expect(html).toContain('Gas station refill');
+    expect(html).toContain('Avg $90.00');
+    expect(html).toContain('Transport');
   });
 
   test('BalancesSection renders member balances and spending consumption breakdown', () => {
@@ -147,7 +147,7 @@ describe('Modular Page & Sub-Page Architecture', () => {
 
     expect(html).toContain('Suggested Settlements');
     expect(html).toContain('Bob');
-    expect(html).toContain('owes');
+    expect(html).not.toContain('owes');
     expect(html).toContain('$45.00');
     expect(html).toContain('Settle');
   });

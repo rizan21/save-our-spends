@@ -1,4 +1,4 @@
-import { UserPlus, Shield, Pencil } from 'lucide-react';
+import { UserPlus, Pencil } from 'lucide-react';
 import { Button } from '../../../components/common/Button';
 import { Badge } from '../../../components/common/Badge';
 import { UserAvatar } from '../../../components/common/UserAvatar';
@@ -9,6 +9,7 @@ export interface MemberListProps {
   members: Member[];
   pendingInvites: PendingInvite[];
   currentUserEmail: string;
+  currentUserName?: string;
   currentUserPicture?: string;
   isOwner: boolean;
   onOpenInviteModal: () => void;
@@ -21,6 +22,7 @@ export function MemberList({
   members,
   pendingInvites,
   currentUserEmail,
+  currentUserName,
   currentUserPicture,
   isOwner,
   onOpenInviteModal,
@@ -41,12 +43,7 @@ export function MemberList({
       {/* Active Members Card */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs space-y-4">
         <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold text-slate-900 dark:text-white text-sm">Active Members ({members.length})</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              People with edit permissions on this group Google Sheet.
-            </p>
-          </div>
+          <h3 className="font-semibold text-slate-900 dark:text-white text-sm">Active Members ({members.length})</h3>
           <Button size="sm" variant="outline" onClick={onOpenInviteModal} className="gap-1.5">
             <UserPlus className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>Invite</span>
@@ -58,14 +55,15 @@ export function MemberList({
             const isMe = m.email === currentUserEmail;
             const isMemberOwner = m.role === 'OWNER';
             const memberPic = isMe ? (currentUserPicture || m.picture) : m.picture;
+            const memberName = isMe && currentUserName ? currentUserName : (m.name || m.email);
 
             return (
               <div key={m.email} className="py-3 flex items-center justify-between text-xs sm:text-sm">
                 <div className="flex items-center gap-3">
-                  <UserAvatar name={m.name || m.email} picture={memberPic} size="md" />
+                  <UserAvatar name={memberName} picture={memberPic} size="md" />
                   <div>
                     <div className="font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 flex-wrap">
-                      <span>{m.name || m.email}</span>
+                      <span>{memberName}</span>
                       {isMe && (
                         <span className="text-[10px] text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded font-bold">
                           YOU
@@ -89,12 +87,8 @@ export function MemberList({
 
                 <div>
                   {isMemberOwner ? (
-                    <Badge variant="emerald" className="gap-1 font-semibold">
-                      <Shield className="w-3 h-3" /> Group Owner
-                    </Badge>
-                  ) : (
-                    <Badge variant="slate">Member</Badge>
-                  )}
+                    <Badge variant="emerald">Owner</Badge>
+                  ) : null}
                 </div>
               </div>
             );

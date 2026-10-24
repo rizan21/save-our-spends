@@ -54,12 +54,7 @@ export function MemberSpendings({
           <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center">
             <ArrowLeftRight className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           </div>
-          <div>
-            <h3 className="font-semibold text-slate-900 dark:text-white text-sm">Spending & Consumption</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              How much each member paid out of pocket versus consumed in expenses.
-            </p>
-          </div>
+          <h3 className="font-semibold text-slate-900 dark:text-white text-sm">Spending & Consumption</h3>
         </div>
 
         {/* Legend */}
@@ -107,8 +102,7 @@ export function MemberSpendings({
                 <div className="space-y-2 pl-9">
                   {/* Paid Bar */}
                   <div className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-500 dark:text-slate-400">Paid</span>
+                    <div className="flex items-center justify-end text-xs">
                       <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(paid, currency)}</span>
                     </div>
                     <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
@@ -121,8 +115,7 @@ export function MemberSpendings({
 
                   {/* Consumed Bar */}
                   <div className="space-y-1">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-slate-500 dark:text-slate-400">Consumed</span>
+                    <div className="flex items-center justify-end text-xs">
                       <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(consumed, currency)}</span>
                     </div>
                     <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">

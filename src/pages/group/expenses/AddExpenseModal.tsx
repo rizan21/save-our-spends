@@ -58,13 +58,12 @@ type Step = 1 | 2 | 3;
 interface StepDef {
   step: Step;
   title: string;
-  subtitle: string;
 }
 
 const STEPS: StepDef[] = [
-  { step: 1, title: 'Amount', subtitle: 'Expense details' },
-  { step: 2, title: 'Who Paid', subtitle: 'Payer amounts' },
-  { step: 3, title: 'Who Owes', subtitle: 'Split method' },
+  { step: 1, title: 'Amount' },
+  { step: 2, title: 'Who Paid' },
+  { step: 3, title: 'Who Owes' },
 ];
 
 function SplitMemberRow({
@@ -109,10 +108,12 @@ export function AddExpenseModal({
   const [description, setDescription] = useState(() => initialExpense?.description || '');
   const [amountStr, setAmountStr] = useState(() => (initialExpense ? initialExpense.amount.toString() : ''));
   const [category, setCategory] = useState<ExpenseCategory>(() => initialExpense?.category || 'food');
+  const [isCategoryPopoverOpen, setIsCategoryPopoverOpen] = useState(false);
   const [date, setDate] = useState(() => initialExpense?.date || new Date().toISOString().split('T')[0]);
-  const [time, setTime] = useState(() => extractTimeFromTimestamp(initialExpense?.createdAt));
+  const [time, setTime] = useState(() => extractTimeFromTimestamp(initialExpense?.createdAt).slice(0, 5));
   const [isTimeCustomized, setIsTimeCustomized] = useState(false);
   const [notes, setNotes] = useState(() => initialExpense?.notes || '');
+  const [showNotes, setShowNotes] = useState(() => Boolean(initialExpense?.notes));
 
   // Default payer fallback
   const defaultPayerEmail = useMemo(() => {
@@ -305,21 +306,6 @@ export function AddExpenseModal({
       return acc + (isNaN(s) || s < 0 ? 0 : s);
     }, 0);
   }, [members, shareInputs]);
-
-  // Net balance impact preview for step 3
-  const balancePreview = useMemo(() => {
-    return members.map((m) => {
-      const paid = payerValidation.paidBy[m.email] || 0;
-      const owed = splitResult.splits[m.email] || 0;
-      const net = roundToCents(paid - owed);
-      return {
-        member: m,
-        paid,
-        owed,
-        net,
-      };
-    });
-  }, [members, payerValidation.paidBy, splitResult.splits]);
 
   // Payer summary description
   const payerSummary = useMemo(() => {
@@ -662,9 +648,6 @@ export function AddExpenseModal({
                       >
                         {s.title}
                       </div>
-                      <div className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight hidden sm:block">
-                        {s.subtitle}
-                      </div>
                     </div>
                   </button>
 
@@ -724,22 +707,54 @@ export function AddExpenseModal({
               </div>
             </div>
 
-            {/* Description */}
+            {/* Name & Category Picker */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1">
-                Description <span className="text-rose-500">*</span>
+                Name <span className="text-rose-500">*</span>
               </label>
-              <input
-                type="text"
-                placeholder="What was this for? (e.g. Dinner, Fuel, Groceries)"
-                value={description}
-                onChange={(e) => {
-                  setDescription(e.target.value);
-                  if (stepError) setStepError(null);
-                }}
-                className="w-full px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                required
-              />
+              <div className="relative flex items-center gap-2">
+                <button
+                  type="button"
+                  aria-label="Select category"
+                  onClick={() => setIsCategoryPopoverOpen((prev) => !prev)}
+                  className="shrink-0 p-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:border-emerald-400 transition-colors cursor-pointer"
+                >
+                  <CategoryIcon category={category} size="md" />
+                </button>
+                <input
+                  type="text"
+                  placeholder="What was this for? (e.g. Dinner, Fuel, Groceries)"
+                  value={description}
+                  onChange={(e) => {
+                    setDescription(e.target.value);
+                    if (stepError) setStepError(null);
+                  }}
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  required
+                />
+                {isCategoryPopoverOpen && (
+                  <div className="absolute left-0 top-full mt-2 z-30 p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-lg flex flex-wrap gap-2 w-full">
+                    {CATEGORIES.map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => {
+                          setCategory(cat);
+                          setIsCategoryPopoverOpen(false);
+                        }}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium capitalize transition-all cursor-pointer ${
+                          category === cat
+                            ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 shadow-xs'
+                            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
+                        }`}
+                      >
+                        <CategoryIcon category={cat} size="sm" />
+                        <span>{cat}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Date & Time */}
@@ -768,7 +783,6 @@ export function AddExpenseModal({
                 </label>
                 <input
                   type="time"
-                  step="1"
                   value={time}
                   onChange={(e) => {
                     setTime(e.target.value);
@@ -780,43 +794,32 @@ export function AddExpenseModal({
               </div>
             </div>
 
-            {/* Category Picker */}
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">
-                Category
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {CATEGORIES.map((cat) => (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setCategory(cat)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium capitalize transition-all cursor-pointer ${
-                      category === cat
-                        ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 shadow-xs'
-                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600'
-                    }`}
-                  >
-                    <CategoryIcon category={cat} size="sm" />
-                    <span>{cat}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {/* Optional Notes */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1 flex items-center gap-1">
-                <FileText className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
-                Notes <span className="text-slate-400 dark:text-slate-500 font-normal">(Optional)</span>
-              </label>
-              <input
-                type="text"
-                placeholder="Add receipt details, notes or comments..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
+              {!showNotes ? (
+                <button
+                  type="button"
+                  onClick={() => setShowNotes(true)}
+                  className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>+ Add note</span>
+                </button>
+              ) : (
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1 flex items-center gap-1">
+                    <FileText className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                    Notes
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Add receipt details, notes or comments..."
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Page 1 Actions */}
@@ -825,7 +828,7 @@ export function AddExpenseModal({
                 Cancel
               </Button>
               <Button type="button" variant="primary" onClick={goToStep2} className="gap-2">
-                <span>Next: Who Paid</span>
+                <span>Who Paid</span>
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
@@ -887,64 +890,58 @@ export function AddExpenseModal({
 
             {/* Single Payer View */}
             {!isMultiPayer ? (
-              <div className="space-y-2">
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
-                  Select who paid the full {formatCurrency(totalAmount, defaultCurrency)}:
-                </span>
-                <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
-                  {members.map((m) => {
-                    const isSelected = singlePayerEmail === m.email;
-                    const isMe = m.email === currentUserEmail;
+              <div className="space-y-1.5 max-h-60 overflow-y-auto pr-1">
+                {members.map((m) => {
+                  const isSelected = singlePayerEmail === m.email;
+                  const isMe = m.email === currentUserEmail;
 
-                    return (
-                      <button
-                        key={m.email}
-                        type="button"
-                        onClick={() => {
-                          setSinglePayerEmail(m.email);
-                          if (stepError) setStepError(null);
-                        }}
-                        className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition-all cursor-pointer ${
-                          isSelected
-                            ? 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/30 shadow-xs'
-                            : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850/60 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-800'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <UserAvatar name={m.name || m.email} picture={m.picture} size="sm" />
-                          <div className="min-w-0">
-                            <div className="text-xs font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 truncate">
-                              <span>{m.name || m.email}</span>
-                              {isMe && (
-                                <span className="text-[10px] text-emerald-700 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950 px-1.5 py-0.2 rounded font-bold">
-                                  You
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-[11px] text-slate-400 dark:text-slate-500 truncate">{m.email}</div>
+                  return (
+                    <button
+                      key={m.email}
+                      type="button"
+                      onClick={() => {
+                        setSinglePayerEmail(m.email);
+                        if (stepError) setStepError(null);
+                      }}
+                      className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                        isSelected
+                          ? 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/30 shadow-xs'
+                          : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850/60 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50/50 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <UserAvatar name={m.name || m.email} picture={m.picture} size="sm" />
+                        <div className="min-w-0">
+                          <div className="text-xs font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 truncate">
+                            <span>{m.name || m.email}</span>
+                            {isMe && (
+                              <span className="text-[10px] text-emerald-700 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950 px-1.5 py-0.2 rounded font-bold">
+                                You
+                              </span>
+                            )}
                           </div>
                         </div>
+                      </div>
 
-                        <div className="flex items-center gap-2 shrink-0">
-                          {isSelected && (
-                            <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
-                              Paid {formatCurrency(totalAmount, defaultCurrency)}
-                            </span>
-                          )}
-                          <div
-                            className={`w-5 h-5 rounded-full border flex items-center justify-center ${
-                              isSelected
-                                ? 'border-emerald-600 bg-emerald-600 text-white'
-                                : 'border-slate-300 dark:border-slate-600'
-                            }`}
-                          >
-                            {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
-                          </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {isSelected && (
+                          <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                            Paid {formatCurrency(totalAmount, defaultCurrency)}
+                          </span>
+                        )}
+                        <div
+                          className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                            isSelected
+                              ? 'border-emerald-600 bg-emerald-600 text-white'
+                              : 'border-slate-300 dark:border-slate-600'
+                          }`}
+                        >
+                          {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                         </div>
-                      </button>
-                    );
-                  })}
-                </div>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             ) : (
               /* Multiple Payers View */
@@ -970,13 +967,13 @@ export function AddExpenseModal({
                         Total Paid: {formatCurrency(sumPaid, defaultCurrency)} of{' '}
                         {formatCurrency(totalAmount, defaultCurrency)}
                       </div>
-                      <div className="text-[11px] opacity-90">
-                        {payerValidation.isValid
-                          ? 'Exact match! All payments accounted for.'
-                          : payerRemaining > 0
-                          ? `Remaining to allocate: ${formatCurrency(payerRemaining, defaultCurrency)}`
-                          : `Over-allocated by: ${formatCurrency(Math.abs(payerRemaining), defaultCurrency)}`}
-                      </div>
+                      {!payerValidation.isValid && (
+                        <div className="text-[11px] opacity-90">
+                          {payerRemaining > 0
+                            ? `Remaining to allocate: ${formatCurrency(payerRemaining, defaultCurrency)}`
+                            : `Over-allocated by: ${formatCurrency(Math.abs(payerRemaining), defaultCurrency)}`}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1056,7 +1053,7 @@ export function AddExpenseModal({
                 disabled={!payerValidation.isValid}
                 className="gap-2"
               >
-                <span>Next: Who Owes</span>
+                <span>Who Owes</span>
                 <ArrowRight className="w-4 h-4" />
               </Button>
             </div>
@@ -1091,41 +1088,35 @@ export function AddExpenseModal({
 
             {/* Split Type Tabs */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Split method</label>
-                <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg text-xs font-medium">
-                  {(
-                    [
-                      { type: 'EQUAL', label: 'Equally', icon: Users },
-                      { type: 'EXACT', label: 'Exact', icon: DollarSign },
-                      { type: 'PERCENTAGE', label: 'Percentage', icon: Percent },
-                      { type: 'SHARES', label: 'Shares', icon: Hash },
-                    ] as const
-                  ).map(({ type, label, icon: Icon }) => (
-                    <button
-                      key={type}
-                      type="button"
-                      onClick={() => setSplitType(type)}
-                      className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all cursor-pointer ${
-                        splitType === type
-                          ? 'bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs font-semibold'
-                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-                      }`}
-                    >
-                      <Icon className="w-3 h-3" />
-                      <span>{label}</span>
-                    </button>
-                  ))}
-                </div>
+              <div className="grid grid-cols-4 gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-medium mb-2">
+                {(
+                  [
+                    { type: 'EQUAL', label: 'Equally', icon: Users },
+                    { type: 'EXACT', label: 'Exact', icon: DollarSign },
+                    { type: 'PERCENTAGE', label: 'Percentage', icon: Percent },
+                    { type: 'SHARES', label: 'Shares', icon: Hash },
+                  ] as const
+                ).map(({ type, label, icon: Icon }) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setSplitType(type)}
+                    className={`flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg transition-all cursor-pointer ${
+                      splitType === type
+                        ? 'bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs font-semibold'
+                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    <Icon className="w-3 h-3 shrink-0" />
+                    <span className="truncate">{label}</span>
+                  </button>
+                ))}
               </div>
 
               {/* 1. Equal Split Form */}
               {splitType === 'EQUAL' && (
                 <div className="space-y-2 p-3 bg-slate-50 dark:bg-slate-850/60 border border-slate-200 dark:border-slate-800 rounded-xl">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Select who shares this expense ({includedMembers.length} of {members.length}):
-                    </span>
+                  <div className="flex justify-end mb-1">
                     <button
                       type="button"
                       onClick={handleToggleAllMembers}
@@ -1368,53 +1359,6 @@ export function AddExpenseModal({
                   </div>
                 </div>
               )}
-            </div>
-
-            {/* Net Balance Impact Preview */}
-            <div className="p-3 bg-slate-50 dark:bg-slate-850/60 border border-slate-200/90 dark:border-slate-800 rounded-xl space-y-2">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                Net Impact for this Expense
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-36 overflow-y-auto pr-1">
-                {balancePreview.map(({ member, paid, owed, net }) => {
-                  const isMe = member.email === currentUserEmail;
-
-                  return (
-                    <div
-                      key={member.email}
-                      className="p-2 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700/60 rounded-lg flex items-center justify-between text-xs"
-                    >
-                      <div className="flex items-center gap-2 min-w-0 pr-1">
-                        <UserAvatar name={member.name || member.email} picture={member.picture} size="xs" />
-                        <div className="min-w-0">
-                          <div className="font-semibold text-slate-800 dark:text-slate-100 truncate">
-                            {member.name || member.email} {isMe ? '(You)' : ''}
-                          </div>
-                          <div className="text-[10px] text-slate-400 dark:text-slate-500">
-                            Paid {formatCurrency(paid, defaultCurrency)} • Owes{' '}
-                            {formatCurrency(owed, defaultCurrency)}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="shrink-0 text-right">
-                        {net > 0.005 ? (
-                          <span className="font-bold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded">
-                            +{formatCurrency(net, defaultCurrency)}
-                          </span>
-                        ) : net < -0.005 ? (
-                          <span className="font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 px-1.5 py-0.5 rounded">
-                            -{formatCurrency(Math.abs(net), defaultCurrency)}
-                          </span>
-                        ) : (
-                          <span className="font-medium text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-700/60 px-1.5 py-0.5 rounded">
-                            {formatCurrency(0, defaultCurrency)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
             </div>
 
             {/* Page 3 Actions */}

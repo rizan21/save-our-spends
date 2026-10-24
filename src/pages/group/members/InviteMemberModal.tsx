@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Modal } from '../../../components/common/Modal';
 import { Button } from '../../../components/common/Button';
-import { Mail, ShieldCheck, Clock, AlertCircle } from 'lucide-react';
+import { Mail, AlertCircle } from 'lucide-react';
 import type { Member, PendingInvite } from '../../../types/group';
 
 export interface InviteMemberModalProps {
@@ -68,8 +68,7 @@ export function InviteMemberModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isOwner ? 'Invite Member (Direct Access)' : 'Propose Member Invitation'}
-      description="Add someone to this group by their Google Account email."
+      title="Invite Member"
       maxWidth="md"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -79,34 +78,6 @@ export function InviteMemberModal({
             <span>{error}</span>
           </div>
         )}
-
-        {/* Informational UX Banner */}
-        <div
-          className={`p-3.5 rounded-xl border text-xs leading-relaxed flex items-start gap-2.5 ${
-            isOwner
-              ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/50 text-emerald-800 dark:text-emerald-300'
-              : 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-300'
-          }`}
-        >
-          {isOwner ? (
-            <>
-              <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
-              <div>
-                <strong>Direct Owner Invite:</strong> Because you own this Google Sheet, inviting
-                this user will grant Google Drive edit permissions immediately.
-              </div>
-            </>
-          ) : (
-            <>
-              <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-              <div>
-                <strong>Owner Approval Workflow:</strong> As a member, your invitation request will
-                be sent to the group owner for approval. Once approved, Google Drive edit access is
-                granted.
-              </div>
-            </>
-          )}
-        </div>
 
         {/* Email Input */}
         <div>
@@ -130,7 +101,7 @@ export function InviteMemberModal({
             Cancel
           </Button>
           <Button type="submit" isLoading={isSubmitting}>
-            {isOwner ? 'Grant Access & Add' : 'Submit Invitation Request'}
+            {isOwner ? 'Add Member' : 'Propose Invite'}
           </Button>
         </div>
       </form>

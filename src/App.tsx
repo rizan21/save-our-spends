@@ -17,6 +17,7 @@ import { GroupsPage } from './pages/groups/GroupsPage';
 import { GroupDetailPage } from './pages/group/GroupDetailPage';
 import { groupService } from './services/groupService';
 import type { SimplifiedDebt } from './types/balance';
+import type { GroupDataPayload } from './hooks/useGroupDetail';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -78,22 +79,67 @@ function SpreadSpendsInner() {
 
   const handleSaveUserName = async (newName: string) => {
     updateUserName(newName);
-    if (selectedGroupId && user) {
-      try {
-        await groupService.updateMemberName(selectedGroupId, user.email, newName);
-      } catch (err) {
-        console.warn('Could not update member name in group sheet:', err);
+    if (user) {
+      // 1. Optimistically update all loaded group-detail queries in React Query
+      queryClient.setQueriesData<GroupDataPayload>(
+        { queryKey: ['group-detail'] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            group: {
+              ...old.group,
+              members: old.group.members.map((m) =>
+                m.email.toLowerCase() === user.email.toLowerCase() ? { ...m, name: newName } : m
+              ),
+            },
+          };
+        }
+      );
+
+      // 2. Invalidate queries so background refetch aligns with sheets
+      queryClient.invalidateQueries({ queryKey: ['group-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
+
+      // 3. Persist to active group sheet
+      if (selectedGroupId) {
+        try {
+          await groupService.updateMemberName(selectedGroupId, user.email, newName);
+        } catch (err) {
+          console.warn('Could not update member name in group sheet:', err);
+        }
       }
     }
   };
 
   const handleResetUserName = async () => {
     const updated = resetUserNameToGoogle();
-    if (selectedGroupId && user && updated.name) {
-      try {
-        await groupService.updateMemberName(selectedGroupId, user.email, updated.name);
-      } catch (err) {
-        console.warn('Could not reset member name in group sheet:', err);
+    if (user && updated.name) {
+      queryClient.setQueriesData<GroupDataPayload>(
+        { queryKey: ['group-detail'] },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            group: {
+              ...old.group,
+              members: old.group.members.map((m) =>
+                m.email.toLowerCase() === user.email.toLowerCase() ? { ...m, name: updated.name } : m
+              ),
+            },
+          };
+        }
+      );
+
+      queryClient.invalidateQueries({ queryKey: ['group-detail'] });
+      queryClient.invalidateQueries({ queryKey: ['groups'] });
+
+      if (selectedGroupId) {
+        try {
+          await groupService.updateMemberName(selectedGroupId, user.email, updated.name);
+        } catch (err) {
+          console.warn('Could not reset member name in group sheet:', err);
+        }
       }
     }
   };
@@ -179,6 +225,12 @@ function SpreadSpendsInner() {
           user={user}
           onSaveName={handleSaveUserName}
           onResetName={handleResetUserName}
+          onLogout={logout}
+          showInstallButton={!isStandalone}
+          onOpenInstall={() => {
+            setIsEditProfileOpen(false);
+            openInstallModal();
+          }}
         />
       )}
 

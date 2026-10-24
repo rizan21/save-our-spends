@@ -2,6 +2,28 @@
 
 Lightweight, zero-server Web Push notification relay and real-time sheet sync coordinator for [Spread-Spends](https://github.com/spread-spends).
 
+## Overview
+Coordinates zero-server Web Push notifications and real-time sheet sync between browser clients without storing financial data.
+
+## Interface
+- `bun run dev`: Starts local worker development server via `wrangler dev`.
+- `bun run deploy`: Deploys the worker relay to Cloudflare via `wrangler deploy`.
+- `bun run generate-keys`: Runs script to generate VAPID keys.
+- [Worker Source](./src/README.md): Core Cloudflare Worker routing, crypto, and push relay implementation contract.
+
+## Invariants
+- Node.js compatibility mode enabled (`nodejs_compat` flag in `wrangler.jsonc`).
+- Cloudflare KV binding `PUSH_SUBSCRIPTIONS` is required for stateful subscription storage.
+- Worker never connects directly to Google Sheets or Google Drive API.
+- `VAPID_PRIVATE_KEY` must be stored as an encrypted Cloudflare secret, never committed in code or `wrangler.jsonc`.
+
+## Side Effects
+- Interacts with Cloudflare Workers runtime and KV namespace infrastructure.
+- Routes encrypted push notification traffic to push service providers.
+
+## Verification
+- Run: `bun test`
+
 ---
 
 ## 🚀 Setup & Deployment

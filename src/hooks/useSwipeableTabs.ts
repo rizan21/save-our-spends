@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 
-export const GROUP_TABS = ['overview', 'expenses', 'balances', 'members'] as const;
+export const GROUP_TABS = ['overview', 'expenses', 'balances', 'settings'] as const;
 export type GroupTab = (typeof GROUP_TABS)[number];
 
 export function getNextTab(current: GroupTab): GroupTab | null {

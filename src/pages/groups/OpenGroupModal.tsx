@@ -105,12 +105,7 @@ export function OpenGroupModal({ isOpen, onClose, onOpenGroup }: OpenGroupModalP
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Open Shared Group">
-      <div className="space-y-6">
-        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-          If someone shared a Spread-Spends sheet with you, open it below. Selecting or pasting
-          it authorizes the sheet under Google's least-privilege <code className="text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1 py-0.5 rounded">drive.file</code> scope.
-        </p>
-
+      <div className="space-y-4">
         {error && (
           <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-xl flex items-start gap-2.5 text-xs text-red-700 dark:text-red-300">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-500 dark:text-red-400" />
@@ -119,21 +114,18 @@ export function OpenGroupModal({ isOpen, onClose, onOpenGroup }: OpenGroupModalP
         )}
 
         {/* Primary Option: Google Drive Picker */}
-        <div className="p-4 bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="p-4 bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 rounded-2xl flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm">
               <FolderSearch className="w-5 h-5" />
             </div>
-            <div>
-              <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Google Drive Picker</h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Pick any shared spreadsheet from your Drive.</p>
-            </div>
+            <h4 className="text-sm font-semibold text-slate-900 dark:text-white">Google Drive Picker</h4>
           </div>
           <Button
             type="button"
             onClick={handlePickFromDrive}
             isLoading={isPicking}
-            className="w-full sm:w-auto shadow-xs gap-1.5"
+            className="shadow-xs gap-1.5"
           >
             <Sparkles className="w-4 h-4" />
             <span>Pick from Drive</span>
@@ -143,7 +135,7 @@ export function OpenGroupModal({ isOpen, onClose, onOpenGroup }: OpenGroupModalP
         {/* Divider */}
         <div className="flex items-center gap-3">
           <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1" />
-          <span className="text-xs uppercase tracking-wider text-slate-400 dark:text-slate-500 font-medium">Or paste link</span>
+          <span className="text-xs uppercase tracking-wider text-slate-400 dark:text-slate-500 font-medium">OR</span>
           <div className="h-px bg-slate-200 dark:bg-slate-800 flex-1" />
         </div>
 
@@ -170,7 +162,7 @@ export function OpenGroupModal({ isOpen, onClose, onOpenGroup }: OpenGroupModalP
               Cancel
             </Button>
             <Button type="submit" size="sm" disabled={!sheetInput.trim()}>
-              Open Group
+              Open
             </Button>
           </div>
         </form>
