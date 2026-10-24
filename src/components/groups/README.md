@@ -4,8 +4,8 @@
 Expense group management and navigation components, including group listings, group detail headers with tab navigation, swipeable tab panel containers, and backward-compatible modal exports.
 
 ## Interface
-- `GroupHeader({ group, currentUserEmail, financialSummary, activeTab, onTabChange, onBack, onOpenAddExpense, onOpenSettleUp, onOpenInvite, isPushEnabled, onToggleNotifications, onOpenNotificationSettings }: GroupHeaderProps): JSX.Element`
-- `GroupList({ groups, currentUserEmail, isLoading, isRefetching, groupBalances, activeSettlements, totalYouAreOwed, totalYouOwe, currency, isPushEnabled, onOpenNotifications, onSelectGroup, onOpenCreateGroup, onOpenImportModal, onSettleDebt, onRefresh, onLogin }: GroupListProps): JSX.Element`
+- `GroupHeader({ group, currentUserEmail, financialSummary, activeTab, onTabChange, onBack, onOpenAddExpense, onOpenSettleUp, onOpenInvite }: GroupHeaderProps): JSX.Element`
+- `GroupList({ groups, currentUserEmail, isLoading, isRefetching, groupBalances, activeSettlements, totalYouAreOwed, totalYouOwe, currency, onSelectGroup, onOpenCreateGroup, onOpenImportModal, onSettleDebt, onRefresh, onLogin }: GroupListProps): JSX.Element`
 - `GroupTabsContainer({ activeTab, slideDirection, dragOffset, isDragging, touchHandlers, children, className }: GroupTabsContainerProps): JSX.Element`
 - Re-exports from `src/pages`:
   - `CategoryPieChart` (from `../../pages/group/summary/CategoryPieChart`)

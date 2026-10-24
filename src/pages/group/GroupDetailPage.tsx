@@ -22,8 +22,6 @@ export interface GroupDetailPageProps {
   initialDebtToSettle?: SimplifiedDebt | null;
   onBack: () => void;
   onOpenEditProfile: () => void;
-  isPushEnabled?: boolean;
-  onOpenNotificationSettings?: () => void;
 }
 
 export function GroupDetailPage({
@@ -33,8 +31,6 @@ export function GroupDetailPage({
   initialDebtToSettle = null,
   onBack,
   onOpenEditProfile,
-  isPushEnabled = false,
-  onOpenNotificationSettings,
 }: GroupDetailPageProps) {
   // Group query & mutations
   const {
@@ -253,9 +249,6 @@ export function GroupDetailPage({
           }}
           onOpenSettleUp={() => handleOpenSettleUp(null)}
           onOpenInvite={() => setIsInviteModalOpen(true)}
-          isPushEnabled={isPushEnabled}
-          onOpenNotificationSettings={onOpenNotificationSettings}
-          onToggleNotifications={onOpenNotificationSettings}
         />
 
         <GroupTabsContainer

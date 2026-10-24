@@ -7,10 +7,7 @@ import { LoginScreen } from './components/auth/LoginScreen';
 import { EditProfileModal } from './components/auth/EditProfileModal';
 import { InstallAppModal } from './components/pwa/InstallAppModal';
 import { OfflineIndicator } from './components/pwa/OfflineIndicator';
-import { NotificationSettingsModal } from './components/notifications/NotificationSettingsModal';
 import { useAuth } from './hooks/useAuth';
-import { useGroups } from './hooks/useGroups';
-import { useSheetSync } from './hooks/useSheetSync';
 import { usePwaInstall } from './hooks/usePwaInstall';
 import { useAppRoute } from './router/useAppRoute';
 import { GroupsPage } from './pages/groups/GroupsPage';
@@ -57,25 +54,9 @@ function SpreadSpendsInner() {
 
   // Modals at app level
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-  const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
   const [selectedDebtToSettle, setSelectedDebtToSettle] = useState<SimplifiedDebt | null>(null);
 
   const selectedGroupId = route.page === 'group' ? route.groupId : null;
-
-  // Real-time synchronization
-  const {
-    recentNotification,
-    clearNotification,
-    lastSyncTime,
-    isPushEnabled,
-    notificationPermission,
-    enableNotifications,
-    sendTestNotification,
-    triggerManualSync,
-    isPushSupported,
-  } = useSheetSync(selectedGroupId, user?.email);
-
-  const { groups } = useGroups(user);
 
   const handleSaveUserName = async (newName: string) => {
     updateUserName(newName);
@@ -189,8 +170,6 @@ function SpreadSpendsInner() {
           {route.page === 'groups' && (
             <GroupsPage
               user={user}
-              isPushEnabled={isPushEnabled}
-              onOpenNotifications={() => setIsNotificationModalOpen(true)}
               onSelectGroup={(groupId, debt) => {
                 setSelectedDebtToSettle(debt || null);
                 navigateToGroup(groupId);
@@ -210,8 +189,6 @@ function SpreadSpendsInner() {
                 navigateToGroups();
               }}
               onOpenEditProfile={() => setIsEditProfileOpen(true)}
-              isPushEnabled={isPushEnabled}
-              onOpenNotificationSettings={() => setIsNotificationModalOpen(true)}
             />
           )}
         </ErrorBoundary>
@@ -234,21 +211,6 @@ function SpreadSpendsInner() {
         />
       )}
 
-      {/* Real-time Sync & Notifications Settings Modal */}
-      <NotificationSettingsModal
-        isOpen={isNotificationModalOpen}
-        onClose={() => setIsNotificationModalOpen(false)}
-        groupId={selectedGroupId || groups[0]?.id}
-        groupName={groups.find((g) => g.id === selectedGroupId)?.name || 'All Groups'}
-        isPushEnabled={isPushEnabled}
-        notificationPermission={notificationPermission}
-        isPushSupported={isPushSupported}
-        lastSyncTime={lastSyncTime}
-        onEnableNotifications={() => enableNotifications(groups.map((g) => g.id))}
-        onSendTestNotification={() => sendTestNotification(selectedGroupId || groups[0]?.id)}
-        onManualSync={triggerManualSync}
-      />
-
       {/* PWA Install Modal */}
       <InstallAppModal
         isOpen={isInstallModalOpen}
@@ -258,26 +220,6 @@ function SpreadSpendsInner() {
         canPromptDirectly={canPromptDirectly}
         onTriggerInstall={triggerInstall}
       />
-
-      {/* Real-time Sheet Sync Notification Toast */}
-      {recentNotification && (
-        <aside
-          role="status"
-          aria-live="polite"
-          className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 max-w-md w-[90%] bg-slate-900/95 dark:bg-slate-800/95 text-white backdrop-blur-md px-4 py-3 rounded-2xl shadow-xl border border-slate-700/50 flex items-center justify-between gap-3 animate-in fade-in slide-in-from-bottom-4 duration-200"
-        >
-          <div className="flex items-center gap-2.5 text-xs sm:text-sm font-medium min-w-0">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-            <span className="truncate">{recentNotification}</span>
-          </div>
-          <button
-            onClick={clearNotification}
-            className="text-xs text-slate-300 hover:text-white px-2 py-1 rounded-md bg-slate-800 dark:bg-slate-700 hover:bg-slate-700 dark:hover:bg-slate-600 shrink-0 cursor-pointer transition-colors"
-          >
-            Dismiss
-          </button>
-        </aside>
-      )}
     </div>
   );
 }

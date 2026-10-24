@@ -9,16 +9,12 @@ import type { SimplifiedDebt } from '../../types/balance';
 
 export interface GroupsPageProps {
   user: GoogleUser | null;
-  isPushEnabled?: boolean;
-  onOpenNotifications?: () => void;
   onSelectGroup: (groupId: string, debt?: SimplifiedDebt) => void;
   onLogin: () => void;
 }
 
 export function GroupsPage({
   user,
-  isPushEnabled = false,
-  onOpenNotifications,
   onSelectGroup,
   onLogin,
 }: GroupsPageProps) {
@@ -71,8 +67,6 @@ export function GroupsPage({
         totalYouAreOwed={totalYouAreOwed}
         totalYouOwe={totalYouOwe}
         currency={homeCurrency}
-        isPushEnabled={isPushEnabled}
-        onOpenNotifications={onOpenNotifications}
         onSelectGroup={onSelectGroup}
         onOpenCreateGroup={() => setIsCreateGroupOpen(true)}
         onOpenImportModal={() => setIsOpenGroupModalOpen(true)}

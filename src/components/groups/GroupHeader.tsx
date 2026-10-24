@@ -26,9 +26,6 @@ export interface GroupHeaderProps {
   onOpenAddExpense: () => void;
   onOpenSettleUp: () => void;
   onOpenInvite?: () => void;
-  isPushEnabled?: boolean;
-  onToggleNotifications?: () => void;
-  onOpenNotificationSettings?: () => void;
 }
 
 export function GroupHeader({

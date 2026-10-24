@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, FolderPlus, RefreshCw, FolderDown, TrendingUp, TrendingDown, Table, LogIn, Bell, BellOff } from 'lucide-react';
+import { Plus, Search, FolderPlus, RefreshCw, FolderDown, TrendingUp, TrendingDown, Table, LogIn } from 'lucide-react';
 import { GroupCard } from '../../pages/groups/GroupCard';
 import { Button } from '../common/Button';
 import type { GoogleDriveFile } from '../../types/google';
@@ -17,8 +17,6 @@ export interface GroupListProps {
   totalYouAreOwed?: number;
   totalYouOwe?: number;
   currency?: string;
-  isPushEnabled?: boolean;
-  onOpenNotifications?: () => void;
   onSelectGroup: (groupId: string) => void;
   onOpenCreateGroup: () => void;
   onOpenImportModal?: () => void;
@@ -36,8 +34,6 @@ export function GroupList({
   totalYouAreOwed = 0,
   totalYouOwe = 0,
   currency = 'USD',
-  isPushEnabled = false,
-  onOpenNotifications,
   onSelectGroup,
   onOpenCreateGroup,
   onOpenImportModal,
@@ -109,22 +105,6 @@ export function GroupList({
           >
             <RefreshCw className={`w-4 h-4 ${isRefetching ? 'animate-spin' : ''}`} />
           </Button>
-          {onOpenNotifications && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onOpenNotifications}
-              className="p-2"
-              title="Notifications & Sync"
-              aria-label="Notifications & Sync"
-            >
-              {isPushEnabled ? (
-                <Bell className="w-4 h-4 text-emerald-600 dark:text-emerald-400 fill-emerald-500/20" />
-              ) : (
-                <BellOff className="w-4 h-4 text-slate-400" />
-              )}
-            </Button>
-          )}
           {onOpenImportModal && (
             <Button
               variant="outline"

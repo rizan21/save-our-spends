@@ -18,8 +18,6 @@ import {
   serializeSettlementRow,
   SHEET_TABS,
 } from '../core/sheetSerializer';
-import { pushNotificationService } from './pushNotificationService';
-
 
 export class GroupService {
   private getAuthToken(): string {
@@ -247,12 +245,6 @@ export class GroupService {
   public async addExpense(sheetId: string, expense: Expense): Promise<void> {
     if (googleAuthService.getIsDemoMode()) {
       await mockGoogleService.appendExpense(sheetId, expense);
-      pushNotificationService.notifyGroupMembers({
-        groupId: sheetId,
-        actorEmail: expense.createdBy,
-        action: 'TRANSACTION_ADDED',
-        summary: `${expense.createdBy?.split('@')[0] || 'Someone'} added "${expense.description}" (${expense.currency} ${expense.amount})`,
-      }).catch(() => {});
       return;
     }
 
@@ -272,13 +264,6 @@ export class GroupService {
       await googleSheetsService.addMemberTab(token, sheetId, authorEmail);
       await googleSheetsService.appendRow(token, sheetId, targetTab, row);
     }
-
-    pushNotificationService.notifyGroupMembers({
-      groupId: sheetId,
-      actorEmail: authorEmail,
-      action: 'TRANSACTION_ADDED',
-      summary: `${authorEmail.split('@')[0]} added "${expense.description}" (${expense.currency} ${expense.amount})`,
-    }).catch(() => {});
   }
 
   /**
@@ -287,25 +272,12 @@ export class GroupService {
   public async addSettlement(sheetId: string, settlement: Settlement): Promise<void> {
     if (googleAuthService.getIsDemoMode()) {
       await mockGoogleService.appendSettlement(sheetId, settlement);
-      pushNotificationService.notifyGroupMembers({
-        groupId: sheetId,
-        actorEmail: settlement.payerEmail,
-        action: 'TRANSACTION_ADDED',
-        summary: `${settlement.payerName || settlement.payerEmail} paid ${settlement.payeeName || settlement.payeeEmail} (${settlement.currency} ${settlement.amount})`,
-      }).catch(() => {});
       return;
     }
 
     const token = this.getAuthToken();
     const row = serializeSettlementRow(settlement);
     await googleSheetsService.appendRow(token, sheetId, SHEET_TABS.SETTLEMENTS, row);
-
-    pushNotificationService.notifyGroupMembers({
-      groupId: sheetId,
-      actorEmail: settlement.payerEmail,
-      action: 'TRANSACTION_ADDED',
-      summary: `${settlement.payerName || settlement.payerEmail} paid ${settlement.payeeName || settlement.payeeEmail} (${settlement.currency} ${settlement.amount})`,
-    }).catch(() => {});
   }
 
   /**
@@ -314,24 +286,11 @@ export class GroupService {
   public async updateExpense(sheetId: string, expense: Expense): Promise<void> {
     if (googleAuthService.getIsDemoMode()) {
       await mockGoogleService.updateExpense(sheetId, expense);
-      pushNotificationService.notifyGroupMembers({
-        groupId: sheetId,
-        actorEmail: expense.createdBy,
-        action: 'TRANSACTION_MODIFIED',
-        summary: `${expense.createdBy?.split('@')[0] || 'Someone'} updated "${expense.description}"`,
-      }).catch(() => {});
       return;
     }
 
     const token = this.getAuthToken();
     await googleSheetsService.updateExpense(token, sheetId, expense);
-
-    pushNotificationService.notifyGroupMembers({
-      groupId: sheetId,
-      actorEmail: expense.createdBy,
-      action: 'TRANSACTION_MODIFIED',
-      summary: `${expense.createdBy?.split('@')[0] || 'Someone'} updated "${expense.description}"`,
-    }).catch(() => {});
   }
 
   /**
@@ -340,12 +299,6 @@ export class GroupService {
   public async deleteExpense(sheetId: string, expenseId: string, editorEmail?: string): Promise<void> {
     if (googleAuthService.getIsDemoMode()) {
       await mockGoogleService.deleteExpense(sheetId, expenseId, editorEmail);
-      pushNotificationService.notifyGroupMembers({
-        groupId: sheetId,
-        actorEmail: editorEmail,
-        action: 'TRANSACTION_REMOVED',
-        summary: `${editorEmail?.split('@')[0] || 'Someone'} deleted an expense`,
-      }).catch(() => {});
       return;
     }
 
@@ -370,13 +323,6 @@ export class GroupService {
 
     const token = this.getAuthToken();
     await googleSheetsService.updateExpense(token, sheetId, target);
-
-    pushNotificationService.notifyGroupMembers({
-      groupId: sheetId,
-      actorEmail: editorEmail,
-      action: 'TRANSACTION_REMOVED',
-      summary: `${editorEmail?.split('@')[0] || 'Someone'} deleted an expense`,
-    }).catch(() => {});
   }
 
   /**
@@ -385,24 +331,11 @@ export class GroupService {
   public async updateSettlement(sheetId: string, settlement: Settlement): Promise<void> {
     if (googleAuthService.getIsDemoMode()) {
       await mockGoogleService.updateSettlement(sheetId, settlement);
-      pushNotificationService.notifyGroupMembers({
-        groupId: sheetId,
-        actorEmail: settlement.payerEmail,
-        action: 'TRANSACTION_MODIFIED',
-        summary: `Settlement updated: ${settlement.payerName} paid ${settlement.payeeName}`,
-      }).catch(() => {});
       return;
     }
 
     const token = this.getAuthToken();
     await googleSheetsService.updateSettlement(token, sheetId, settlement);
-
-    pushNotificationService.notifyGroupMembers({
-      groupId: sheetId,
-      actorEmail: settlement.payerEmail,
-      action: 'TRANSACTION_MODIFIED',
-      summary: `Settlement updated: ${settlement.payerName} paid ${settlement.payeeName}`,
-    }).catch(() => {});
   }
 
   /**
@@ -411,12 +344,6 @@ export class GroupService {
   public async deleteSettlement(sheetId: string, settlementId: string, editorEmail?: string): Promise<void> {
     if (googleAuthService.getIsDemoMode()) {
       await mockGoogleService.deleteSettlement(sheetId, settlementId, editorEmail);
-      pushNotificationService.notifyGroupMembers({
-        groupId: sheetId,
-        actorEmail: editorEmail,
-        action: 'TRANSACTION_REMOVED',
-        summary: `${editorEmail?.split('@')[0] || 'Someone'} deleted a settlement`,
-      }).catch(() => {});
       return;
     }
 
@@ -441,13 +368,6 @@ export class GroupService {
 
     const token = this.getAuthToken();
     await googleSheetsService.updateSettlement(token, sheetId, target);
-
-    pushNotificationService.notifyGroupMembers({
-      groupId: sheetId,
-      actorEmail: editorEmail,
-      action: 'TRANSACTION_REMOVED',
-      summary: `${editorEmail?.split('@')[0] || 'Someone'} deleted a settlement`,
-    }).catch(() => {});
   }
 
   /**

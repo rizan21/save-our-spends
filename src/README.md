@@ -1,7 +1,7 @@
 # Source (`src`)
 
 ## Overview
-Main frontend application codebase for Spread-Spends. Implements a serverless expense sharing Progressive Web App powered by Google Sheets and Google Drive, with real-time multi-tab synchronization and offline persistence.
+Main frontend application codebase for Spread-Spends. Implements a 100% client-side expense sharing Progressive Web App powered by Google Sheets and Google Drive, with offline persistence and zero external notification services.
 
 ## Local Interface & Invariants
 - `App()`: Root React application component wrapping the application with `ThemeProvider`, `QueryClientProvider`, and `SpreadSpendsInner`.
@@ -18,7 +18,7 @@ Main frontend application codebase for Spread-Spends. Implements a serverless ex
 - [Hooks](./hooks/README.md): React state, optimistic data queries, real-time sync, and mobile gesture hooks.
 - [Pages](./pages/README.md): Top-level application route views (`groups` dashboard and `group` detail workspace).
 - [Router](./router/README.md): Lightweight hash-based client-side router synchronizing with `window.location.hash`.
-- [Services](./services/README.md): Google API clients (Drive, Sheets), IndexedDB persistence, and push notification relays.
+- [Services](./services/README.md): Google API clients (Drive, Sheets), and IndexedDB persistence.
 - [Types](./types/README.md): TypeScript domain interfaces, balance models, and Google API ambient declarations.
 
 ## Verification

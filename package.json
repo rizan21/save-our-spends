@@ -10,7 +10,6 @@
     "test": "bun test",
     "lint": "oxlint",
     "preview": "vite preview --host",
-    "worker:dev": "cd worker && wrangler dev",
     "deploy": "bun run build && wrangler deploy"
   },
   "dependencies": {
