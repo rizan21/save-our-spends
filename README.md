@@ -1,8 +1,39 @@
-# Spread-Spends 📊💸
+# Spread-Spends 📊💸 Blueprint
 
 > A fast, snappy, decentralized group expense sharing web app backed entirely by **Google Sheets** and **Google Drive**.
 
 Zero backend servers, zero hosting costs, 100% data ownership, and complete financial privacy.
+
+---
+
+## System Overview
+
+Spread-Spends is a decentralized, serverless expense sharing Progressive Web App that leverages user-owned Google Sheets spreadsheets as a distributed database. The application couples a client-side React frontend with a lightweight Cloudflare Worker Web Push notification relay. It delivers 0ms perceived latency via optimistic UI mutations, IndexedDB caching, and real-time inter-tab synchronization without central database infrastructure.
+
+## Subdirectories & System Boundaries
+
+- [Source (`src`)](./src/README.md) - Main frontend application codebase containing React design system primitives, routing, state hooks, financial calculation algorithms, and Google API integration services.
+- [Worker (`worker`)](./worker/README.md) - Cloudflare Worker relay subsystem coordinating zero-server Web Push notifications and real-time sheet sync between clients.
+
+## Global Invariants
+
+- **Decentralized Data Ownership**: All persistent financial data resides exclusively within user-owned Google Spreadsheets in Google Drive. No application database or backend storage exists.
+- **Isolated Per-Member Worksheets**: Concurrent write collisions on Google Sheets are completely eliminated by partitioning transactions into member-specific tabs (`Exp_<email>`), rolled up into `All_Expenses` via formulas.
+- **Penny Conservation**: All split calculations (Equal, Exact, Percentage, Shares) are computed using integer cents to guarantee that allocations sum exactly to the total transaction amount without floating-point accumulation drift.
+- **Financial Privacy Guarantee**: The Cloudflare Worker relay never handles, inspects, or receives Google OAuth tokens, spreadsheet contents, or monetary amounts.
+- **Soft Deletions & Audit History**: Transactions are never hard-deleted from spreadsheets; records are marked with status `DELETED` and preserve edit history diffs.
+- **Offline & Optimistic Integrity**: Local optimistic mutations are immediately reflected in UI state and cached in IndexedDB (`idb-keyval`), automatically reconciling or rolling back upon background Google Sheets synchronization.
+
+## Global Side Effects
+
+- **Google APIs**: Direct HTTP REST requests to Google Drive v3 (`drive/v3/files`, `drive/v3/permissions`) and Google Sheets v4 (`v4/spreadsheets`).
+- **Cloudflare Worker Relay**: Outbound HTTPS requests to `/api/subscribe` and `/api/notify` for Web Push delivery.
+- **Browser Persistence**: Reads and writes to `localStorage`, `sessionStorage`, and `IndexedDB` (`idb-keyval`).
+- **Real-Time Messaging**: Dispatches and listens to events over `BroadcastChannel('spread_spends_sync')` and Service Worker push notifications.
+
+## System Verification
+
+- Run: `bun test`
 
 ---
 
@@ -99,32 +130,3 @@ To eliminate Google Sheets write collisions and race conditions between concurre
 
 * **Single-roundtrip batch reads**: The web app queries all member tabs at once using `spreadsheets.values.batchGet`.
 * **Collaborator Onboarding**: Collaborators easily open shared sheets via the **Google Drive Picker** ("Open Shared"), instantly authorizing them under `drive.file`.
-
----
-
-## 🧪 Architecture & Test Suite
-
-```
-src/
-├── types/           # Strongly-typed domain interfaces (Group, Expense, Settlement, Balance)
-├── core/            # Precision math & serialization engines
-│   ├── splitCalculator.ts   # Equal, Exact, Percent, Shares split with penny rounding
-│   ├── debtSimplifier.ts    # Greedy Min-Cash-Flow graph algorithm
-│   └── sheetSerializer.ts   # TS models <-> Google Sheets 2D cell arrays
-├── services/        # Google APIs & Mocking
-│   ├── googleAuth.ts        # Google Identity Services (GIS) OAuth 2.0 token client
-│   ├── googleDrive.ts       # Drive file discovery & permission grants
-│   ├── googleSheets.ts      # Sheets API v4 batch and append operations
-│   ├── mockGoogleService.ts # Local mock simulating Drive & Sheets API
-│   ├── storageService.ts    # IndexedDB persistent caching (idb-keyval)
-│   └── groupService.ts      # Unified facade routing Demo / Live requests
-├── hooks/           # Reactive state hooks with optimistic UI mutations
-└── components/      # Responsive, mobile-first Tailwind UI components
-```
-
-All core components are thoroughly tested via `bun test`:
-- `src/test/splitCalculator.test.ts`: Validates penny rounding, exact amounts, multi-payer contributions.
-- `src/test/debtSimplifier.test.ts`: Validates circular debt resolution, multi-party debt minimization, invariant checks.
-- `src/test/sheetSerializer.test.ts`: Validates roundtrip conversions between TypeScript models and Google Sheets rows.
-- `src/test/mockGoogleService.test.ts`: Validates group creation, row appending, permission lifecycle.
-- `src/test/groupService.test.ts`: Validates unified facade and invite approval workflows.
