@@ -182,4 +182,56 @@ describe('debtSimplifier - Balances & Greedy Min Cash Flow', () => {
     expect(summary.currency).toBe('INR');
     expect(summary.simplifiedDebts[0].currency).toBe('INR');
   });
+
+  test('calculateBalances creates dynamic balance entries for external or unlisted members', () => {
+    // Expense paid by external@test.com and split with guest@test.com (neither in members)
+    const expenses: Expense[] = [
+      {
+        id: 'exp-external',
+        date: '2026-09-22',
+        description: 'Airport Taxi',
+        category: 'transport',
+        amount: 80,
+        currency: 'USD',
+        paidBy: { 'external@test.com': 80 },
+        splitType: 'EQUAL',
+        splits: { 'guest@test.com': 80 },
+        createdBy: 'external@test.com',
+        createdAt: '2026-09-22T00:00:00Z',
+        status: 'ACTIVE',
+      },
+    ];
+
+    // Settlement between external payer and payee
+    const settlements: Settlement[] = [
+      {
+        id: 'set-external',
+        date: '2026-09-23',
+        payerEmail: 'guest@test.com',
+        payerName: 'Guest User',
+        payeeEmail: 'external@test.com',
+        payeeName: 'External User',
+        amount: 30,
+        currency: 'USD',
+        paymentMethod: 'Cash',
+        recordedBy: 'guest@test.com',
+        createdAt: '2026-09-23T00:00:00Z',
+        status: 'ACTIVE',
+      },
+    ];
+
+    const summary = calculateBalances(members, expenses, settlements, 'USD');
+    expect(summary.balances['external@test.com']).toBeDefined();
+    expect(summary.balances['guest@test.com']).toBeDefined();
+
+    // external@test.com: paid 80 exp, received 30 set -> totalPaid 80, totalOwed 30, netBalance 50
+    expect(summary.balances['external@test.com'].netBalance).toBe(50);
+    // guest@test.com: paid 30 set, owed 80 exp -> totalPaid 30, totalOwed 80, netBalance -50
+    expect(summary.balances['guest@test.com'].netBalance).toBe(-50);
+
+    expect(summary.simplifiedDebts.length).toBe(1);
+    expect(summary.simplifiedDebts[0].fromEmail).toBe('guest@test.com');
+    expect(summary.simplifiedDebts[0].toEmail).toBe('external@test.com');
+    expect(summary.simplifiedDebts[0].amount).toBe(50);
+  });
 });

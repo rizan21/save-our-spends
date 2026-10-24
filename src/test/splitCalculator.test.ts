@@ -6,6 +6,7 @@ import {
   calculateSharesSplit,
   validatePaidBy,
   roundToCents,
+  formatCurrency,
 } from '../core/splitCalculator';
 
 describe('splitCalculator - Math & Precision', () => {
@@ -150,5 +151,33 @@ describe('splitCalculator - Math & Precision', () => {
       'bob@test.com': 40,
     });
     expect(invalid.isValid).toBe(false);
+  });
+
+  test('formatCurrency formats standard and falls back cleanly on invalid currency codes', () => {
+    // Standard USD formatting
+    const formattedUsd = formatCurrency(123.45, 'USD');
+    expect(formattedUsd).toContain('123.45');
+
+    // Invalid currency fallback (lines 29-30)
+    const fallback = formatCurrency(42, 'XYZ_INVALID_CURRENCY');
+    expect(fallback).toBe('XYZ_INVALID_CURRENCY 42.00');
+  });
+
+  test('calculateEqualSplit handles empty participants and zero/negative amounts', () => {
+    // Empty participants (line 43)
+    const emptyRes = calculateEqualSplit(100, []);
+    expect(emptyRes.isValid).toBe(false);
+    expect(emptyRes.error).toBe('No participants provided');
+
+    // Zero amount (lines 47-49)
+    const zeroRes = calculateEqualSplit(0, ['a@test.com', 'b@test.com']);
+    expect(zeroRes.isValid).toBe(true);
+    expect(zeroRes.splits['a@test.com']).toBe(0);
+    expect(zeroRes.splits['b@test.com']).toBe(0);
+
+    // Negative amount
+    const negRes = calculateEqualSplit(-10, ['a@test.com']);
+    expect(negRes.isValid).toBe(true);
+    expect(negRes.splits['a@test.com']).toBe(0);
   });
 });

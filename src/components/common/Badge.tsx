@@ -1,7 +1,7 @@
 import React from 'react';
 
 export interface BadgeProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   variant?: 'emerald' | 'slate';
   className?: string;
 }

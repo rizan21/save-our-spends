@@ -248,4 +248,56 @@ describe('historyTracker - Diff and Audit Engine', () => {
     expect(setTimeChange!.oldValue).toBe('09:15:00');
     expect(setTimeChange!.newValue).toBe('11:45:00');
   });
+
+  test('computeExpenseDiff formats non-equal split types and individual member breakdowns', () => {
+    const updated: Expense = {
+      ...baseExpense,
+      splitType: 'PERCENTAGE',
+      splits: { 'alice@test.com': 30, 'bob@test.com': 20 },
+    };
+    const diff = computeExpenseDiff(baseExpense, updated, 'alice@test.com', 'Alice Dev', members);
+    expect(diff).not.toBeNull();
+    const splitChange = diff!.changes.find((c) => c.field === 'splits');
+    expect(splitChange).toBeDefined();
+    expect(splitChange!.newValue).toContain('PERCENTAGE');
+    expect(splitChange!.newValue).toContain('Alice Dev: $30.00');
+    expect(splitChange!.newValue).toContain('Bob Jones: $20.00');
+  });
+
+  test('computeSettlementDiff detects payer, payee, payment method, and date changes', () => {
+    const original: Settlement = {
+      id: 'set-diff-1',
+      date: '2026-09-20',
+      payerEmail: 'bob@test.com',
+      payerName: 'Bob Jones',
+      payeeEmail: 'alice@test.com',
+      payeeName: 'Alice Dev',
+      amount: 100,
+      currency: 'USD',
+      paymentMethod: 'Cash',
+      recordedBy: 'bob@test.com',
+      createdAt: '2026-09-20T10:00:00.000Z',
+      status: 'ACTIVE',
+    };
+
+    const updated: Settlement = {
+      ...original,
+      payerEmail: 'charlie@test.com',
+      payeeEmail: 'bob@test.com',
+      paymentMethod: 'UPI',
+      date: '2026-09-21',
+    };
+
+    const diff = computeSettlementDiff(original, updated, 'alice@test.com', 'Alice Dev', members);
+    expect(diff).not.toBeNull();
+    const fields = diff!.changes.map((c) => c.field);
+    expect(fields).toContain('payerEmail');
+    expect(fields).toContain('payeeEmail');
+    expect(fields).toContain('paymentMethod');
+    expect(fields).toContain('date');
+
+    // When settlement is unchanged, computeSettlementDiff returns null (line 281)
+    const unchangedDiff = computeSettlementDiff(original, original, 'alice@test.com', 'Alice Dev', members);
+    expect(unchangedDiff).toBeNull();
+  });
 });

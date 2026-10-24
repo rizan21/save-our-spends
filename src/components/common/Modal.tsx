@@ -7,7 +7,7 @@ export interface ModalProps {
   onClose: () => void;
   title?: string;
   description?: string;
-  children: React.ReactNode;
+  children?: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl';
   closeOnBack?: boolean;
   showCloseButton?: boolean;
