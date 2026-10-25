@@ -3,8 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#10b981" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#020617" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#10b981" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#020617" />
     <meta name="color-scheme" content="light dark" />
     <meta name="description" content="Spread-Spends: A fast, serverless expense sharing web app powered by Google Sheets and Google Drive." />
     <title>Spread-Spends | Expense Sharing Powered by Google Sheets</title>
@@ -15,6 +17,7 @@
           var stored = localStorage.getItem('spread_spends_theme');
           var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
           var isDark = stored === 'dark' || (!stored && prefersDark) || (stored === 'system' && prefersDark);
+          var themeColor = isDark ? '#020617' : '#10b981';
           if (isDark) {
             document.documentElement.classList.add('dark');
             document.documentElement.style.colorScheme = 'dark';
@@ -22,9 +25,40 @@
             document.documentElement.classList.remove('dark');
             document.documentElement.style.colorScheme = 'light';
           }
+          var metaThemes = document.querySelectorAll('meta[name="theme-color"]');
+          for (var i = 0; i < metaThemes.length; i++) {
+            metaThemes[i].setAttribute('content', themeColor);
+          }
+          var metaScheme = document.querySelector('meta[name="color-scheme"]');
+          if (metaScheme) {
+            metaScheme.setAttribute('content', isDark ? 'dark' : 'light');
+          }
         } catch (e) {}
 
-        window.addEventListener('error', function(event) {
+        function isIgnoredScript(src) {
+          if (!src) return true;
+          // Ignore third-party analytics, beacons, extensions, and non-critical tracking scripts
+          var ignoredPatterns = [
+            'cloudflareinsights.com',
+            'cloudflare.com',
+            'accounts.google.com',
+            'google-analytics.com',
+            'googletagmanager.com',
+            'chrome-extension:',
+            'moz-extension:',
+            'safari-extension:',
+            'edge-extension:'
+          ];
+          for (var i = 0; i < ignoredPatterns.length; i++) {
+            if (src.indexOf(ignoredPatterns[i]) !== -1) {
+              return true;
+            }
+          }
+          return false;
+        }
+
+        function showEmergencyError(msg) {
+          if (window.__SPREAD_SPENDS_MOUNTED) return;
           var errBox = document.getElementById('emergency-error-box');
           if (!errBox) {
             errBox = document.createElement('div');
@@ -32,30 +66,51 @@
             errBox.style = 'position:fixed;inset:0;background:#090d16;color:#f87171;padding:24px;font-family:system-ui,sans-serif;z-index:999999;overflow-y:auto;display:flex;flex-direction:column;gap:16px;';
             document.body.appendChild(errBox);
           }
-          var msg = event.message || (event.target && event.target.src ? 'Failed to load script: ' + event.target.src : 'Script loading or execution error');
           errBox.innerHTML = '<div style="font-size:18px;font-weight:bold;color:#ef4444;">Application Error</div>' +
             '<div style="font-size:13px;color:#cbd5e1;background:#1e293b;padding:12px;border-radius:8px;white-space:pre-wrap;font-family:monospace;">' + msg + '</div>' +
-            '<div style="display:flex;gap:12px;margin-top:8px;">' +
+            '<div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;">' +
             '<button onclick="clearAndReload()" style="padding:10px 16px;background:#10b981;color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Clear Cache & Reload</button>' +
             '<button onclick="window.location.reload()" style="padding:10px 16px;background:#334155;color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Retry</button>' +
+            '<button onclick="dismissEmergencyError()" style="padding:10px 16px;background:transparent;border:1px solid #475569;color:#cbd5e1;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Dismiss</button>' +
             '</div>';
+        }
+
+        window.dismissEmergencyError = function() {
+          var box = document.getElementById('emergency-error-box');
+          if (box) box.remove();
+        };
+
+        window.addEventListener('error', function(event) {
+          if (window.__SPREAD_SPENDS_MOUNTED) return;
+
+          // If it's a resource load error on a DOM element (captured via capture phase)
+          if (event.target && event.target !== window) {
+            var tag = (event.target.tagName || '').toUpperCase();
+            if (tag !== 'SCRIPT') {
+              return;
+            }
+            var src = event.target.src || '';
+            if (isIgnoredScript(src)) {
+              console.warn('Ignored script loading failure for non-critical resource:', src);
+              return;
+            }
+            showEmergencyError('Failed to load application script: ' + src);
+            return;
+          }
+
+          var msg = event.message || (event.error && event.error.message ? event.error.message : 'Application startup error');
+          if (msg && (msg.indexOf('ResizeObserver') !== -1 || msg.indexOf('Script error') !== -1)) {
+            return;
+          }
+          showEmergencyError(msg);
         }, true);
 
         window.addEventListener('unhandledrejection', function(event) {
-          var errBox = document.getElementById('emergency-error-box');
-          if (!errBox) {
-            errBox = document.createElement('div');
-            errBox.id = 'emergency-error-box';
-            errBox.style = 'position:fixed;inset:0;background:#090d16;color:#f87171;padding:24px;font-family:system-ui,sans-serif;z-index:999999;overflow-y:auto;display:flex;flex-direction:column;gap:16px;';
-            document.body.appendChild(errBox);
-          }
+          if (window.__SPREAD_SPENDS_MOUNTED) return;
           var reason = event.reason ? (event.reason.stack || event.reason.message || String(event.reason)) : 'Unhandled rejection';
-          errBox.innerHTML = '<div style="font-size:18px;font-weight:bold;color:#ef4444;">Unhandled Promise Rejection</div>' +
-            '<div style="font-size:13px;color:#cbd5e1;background:#1e293b;padding:12px;border-radius:8px;white-space:pre-wrap;font-family:monospace;">' + reason + '</div>' +
-            '<div style="display:flex;gap:12px;margin-top:8px;">' +
-            '<button onclick="clearAndReload()" style="padding:10px 16px;background:#10b981;color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Clear Cache & Reload</button>' +
-            '<button onclick="window.location.reload()" style="padding:10px 16px;background:#334155;color:#fff;border:none;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer;">Retry</button>' +
-            '</div>';
+          if (typeof reason === 'string' && (reason.indexOf('dynamically imported module') !== -1 || reason.indexOf('Loading chunk') !== -1)) {
+            showEmergencyError(reason);
+          }
         });
 
         window.clearAndReload = function() {

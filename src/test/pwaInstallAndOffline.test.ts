@@ -25,6 +25,8 @@ describe('PWA Install and Offline Viewing Infrastructure', () => {
     expect(manifest.start_url).toBe('/');
     expect(manifest.display).toBe('standalone');
     expect(manifest.theme_color).toBe('#10b981');
+    expect(manifest.background_color).toBe('#020617');
+    expect(manifest.color_scheme_dark?.background_color).toBe('#020617');
     expect(manifest.icons).toBeArray();
     expect(manifest.icons.length).toBeGreaterThanOrEqual(3);
 

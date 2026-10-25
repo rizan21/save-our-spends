@@ -61,6 +61,12 @@ describe('Theme Management and Dark Mode Infrastructure', () => {
         }
         return null;
       },
+      querySelectorAll: (selector: string) => {
+        if (selector === 'meta[name="theme-color"]') {
+          return [mockMeta];
+        }
+        return [];
+      },
     } as unknown as Document;
   });
 
@@ -118,17 +124,18 @@ describe('Theme Management and Dark Mode Infrastructure', () => {
         (root.style as unknown as Record<string, string>).colorScheme = 'light';
       }
 
-      const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-      if (metaThemeColor) {
-        metaThemeColor.setAttribute('content', effectiveTheme === 'dark' ? '#0f172a' : '#10b981');
-      }
+      const themeColor = effectiveTheme === 'dark' ? '#020617' : '#10b981';
+      const metaThemeColors = document.querySelectorAll('meta[name="theme-color"]');
+      metaThemeColors.forEach((meta) => {
+        meta.setAttribute('content', themeColor);
+      });
     };
 
     // Test Dark mode application
     applyThemeToDocument('dark');
     expect(document.documentElement.classList.contains('dark')).toBe(true);
     expect((document.documentElement.style as unknown as Record<string, string>).colorScheme).toBe('dark');
-    expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe('#0f172a');
+    expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe('#020617');
 
     // Test Light mode application
     applyThemeToDocument('light');

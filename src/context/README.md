@@ -20,7 +20,7 @@ Provides React context and provider infrastructure for application-wide theme st
 ## Side Effects
 - Reads and persists theme configuration to `localStorage` under `'spread_spends_theme'`.
 - Mutates DOM `document.documentElement` classList (adds/removes `'dark'`) and `style.colorScheme`.
-- Updates `document.querySelector('meta[name="theme-color"]')` content attribute between `'#0f172a'` and `'#10b981'`.
+- Updates `document.querySelectorAll('meta[name="theme-color"]')` content attribute between `'#020617'` and `'#10b981'`.
 - Attaches and cleans up mediaQuery change event listeners on `window.matchMedia('(prefers-color-scheme: dark)')`.
 
 ## Verification

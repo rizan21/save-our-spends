@@ -165,7 +165,7 @@ function SpreadSpendsInner() {
       <OfflineIndicator />
 
       {/* Main Container */}
-      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] sm:pb-8">
         <ErrorBoundary key={selectedGroupId || 'home'}>
           {route.page === 'groups' && (
             <GroupsPage

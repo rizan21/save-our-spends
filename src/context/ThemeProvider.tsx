@@ -38,10 +38,16 @@ function applyThemeToDocument(effectiveTheme: EffectiveTheme) {
     root.style.colorScheme = 'light';
   }
 
-  // Update mobile status bar theme color
-  const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-  if (metaThemeColor) {
-    metaThemeColor.setAttribute('content', effectiveTheme === 'dark' ? '#0f172a' : '#10b981');
+  // Update mobile status bar and navigation bar theme color
+  const themeColor = effectiveTheme === 'dark' ? '#020617' : '#10b981';
+  const metaThemeColors = document.querySelectorAll('meta[name="theme-color"]');
+  metaThemeColors.forEach((meta) => {
+    meta.setAttribute('content', themeColor);
+  });
+
+  const metaColorScheme = document.querySelector('meta[name="color-scheme"]');
+  if (metaColorScheme) {
+    metaColorScheme.setAttribute('content', effectiveTheme === 'dark' ? 'dark' : 'light');
   }
 }
 

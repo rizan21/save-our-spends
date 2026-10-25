@@ -11,3 +11,7 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>,
 )
+
+if (typeof window !== 'undefined') {
+  (window as unknown as { __SPREAD_SPENDS_MOUNTED?: boolean }).__SPREAD_SPENDS_MOUNTED = true
+}
