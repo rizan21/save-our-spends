@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "spread-spends",
+  "name": "save-our-spends",
   "compatibility_date": "2026-09-30",
   "observability": {
     "enabled": true

@@ -20,8 +20,8 @@ describe('PWA Install and Offline Viewing Infrastructure', () => {
     const rawContent = fs.readFileSync(manifestPath, 'utf-8');
     const manifest = JSON.parse(rawContent);
 
-    expect(manifest.name).toBe('Spread-Spends');
-    expect(manifest.short_name).toBe('SpreadSpends');
+    expect(manifest.name).toBe('Save Our Spends');
+    expect(manifest.short_name).toBe('SoS');
     expect(manifest.start_url).toBe('/');
     expect(manifest.display).toBe('standalone');
     expect(manifest.theme_color).toBe('#10b981');

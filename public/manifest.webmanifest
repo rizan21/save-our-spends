@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Spread-Spends",
-  "short_name": "SpreadSpends",
-  "description": "Expense sharing web app powered by Google Sheets with offline viewing support.",
+  "name": "Save Our Spends",
+  "short_name": "SoS",
+  "description": "Save Our Spends (SoS) - Expense sharing web app powered by Google Sheets with offline viewing support.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -1,4 +1,4 @@
-# Spread-Spends 📊💸 Blueprint
+# Save Our Spends (SoS) 💸🕊️✨
 
 > A fast, snappy, decentralized group expense sharing web app backed entirely by **Google Sheets** and **Google Drive**.
 
@@ -8,7 +8,7 @@ Zero backend servers, zero hosting costs, 100% data ownership, and complete fina
 
 ## System Overview
 
-Spread-Spends is a 100% client-side, decentralized expense sharing Progressive Web App that leverages user-owned Google Sheets spreadsheets as a distributed database. The application runs completely in the browser, communicating directly with Google Sheets and Google Drive APIs with zero backend servers or notification services. It delivers 0ms perceived latency via optimistic UI mutations, IndexedDB caching, and offline PWA capabilities without central database infrastructure.
+**Save Our Spends (SoS)** (formerly Spread-Spends) is a 100% client-side, decentralized expense sharing Progressive Web App that leverages user-owned Google Sheets spreadsheets as a distributed database. The application runs completely in the browser, communicating directly with Google Sheets and Google Drive APIs with zero backend servers or notification services. It delivers 0ms perceived latency via optimistic UI mutations, IndexedDB caching, and offline PWA capabilities without central database infrastructure.
 
 ## Subdirectories & System Boundaries
 

@@ -50,7 +50,7 @@ export async function pickSpreadsheet(
     const builder = new window.google!.picker!.PickerBuilder()
       .addView(view)
       .setOAuthToken(token)
-      .setTitle('Select a Spread-Spends Group Spreadsheet')
+      .setTitle('Select a Save Our Spends (SoS) Group Spreadsheet')
       .setCallback((data: GooglePickerResponse) => {
         if (data.action === window.google!.picker!.Action.PICKED && data.docs && data.docs[0]) {
           const doc = data.docs[0];

@@ -1,5 +1,6 @@
-import { Table, AlertCircle, Download } from 'lucide-react';
+import { AlertCircle, Download } from 'lucide-react';
 import { ThemeToggle } from '../common/ThemeToggle';
+import { Logo } from '../common/Logo';
 
 export interface LoginScreenProps {
   onLogin: () => Promise<unknown>;
@@ -29,11 +30,13 @@ export function LoginScreen({
       <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-none p-6 sm:p-8 space-y-6">
         {/* App Logo & Header */}
         <div className="text-center space-y-3">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center mx-auto shadow-md shadow-emerald-500/20">
-            <Table className="w-7 h-7" />
+          <div className="flex justify-center">
+            <Logo size={76} className="drop-shadow-md" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Spread-Spends</h1>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+              Save Our Spends
+            </h1>
           </div>
         </div>
 

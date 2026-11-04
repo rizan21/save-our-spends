@@ -1,11 +1,11 @@
 import type { GoogleDriveFile } from '../types/google';
 
 /**
- * Discovers SpreadSpends spreadsheets in the user's Drive.
+ * Discovers Save Our Spends (SoS) and legacy SpreadSpends spreadsheets in the user's Drive.
  */
 export async function listSpreadSpendsFiles(token: string): Promise<GoogleDriveFile[]> {
   const q = encodeURIComponent(
-    "mimeType = 'application/vnd.google-apps.spreadsheet' and name contains '[SpreadSpends]' and trashed = false"
+    "mimeType = 'application/vnd.google-apps.spreadsheet' and (name contains '[SoS]' or name contains '[Save Our Spends]' or name contains '[SpreadSpends]') and trashed = false"
   );
   const fields = encodeURIComponent('files(id, name, mimeType, webViewLink, owners, shared)');
   const url = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=${fields}&pageSize=50`;

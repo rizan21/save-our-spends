@@ -44,7 +44,7 @@ export function InstallAppModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Install Spread-Spends"
+      title="Install Save Our Spends"
       maxWidth="lg"
     >
       <div className="space-y-4">
@@ -90,7 +90,7 @@ export function InstallAppModal({
                   className="w-full gap-2 py-3 shadow-md shadow-emerald-600/20"
                 >
                   <Download className="w-4 h-4" />
-                  <span>Install Spread-Spends Now</span>
+                  <span>Install Save Our Spends Now</span>
                 </Button>
               </div>
             ) : (

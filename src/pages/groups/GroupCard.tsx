@@ -11,8 +11,8 @@ export interface GroupCardProps {
 }
 
 export function GroupCard({ file, currentUserEmail, balanceInfo, onClick }: GroupCardProps) {
-  // Strip '[SpreadSpends]' prefix if present for clean title
-  const cleanTitle = file.name.replace(/^\[SpreadSpends\]\s*/, '');
+  // Strip '[SoS]' or legacy '[SpreadSpends]' prefix if present for clean title
+  const cleanTitle = file.name.replace(/^\[(SoS|Save Our Spends|SaveOurSpends|SpreadSpends)\]\s*/i, '');
   const isOwner = file.owners?.some((o) => o.emailAddress === currentUserEmail);
 
   return (
