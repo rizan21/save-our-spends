@@ -16,6 +16,36 @@ if (process.platform !== 'android') {
 
 export default defineConfig({
   plugins,
+  build: {
+    rolldownOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            {
+              name: 'vendor-react',
+              test: /node_modules[\\/](react|react-dom)[\\/]/,
+              priority: 20,
+            },
+            {
+              name: 'vendor-query',
+              test: /node_modules[\\/]@tanstack[\\/]/,
+              priority: 20,
+            },
+            {
+              name: 'vendor-lucide',
+              test: /node_modules[\\/]lucide-react[\\/]/,
+              priority: 20,
+            },
+            {
+              name: 'vendor',
+              test: /node_modules[\\/]/,
+              priority: 10,
+            },
+          ],
+        },
+      },
+    },
+  },
   server: {
     host: '0.0.0.0',
     port: 5173,
