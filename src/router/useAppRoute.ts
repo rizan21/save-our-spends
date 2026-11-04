@@ -3,10 +3,19 @@ import { GROUP_TABS, type GroupTab } from '../hooks/useSwipeableTabs';
 
 export type AppRoute =
   | { page: 'groups' }
-  | { page: 'group'; groupId: string; tab?: GroupTab };
+  | { page: 'group'; groupId: string; tab?: GroupTab }
+  | { page: 'privacy' }
+  | { page: 'terms' };
 
-function parseHash(hash: string): AppRoute {
+export function parseHash(hash: string): AppRoute {
   if (!hash || !hash.startsWith('#')) return { page: 'groups' };
+  const rawHash = hash.slice(1).trim().toLowerCase();
+  if (rawHash === 'privacy' || rawHash === 'privacy-policy') {
+    return { page: 'privacy' };
+  }
+  if (rawHash === 'terms' || rawHash === 'terms-of-service') {
+    return { page: 'terms' };
+  }
   const params = new URLSearchParams(hash.slice(1));
   const groupId = params.get('group');
   if (groupId) {
@@ -44,5 +53,13 @@ export function useAppRoute() {
     window.location.hash = `#${params.toString()}`;
   }, []);
 
-  return { route, navigateToGroups, navigateToGroup };
+  const navigateToPrivacy = useCallback(() => {
+    window.location.hash = '#privacy';
+  }, []);
+
+  const navigateToTerms = useCallback(() => {
+    window.location.hash = '#terms';
+  }, []);
+
+  return { route, navigateToGroups, navigateToGroup, navigateToPrivacy, navigateToTerms };
 }

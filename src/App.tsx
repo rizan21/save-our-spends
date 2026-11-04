@@ -12,7 +12,10 @@ import { usePwaInstall } from './hooks/usePwaInstall';
 import { useAppRoute } from './router/useAppRoute';
 import { GroupsPage } from './pages/groups/GroupsPage';
 import { GroupDetailPage } from './pages/group/GroupDetailPage';
+import { PrivacyPolicyPage } from './pages/legal/PrivacyPolicyPage';
+import { TermsOfServicePage } from './pages/legal/TermsOfServicePage';
 import { groupService } from './services/groupService';
+import { mockGoogleService } from './services/mockGoogleService';
 import type { SimplifiedDebt } from './types/balance';
 import type { GroupDataPayload } from './hooks/useGroupDetail';
 
@@ -28,12 +31,15 @@ const queryClient = new QueryClient({
 function SpreadSpendsInner() {
   const {
     user,
+    isDemoMode,
     isLoading: isAuthLoading,
     error: authError,
     login,
+    reauthorizeGoogle,
     logout,
     updateUserName,
     resetUserNameToGoogle,
+    toggleDemoMode,
     setCustomClientId,
     getCustomClientId,
   } = useAuth();
@@ -49,8 +55,14 @@ function SpreadSpendsInner() {
     triggerInstall,
   } = usePwaInstall();
 
-  // App hash route: # or #group=<groupId>
-  const { route, navigateToGroups, navigateToGroup } = useAppRoute();
+  // App hash route: # or #group=<groupId> or #privacy or #terms
+  const {
+    route,
+    navigateToGroups,
+    navigateToGroup,
+    navigateToPrivacy,
+    navigateToTerms,
+  } = useAppRoute();
 
   // Modals at app level
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
@@ -126,6 +138,22 @@ function SpreadSpendsInner() {
   };
 
   if (!user) {
+    if (route.page === 'privacy') {
+      return (
+        <div className="min-h-screen bg-slate-50/60 dark:bg-slate-950 flex flex-col text-slate-800 dark:text-slate-100 transition-colors p-4 sm:p-6">
+          <PrivacyPolicyPage onBack={navigateToGroups} />
+        </div>
+      );
+    }
+
+    if (route.page === 'terms') {
+      return (
+        <div className="min-h-screen bg-slate-50/60 dark:bg-slate-950 flex flex-col text-slate-800 dark:text-slate-100 transition-colors p-4 sm:p-6">
+          <TermsOfServicePage onBack={navigateToGroups} />
+        </div>
+      );
+    }
+
     return (
       <>
         <LoginScreen
@@ -136,6 +164,9 @@ function SpreadSpendsInner() {
           onSaveClientId={setCustomClientId}
           showInstallButton={!isStandalone}
           onOpenInstall={openInstallModal}
+          onDemoLogin={() => toggleDemoMode(true)}
+          onNavigateToPrivacy={navigateToPrivacy}
+          onNavigateToTerms={navigateToTerms}
         />
         <InstallAppModal
           isOpen={isInstallModalOpen}
@@ -175,6 +206,7 @@ function SpreadSpendsInner() {
                 navigateToGroup(groupId);
               }}
               onLogin={login}
+              onReauthorize={reauthorizeGoogle}
             />
           )}
 
@@ -191,6 +223,14 @@ function SpreadSpendsInner() {
               onOpenEditProfile={() => setIsEditProfileOpen(true)}
             />
           )}
+
+          {route.page === 'privacy' && (
+            <PrivacyPolicyPage onBack={navigateToGroups} />
+          )}
+
+          {route.page === 'terms' && (
+            <TermsOfServicePage onBack={navigateToGroups} />
+          )}
         </ErrorBoundary>
       </main>
 
@@ -200,9 +240,16 @@ function SpreadSpendsInner() {
           isOpen={isEditProfileOpen}
           onClose={() => setIsEditProfileOpen(false)}
           user={user}
+          isDemoMode={isDemoMode}
+          onResetDemo={() => {
+            mockGoogleService.resetMockData();
+            queryClient.invalidateQueries();
+            setIsEditProfileOpen(false);
+          }}
           onSaveName={handleSaveUserName}
           onResetName={handleResetUserName}
           onLogout={logout}
+          onReauthorizeGoogle={reauthorizeGoogle}
           showInstallButton={!isStandalone}
           onOpenInstall={() => {
             setIsEditProfileOpen(false);

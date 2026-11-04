@@ -1,11 +1,15 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, test, expect, beforeEach } from 'bun:test';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { Badge } from '../components/common/Badge';
 import { DirectSheetsLink } from '../components/export/DirectSheetsLink';
+import { googleAuthService } from '../services/googleAuth';
 import type { Group } from '../types/group';
 
 describe('Common UI Components - Badge & DirectSheetsLink', () => {
+  beforeEach(() => {
+    googleAuthService.setDemoMode(false);
+  });
   describe('Badge Component', () => {
     test('renders default slate variant', () => {
       const html = renderToStaticMarkup(
@@ -59,6 +63,24 @@ describe('Common UI Components - Badge & DirectSheetsLink', () => {
       expect(html).toContain('target="_blank"');
       expect(html).toContain('rel="noreferrer"');
       expect(html).toContain('Open in Google Sheets');
+    });
+
+    test('in demo mode does not render external anchor link or open Google Sheets', () => {
+      const demoGroup: Group = {
+        ...baseGroup,
+        id: 'mock-sheet-goa-2026',
+        driveFileUrl: 'https://docs.google.com/spreadsheets/d/mock-sheet-goa-2026/edit',
+      };
+
+      const html = renderToStaticMarkup(
+        React.createElement(DirectSheetsLink, { group: demoGroup, isDemo: true })
+      );
+
+      // Must NOT contain external Google Sheets anchor link
+      expect(html).not.toContain('<a');
+      expect(html).not.toContain('target="_blank"');
+      expect(html).toContain('Open in Google Sheets');
+      expect(html).toContain('Simulated demo group (not linked to Google Sheets)');
     });
   });
 });

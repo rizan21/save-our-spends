@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Modal } from '../../components/common/Modal';
 import { Button } from '../../components/common/Button';
-import { DollarSign } from 'lucide-react';
+import { DollarSign, AlertCircle, RefreshCw } from 'lucide-react';
 
 export interface CreateGroupModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreateGroup: (name: string, currency: string, initialMembers: string[], description?: string) => Promise<unknown>;
+  onReauthorize?: () => Promise<unknown>;
 }
 
 const COMMON_CURRENCIES = [
@@ -24,11 +25,20 @@ export function CreateGroupModal({
   isOpen,
   onClose,
   onCreateGroup,
+  onReauthorize,
 }: CreateGroupModalProps) {
   const [name, setName] = useState('');
   const [currency, setCurrency] = useState('INR');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isReauthorizing, setIsReauthorizing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isMissingDriveConsent = Boolean(
+    error &&
+      (/drive\.file|google drive permission|caller does not have permission|insufficient.*scope/i.test(
+        error
+      ))
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,6 +61,19 @@ export function CreateGroupModal({
     }
   };
 
+  const handleReauthorize = async () => {
+    if (!onReauthorize) return;
+    setIsReauthorizing(true);
+    try {
+      await onReauthorize();
+      setError(null);
+    } catch (authErr) {
+      setError(authErr instanceof Error ? authErr.message : 'Re-authorization failed');
+    } finally {
+      setIsReauthorizing(false);
+    }
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -59,8 +82,33 @@ export function CreateGroupModal({
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 text-xs rounded-xl">
-            {error}
+          <div className="p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-rose-800 dark:text-rose-200 text-xs rounded-xl space-y-2.5">
+            <div className="flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
+              <div className="space-y-1">
+                <span className="font-semibold block text-rose-900 dark:text-rose-100">
+                  {isMissingDriveConsent ? 'Google Drive Permission Required' : 'Failed to Create Group'}
+                </span>
+                <p className="leading-relaxed text-rose-700 dark:text-rose-300">
+                  {error}
+                </p>
+              </div>
+            </div>
+            {isMissingDriveConsent && onReauthorize && (
+              <div className="pt-1 flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReauthorize}
+                  isLoading={isReauthorizing}
+                  className="text-xs bg-white dark:bg-slate-900 border-rose-300 dark:border-rose-800 hover:bg-rose-50 dark:hover:bg-rose-950/50 text-rose-700 dark:text-rose-300 gap-1.5 font-medium cursor-pointer"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Re-authorize with Google</span>
+                </Button>
+              </div>
+            )}
           </div>
         )}
 

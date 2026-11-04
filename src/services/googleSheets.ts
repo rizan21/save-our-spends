@@ -133,7 +133,16 @@ export class GoogleSheetsService {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || `Failed to create spreadsheet: ${res.statusText}`);
+      const rawMessage = err.error?.message || res.statusText;
+      const isScopeOrPermError =
+        res.status === 403 ||
+        /insufficient.*scope|caller does not have permission|permission_denied/i.test(rawMessage);
+      if (isScopeOrPermError) {
+        throw new Error(
+          'Google Drive permission missing: Save Our Spends needs permission to create spreadsheets in your Google Drive (the drive.file permission). Please re-run Google OAuth in your profile or click Re-authorize with Google to grant Drive access.'
+        );
+      }
+      throw new Error(rawMessage || `Failed to create spreadsheet: ${res.statusText}`);
     }
 
     const data = await res.json();

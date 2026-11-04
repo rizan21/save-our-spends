@@ -23,10 +23,14 @@ export function Navbar({
     <header className="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         {/* Brand */}
-        <div className="flex items-center gap-2.5">
+        <a
+          href="#"
+          className="flex items-center gap-2.5 hover:opacity-90 transition-opacity"
+          aria-label="Save Our Spends Home"
+        >
           <Logo size={36} className="drop-shadow-xs" />
           <span className="font-bold text-lg text-slate-900 dark:text-white tracking-tight">Save Our Spends</span>
-        </div>
+        </a>
 
         {/* User Profile / Theme Toggle / Actions */}
         <div className="flex items-center gap-2">

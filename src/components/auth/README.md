@@ -4,7 +4,7 @@
 Authentication and user identity management UI components, providing Google sign-in onboarding and profile display-name editing modals.
 
 ## Interface
-- `EditProfileModal({ isOpen, onClose, user, onSaveName, onResetName, onLogout, showInstallButton, onOpenInstall }: EditProfileModalProps): JSX.Element`
+- `EditProfileModal({ isOpen, onClose, user, onSaveName, onResetName, onLogout, showInstallButton, onOpenInstall, onReauthorizeGoogle }: EditProfileModalProps): JSX.Element`
 - `EditProfileModalProps`
 - `LoginScreen({ onLogin, isLoading, error, clientId, onSaveClientId, showInstallButton, onOpenInstall }: LoginScreenProps): JSX.Element`
 - `LoginScreenProps`

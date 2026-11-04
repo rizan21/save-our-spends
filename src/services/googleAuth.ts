@@ -106,8 +106,8 @@ export class GoogleAuthService {
     }
     if (enabled) {
       // Mock user for demo mode with Google profile picture
-      const demoEmail = 'alice.dev@gmail.com';
-      const defaultName = 'Alice Dev (Demo Owner)';
+      const demoEmail = 'demo.alice@example.com';
+      const defaultName = 'Demo Alice (Owner)';
       const customName = this.getSavedCustomName(demoEmail);
       this.user = {
         email: demoEmail,
@@ -157,13 +157,14 @@ export class GoogleAuthService {
   }
 
   /**
-   * Initiates Google Sign-In popup
+   * Initiates Google Sign-In popup.
+   * Accepts options such as prompt ('consent', 'select_account', etc.)
    */
-  public async requestLogin(): Promise<GoogleUser> {
+  public async requestLogin(options?: { prompt?: string }): Promise<GoogleUser> {
     const isEnvDemo = typeof import.meta !== 'undefined' && import.meta.env?.VITE_DEMO_MODE === 'true';
     if (this.isDemoMode && isEnvDemo) {
-      const demoEmail = 'alice.dev@gmail.com';
-      const defaultName = 'Alice Dev (Demo Owner)';
+      const demoEmail = 'demo.alice@example.com';
+      const defaultName = 'Demo Alice (Owner)';
       const customName = this.getSavedCustomName(demoEmail);
       this.user = {
         email: demoEmail,
@@ -213,7 +214,7 @@ export class GoogleAuthService {
             accessToken: resp.access_token,
             expiresIn: resp.expires_in || 3599,
             tokenType: 'Bearer',
-            scope: OAUTH_SCOPES,
+            scope: resp.scope || OAUTH_SCOPES,
             issuedAt: Date.now(),
           };
 
@@ -234,8 +235,26 @@ export class GoogleAuthService {
         },
       });
 
-      this.tokenClient.requestAccessToken({ prompt: '' });
+      this.tokenClient.requestAccessToken({ prompt: options?.prompt ?? '' });
     });
+  }
+
+  /**
+   * Re-runs OAuth consent flow, prompting the user for permissions.
+   * Useful when permissions (e.g. drive.file) were omitted or when switching accounts.
+   */
+  public async reauthorize(prompt: string = 'consent'): Promise<GoogleUser> {
+    return await this.requestLogin({ prompt });
+  }
+
+  /**
+   * Checks whether the current OAuth token has the drive.file scope granted.
+   */
+  public hasDriveScope(): boolean {
+    if (this.isDemoMode) return true;
+    if (!this.token) return false;
+    const scopeStr = this.token.scope || '';
+    return scopeStr.includes('drive.file') || scopeStr.includes('drive');
   }
 
   private async fetchUserProfile(token: string): Promise<GoogleUser> {

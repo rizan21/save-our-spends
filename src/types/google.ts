@@ -65,6 +65,7 @@ declare global {
             callback: (response: {
               access_token?: string;
               expires_in?: number;
+              scope?: string;
               error?: string;
               error_description?: string;
             }) => void;

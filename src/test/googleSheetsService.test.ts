@@ -121,6 +121,31 @@ describe('googleSheetsService - Google Sheets API v4 Integration', () => {
     ).rejects.toThrow('Invalid Credentials');
   });
 
+  test('createGroupSpreadsheet translates 403 or caller does not have permission into helpful drive.file error', async () => {
+    (globalThis as any).fetch = mock(async () => {
+      return new Response(
+        JSON.stringify({
+          error: {
+            code: 403,
+            message: 'The caller does not have permission',
+            status: 'PERMISSION_DENIED',
+          },
+        }),
+        { status: 403 }
+      );
+    });
+
+    expect(
+      googleSheetsService.createGroupSpreadsheet(
+        mockToken,
+        'Denied Trip',
+        'USD',
+        mockOwner,
+        []
+      )
+    ).rejects.toThrow(/Google Drive permission missing.*drive\.file/);
+  });
+
   test('appendRow posts row with USER_ENTERED value input option', async () => {
     let capturedUrl = '';
     let capturedBody: any = null;

@@ -11,12 +11,14 @@ export interface GroupsPageProps {
   user: GoogleUser | null;
   onSelectGroup: (groupId: string, debt?: SimplifiedDebt) => void;
   onLogin: () => void;
+  onReauthorize?: () => Promise<unknown>;
 }
 
 export function GroupsPage({
   user,
   onSelectGroup,
   onLogin,
+  onReauthorize,
 }: GroupsPageProps) {
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
   const [isOpenGroupModalOpen, setIsOpenGroupModalOpen] = useState(false);
@@ -82,6 +84,7 @@ export function GroupsPage({
         isOpen={isCreateGroupOpen}
         onClose={() => setIsCreateGroupOpen(false)}
         onCreateGroup={handleCreateGroup}
+        onReauthorize={onReauthorize}
       />
 
       {/* Open / Import Shared Group Modal */}

@@ -153,7 +153,7 @@ describe('sheetSerializer - Roundtrip conversions', () => {
   });
 
   test('getMemberTabName sanitizes illegal characters for Google Sheets tabs', () => {
-    expect(getMemberTabName('alice@gmail.com')).toBe('Exp_alice@gmail.com');
+    expect(getMemberTabName('alice@example.com')).toBe('Exp_alice@example.com');
     expect(getMemberTabName('user[test]?name:dir/file\\sub*end@domain.com')).toBe(
       'Exp_user_test__name_dir_file_sub_end@domain.com'
     );

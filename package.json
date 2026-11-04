@@ -9,6 +9,7 @@
     "typecheck": "tsc -b",
     "test": "bun test",
     "lint": "oxlint",
+    "generate:logo": "bun scripts/generate-logos.ts",
     "preview": "vite preview --host",
     "deploy": "bun run build && wrangler deploy"
   },

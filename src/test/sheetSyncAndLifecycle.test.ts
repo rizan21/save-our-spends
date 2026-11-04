@@ -1,6 +1,7 @@
 import { describe, test, expect, beforeEach } from 'bun:test';
 import { groupService } from '../services/groupService';
 import { mockGoogleService } from '../services/mockGoogleService';
+import { googleAuthService } from '../services/googleAuth';
 import { calculateBalances } from '../core/debtSimplifier';
 import type { Expense, Settlement } from '../types/transaction';
 
@@ -8,7 +9,8 @@ describe('Transaction Lifecycle (Deletions & History)', () => {
   let sheetId: string;
 
   beforeEach(async () => {
-    // Reset mock storage
+    // Reset mock storage & ensure demo mode is active for mock groupService
+    googleAuthService.setDemoMode(true);
     if (typeof localStorage !== 'undefined') {
       localStorage.clear();
     }

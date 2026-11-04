@@ -57,6 +57,12 @@ export class GroupService {
       return await mockGoogleService.createGroupSpreadsheet(name, currency, user, initialMembers, description);
     }
 
+    if (!googleAuthService.hasDriveScope()) {
+      throw new Error(
+        'Google Drive permission missing: Save Our Spends needs permission to create spreadsheets in your Google Drive (the drive.file permission). Please re-run Google OAuth in your profile or click Re-authorize with Google to grant Drive access.'
+      );
+    }
+
     const token = this.getAuthToken();
     const sheetId = await googleSheetsService.createGroupSpreadsheet(
       token,

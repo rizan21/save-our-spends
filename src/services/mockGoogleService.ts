@@ -28,13 +28,13 @@ export interface MockSpreadsheet {
   tabs: Record<string, string[][]>;
 }
 
-const STORAGE_KEY = 'spread_spends_mock_data_v2';
+const STORAGE_KEY = 'spread_spends_mock_data_v3';
 
 export const MOCK_AVATARS: Record<string, string> = {
-  'alice.dev@gmail.com': 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop',
-  'bob.traveler@gmail.com': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop',
-  'charlie.foodie@gmail.com': 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop',
-  'david.photographer@gmail.com': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop',
+  'demo.alice@example.com': 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop',
+  'demo.bob@example.com': 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop',
+  'demo.charlie@example.com': 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop',
+  'demo.david@example.com': 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop',
 };
 
 export function getMockUserAvatar(email: string): string {
@@ -49,9 +49,10 @@ export function getMockUserAvatar(email: string): string {
 // Seed sample data for an instant rich experience
 function getInitialMockSpreadsheets(): Record<string, MockSpreadsheet> {
   const goaId = 'mock-sheet-goa-2026';
-  const ownerEmail = 'alice.dev@gmail.com';
-  const bobEmail = 'bob.traveler@gmail.com';
-  const charlieEmail = 'charlie.foodie@gmail.com';
+  const ownerEmail = 'demo.alice@example.com';
+  const bobEmail = 'demo.bob@example.com';
+  const charlieEmail = 'demo.charlie@example.com';
+  const davidEmail = 'demo.david@example.com';
 
   const config: GroupConfig = {
     appSignature: 'Spread-Spends',
@@ -67,7 +68,7 @@ function getInitialMockSpreadsheets(): Record<string, MockSpreadsheet> {
   const members: Member[] = [
     {
       email: ownerEmail,
-      name: 'Alice Dev (Owner)',
+      name: 'Demo Alice (Owner)',
       role: 'OWNER',
       status: 'ACTIVE',
       addedBy: 'self',
@@ -76,7 +77,7 @@ function getInitialMockSpreadsheets(): Record<string, MockSpreadsheet> {
     },
     {
       email: bobEmail,
-      name: 'Bob Traveler',
+      name: 'Demo Bob',
       role: 'MEMBER',
       status: 'ACTIVE',
       addedBy: ownerEmail,
@@ -85,7 +86,7 @@ function getInitialMockSpreadsheets(): Record<string, MockSpreadsheet> {
     },
     {
       email: charlieEmail,
-      name: 'Charlie Foodie',
+      name: 'Demo Charlie',
       role: 'MEMBER',
       status: 'ACTIVE',
       addedBy: ownerEmail,
@@ -97,9 +98,9 @@ function getInitialMockSpreadsheets(): Record<string, MockSpreadsheet> {
   const pendingInvites: PendingInvite[] = [
     {
       id: 'inv-david-01',
-      invitedEmail: 'david.photographer@gmail.com',
+      invitedEmail: davidEmail,
       invitedByEmail: bobEmail,
-      invitedByName: 'Bob Traveler',
+      invitedByName: 'Demo Bob',
       status: 'PENDING',
       requestedAt: '2026-09-28T14:30:00.000Z',
     },
@@ -148,7 +149,7 @@ function getInitialMockSpreadsheets(): Record<string, MockSpreadsheet> {
           id: 'edit-curlies-01',
           editedAt: '2026-09-23T08:15:00.000Z',
           editedBy: bobEmail,
-          editedByName: 'Bob Traveler',
+          editedByName: 'Demo Bob',
           summary: 'Updated Amount and Notes',
           changes: [
             {
@@ -192,13 +193,13 @@ function getInitialMockSpreadsheets(): Record<string, MockSpreadsheet> {
       id: 'set-bob-alice-01',
       date: '2026-09-24',
       payerEmail: bobEmail,
-      payerName: 'Bob Traveler',
+      payerName: 'Demo Bob',
       payeeEmail: ownerEmail,
-      payeeName: 'Alice Dev (Owner)',
+      payeeName: 'Demo Alice (Owner)',
       amount: 2000,
       currency: 'INR',
       paymentMethod: 'UPI',
-      notes: 'Paid via UPI to Alice',
+      notes: 'Paid via UPI to Demo Alice',
       recordedBy: bobEmail,
       createdAt: '2026-09-24T18:00:00.000Z',
       status: 'ACTIVE',
@@ -247,22 +248,13 @@ class MockGoogleService {
   private loadFromStorage() {
     if (typeof localStorage !== 'undefined') {
       try {
+        // Clean legacy v1 and v2 stores containing real-looking emails
+        localStorage.removeItem('spread_spends_mock_data_v1');
+        localStorage.removeItem('spread_spends_mock_data_v2');
+
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
           this.sheets = JSON.parse(raw);
-          return;
-        }
-
-        // Migrate from v1 if present, preserving custom user sheets while refreshing Goa demo sheet to include audit history
-        const rawV1 = localStorage.getItem('spread_spends_mock_data_v1');
-        if (rawV1) {
-          const oldSheets = JSON.parse(rawV1);
-          const initial = getInitialMockSpreadsheets();
-          this.sheets = {
-            ...oldSheets,
-            'mock-sheet-goa-2026': initial['mock-sheet-goa-2026'],
-          };
-          this.saveToStorage();
           return;
         }
       } catch {
@@ -302,6 +294,14 @@ class MockGoogleService {
         owners: [{ emailAddress: s.ownerEmail, displayName: s.ownerEmail.split('@')[0] }],
         shared: s.ownerEmail !== userEmail,
       }));
+  }
+
+  /**
+   * Deletes a spreadsheet from the mock Drive.
+   */
+  public async deleteGroupSpreadsheet(sheetId: string): Promise<void> {
+    delete this.sheets[sheetId];
+    this.saveToStorage();
   }
 
   /**

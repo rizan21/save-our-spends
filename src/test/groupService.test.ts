@@ -12,13 +12,13 @@ describe('groupService - Unified Facade Lifecycle', () => {
   });
 
   test('listGroups returns mock groups in demo mode', async () => {
-    const groups = await groupService.listGroups('alice.dev@gmail.com');
+    const groups = await groupService.listGroups('demo.alice@example.com');
     expect(groups.length).toBeGreaterThanOrEqual(1);
     expect(groups[0].name).toContain('Goa Vacation 2026');
   });
 
   test('createGroup creates and initializes a complete spreadsheet group', async () => {
-    const groupId = await groupService.createGroup('Paris Trip', 'EUR', ['friend@gmail.com']);
+    const groupId = await groupService.createGroup('Paris Trip', 'EUR', ['friend@example.com']);
     expect(groupId).toBeDefined();
 
     const data = await groupService.loadGroup(groupId);
@@ -28,7 +28,7 @@ describe('groupService - Unified Facade Lifecycle', () => {
   });
 
   test('addExpense updates group transactions and recalculates balances', async () => {
-    const groups = await groupService.listGroups('alice.dev@gmail.com');
+    const groups = await groupService.listGroups('demo.alice@example.com');
     const groupId = groups[0].id;
 
     await groupService.addExpense(groupId, {
@@ -38,14 +38,14 @@ describe('groupService - Unified Facade Lifecycle', () => {
       category: 'entertainment',
       amount: 3000,
       currency: 'INR',
-      paidBy: { 'alice.dev@gmail.com': 3000 },
+      paidBy: { 'demo.alice@example.com': 3000 },
       splitType: 'EQUAL',
       splits: {
-        'alice.dev@gmail.com': 1000,
-        'bob.traveler@gmail.com': 1000,
-        'charlie.foodie@gmail.com': 1000,
+        'demo.alice@example.com': 1000,
+        'demo.bob@example.com': 1000,
+        'demo.charlie@example.com': 1000,
       },
-      createdBy: 'alice.dev@gmail.com',
+      createdBy: 'demo.alice@example.com',
       createdAt: new Date().toISOString(),
       status: 'ACTIVE',
     });
@@ -55,19 +55,19 @@ describe('groupService - Unified Facade Lifecycle', () => {
 
     const summary = calculateBalances(data.group.members, data.expenses, data.settlements, data.group.currency);
     expect(summary.totalSpending).toBeGreaterThan(3000);
-    expect(summary.balances['alice.dev@gmail.com'].totalPaid).toBeGreaterThan(3000);
+    expect(summary.balances['demo.alice@example.com'].totalPaid).toBeGreaterThan(3000);
   });
 
   test('extensible invite lifecycle via groupService', async () => {
-    const groups = await groupService.listGroups('alice.dev@gmail.com');
+    const groups = await groupService.listGroups('demo.alice@example.com');
     const groupId = groups[0].id;
 
     // Bob proposes inviting Zara
     await groupService.proposeInvite(groupId, {
       id: 'inv-zara-01',
-      invitedEmail: 'zara.designer@gmail.com',
-      invitedByEmail: 'bob.traveler@gmail.com',
-      invitedByName: 'Bob Traveler',
+      invitedEmail: 'demo.zara@example.com',
+      invitedByEmail: 'demo.bob@example.com',
+      invitedByName: 'Demo Bob',
       status: 'PENDING',
       requestedAt: new Date().toISOString(),
     });
@@ -76,12 +76,12 @@ describe('groupService - Unified Facade Lifecycle', () => {
     expect(data.group.pendingInvites.some((i) => i.id === 'inv-zara-01')).toBe(true);
 
     // Alice (the owner) approves Zara's invite
-    await groupService.approveInvite(groupId, 'inv-zara-01', 'alice.dev@gmail.com');
+    await groupService.approveInvite(groupId, 'inv-zara-01', 'demo.alice@example.com');
 
     data = await groupService.loadGroup(groupId);
     const approvedInvite = data.group.pendingInvites.find((i) => i.id === 'inv-zara-01');
     expect(approvedInvite?.status).toBe('APPROVED');
-    expect(data.group.members.some((m) => m.email === 'zara.designer@gmail.com')).toBe(true);
+    expect(data.group.members.some((m) => m.email === 'demo.zara@example.com')).toBe(true);
 
     // Zara logs an expense into her newly provisioned personal tab
     await groupService.addExpense(groupId, {
@@ -91,15 +91,15 @@ describe('groupService - Unified Facade Lifecycle', () => {
       category: 'entertainment',
       amount: 1200,
       currency: 'INR',
-      paidBy: { 'zara.designer@gmail.com': 1200 },
+      paidBy: { 'demo.zara@example.com': 1200 },
       splitType: 'EQUAL',
       splits: {
-        'alice.dev@gmail.com': 300,
-        'bob.traveler@gmail.com': 300,
-        'charlie.foodie@gmail.com': 300,
-        'zara.designer@gmail.com': 300,
+        'demo.alice@example.com': 300,
+        'demo.bob@example.com': 300,
+        'demo.charlie@example.com': 300,
+        'demo.zara@example.com': 300,
       },
-      createdBy: 'zara.designer@gmail.com',
+      createdBy: 'demo.zara@example.com',
       createdAt: new Date().toISOString(),
       status: 'ACTIVE',
     });
@@ -109,7 +109,7 @@ describe('groupService - Unified Facade Lifecycle', () => {
   });
 
   test('multi-member concurrent writes are isolated with zero collision', async () => {
-    const groups = await groupService.listGroups('alice.dev@gmail.com');
+    const groups = await groupService.listGroups('demo.alice@example.com');
     const groupId = groups[0].id;
 
     // Simulate Alice and Bob adding expenses concurrently
@@ -120,10 +120,10 @@ describe('groupService - Unified Facade Lifecycle', () => {
       category: 'entertainment',
       amount: 4000,
       currency: 'INR',
-      paidBy: { 'alice.dev@gmail.com': 4000 },
+      paidBy: { 'demo.alice@example.com': 4000 },
       splitType: 'EQUAL',
-      splits: { 'alice.dev@gmail.com': 2000, 'bob.traveler@gmail.com': 2000 },
-      createdBy: 'alice.dev@gmail.com',
+      splits: { 'demo.alice@example.com': 2000, 'demo.bob@example.com': 2000 },
+      createdBy: 'demo.alice@example.com',
       createdAt: '2026-09-26T14:00:00.000Z',
       status: 'ACTIVE',
     });
@@ -135,10 +135,10 @@ describe('groupService - Unified Facade Lifecycle', () => {
       category: 'food',
       amount: 2500,
       currency: 'INR',
-      paidBy: { 'bob.traveler@gmail.com': 2500 },
+      paidBy: { 'demo.bob@example.com': 2500 },
       splitType: 'EQUAL',
-      splits: { 'alice.dev@gmail.com': 1250, 'bob.traveler@gmail.com': 1250 },
-      createdBy: 'bob.traveler@gmail.com',
+      splits: { 'demo.alice@example.com': 1250, 'demo.bob@example.com': 1250 },
+      createdBy: 'demo.bob@example.com',
       createdAt: '2026-09-26T14:00:01.000Z',
       status: 'ACTIVE',
     });
@@ -165,7 +165,7 @@ describe('groupService - Unified Facade Lifecycle', () => {
     const groupId = await groupService.createGroup(
       'Tokyo Trip',
       'JPY',
-      ['friend@gmail.com'],
+      ['friend@example.com'],
       'Exploring Tokyo sushi places, Akihabara, and shrines.'
     );
     const data = await groupService.loadGroup(groupId);
@@ -173,7 +173,7 @@ describe('groupService - Unified Facade Lifecycle', () => {
   });
 
   test('updateGroupDescription updates group description and persists', async () => {
-    const groups = await groupService.listGroups('alice.dev@gmail.com');
+    const groups = await groupService.listGroups('demo.alice@example.com');
     const groupId = groups[0].id;
 
     await groupService.updateGroupDescription(groupId, 'Updated Goa trip notes with beach club reservations.');
@@ -182,7 +182,7 @@ describe('groupService - Unified Facade Lifecycle', () => {
   });
 
   test('updateExpense updates expense fields and preserves history audit trail', async () => {
-    const groups = await groupService.listGroups('alice.dev@gmail.com');
+    const groups = await groupService.listGroups('demo.alice@example.com');
     const groupId = groups[0].id;
     const initial = await groupService.loadGroup(groupId);
     const target = initial.expenses.find((e) => e.id === 'exp-beach-villa')!;
@@ -191,17 +191,17 @@ describe('groupService - Unified Facade Lifecycle', () => {
       ...target,
       amount: 18000,
       splits: {
-        'alice.dev@gmail.com': 6000,
-        'bob.traveler@gmail.com': 6000,
-        'charlie.foodie@gmail.com': 6000,
+        'demo.alice@example.com': 6000,
+        'demo.bob@example.com': 6000,
+        'demo.charlie@example.com': 6000,
       },
       notes: 'Updated to include late checkout',
       history: [
         {
           id: 'hist-edit-1',
           editedAt: new Date().toISOString(),
-          editedBy: 'alice.dev@gmail.com',
-          editedByName: 'Alice Dev (Owner)',
+          editedBy: 'demo.alice@example.com',
+          editedByName: 'Demo Alice (Owner)',
           summary: 'Updated Amount from ₹15,000.00 to ₹18,000.00',
           changes: [
             {
@@ -231,7 +231,7 @@ describe('groupService - Unified Facade Lifecycle', () => {
   });
 
   test('updateSettlement updates settlement fields and records history', async () => {
-    const groups = await groupService.listGroups('alice.dev@gmail.com');
+    const groups = await groupService.listGroups('demo.alice@example.com');
     const groupId = groups[0].id;
     const initial = await groupService.loadGroup(groupId);
     const target = initial.settlements[0];
@@ -245,8 +245,8 @@ describe('groupService - Unified Facade Lifecycle', () => {
         {
           id: 'hist-set-1',
           editedAt: new Date().toISOString(),
-          editedBy: 'bob.traveler@gmail.com',
-          editedByName: 'Bob Traveler',
+          editedBy: 'demo.bob@example.com',
+          editedByName: 'Demo Bob',
           summary: 'Updated Amount and Payment method',
           changes: [
             {
@@ -271,23 +271,23 @@ describe('groupService - Unified Facade Lifecycle', () => {
   });
 
   test('softDeleteMember marks member INACTIVE and removes from Drive sharing', async () => {
-    const groups = await groupService.listGroups('alice.dev@gmail.com');
+    const groups = await groupService.listGroups('demo.alice@example.com');
     const groupId = groups[0].id;
     const initial = await groupService.loadGroup(groupId);
 
-    const bob = initial.group.members.find((m) => m.email === 'bob.traveler@gmail.com');
+    const bob = initial.group.members.find((m) => m.email === 'demo.bob@example.com');
     expect(bob?.status).toBe('ACTIVE');
 
-    await groupService.softDeleteMember(groupId, 'bob.traveler@gmail.com');
+    await groupService.softDeleteMember(groupId, 'demo.bob@example.com');
 
     const updated = await groupService.loadGroup(groupId);
-    const updatedBob = updated.group.members.find((m) => m.email === 'bob.traveler@gmail.com');
+    const updatedBob = updated.group.members.find((m) => m.email === 'demo.bob@example.com');
     expect(updatedBob?.status).toBe('INACTIVE');
 
     // Historical expenses still exist and retain Bob
     expect(updated.expenses.length).toBe(initial.expenses.length);
     const beachVilla = updated.expenses.find((e) => e.id === 'exp-beach-villa');
-    expect(beachVilla?.splits['bob.traveler@gmail.com']).toBeDefined();
+    expect(beachVilla?.splits['demo.bob@example.com']).toBeDefined();
 
     // Inactive members are still retained in debt simplification and balances
     const summary = calculateBalances(
@@ -296,26 +296,26 @@ describe('groupService - Unified Facade Lifecycle', () => {
       updated.settlements,
       updated.group.currency
     );
-    expect(summary.balances['bob.traveler@gmail.com']).toBeDefined();
+    expect(summary.balances['demo.bob@example.com']).toBeDefined();
   });
 
   test('restoreMember reactivates an INACTIVE member and re-grants Drive permissions', async () => {
-    const groups = await groupService.listGroups('alice.dev@gmail.com');
+    const groups = await groupService.listGroups('demo.alice@example.com');
     const groupId = groups[0].id;
 
     // First soft-delete Bob
-    await groupService.softDeleteMember(groupId, 'bob.traveler@gmail.com');
+    await groupService.softDeleteMember(groupId, 'demo.bob@example.com');
     let data = await groupService.loadGroup(groupId);
-    expect(data.group.members.find((m) => m.email === 'bob.traveler@gmail.com')?.status).toBe('INACTIVE');
+    expect(data.group.members.find((m) => m.email === 'demo.bob@example.com')?.status).toBe('INACTIVE');
 
     // Now restore Bob
-    await groupService.restoreMember(groupId, 'bob.traveler@gmail.com');
+    await groupService.restoreMember(groupId, 'demo.bob@example.com');
     data = await groupService.loadGroup(groupId);
-    expect(data.group.members.find((m) => m.email === 'bob.traveler@gmail.com')?.status).toBe('ACTIVE');
+    expect(data.group.members.find((m) => m.email === 'demo.bob@example.com')?.status).toBe('ACTIVE');
   });
 
   test('auditDrivePermissions identifies discrepancies accurately', async () => {
-    const groups = await groupService.listGroups('alice.dev@gmail.com');
+    const groups = await groupService.listGroups('demo.alice@example.com');
     const groupId = groups[0].id;
 
     // Baseline: No discrepancies when in sync
@@ -325,30 +325,30 @@ describe('groupService - Unified Facade Lifecycle', () => {
     // Case 1: Active member missing Drive permission
     // Remove Bob from sharedWith directly in mock
     const sheet = mockGoogleService.getMockSheet(groupId)!;
-    sheet.sharedWith = sheet.sharedWith.filter((e) => e !== 'bob.traveler@gmail.com');
+    sheet.sharedWith = sheet.sharedWith.filter((e) => e !== 'demo.bob@example.com');
 
     audit = await groupService.auditDrivePermissions(groupId);
     expect(audit.length).toBe(1);
     expect(audit[0].type).toBe('MISSING_DRIVE_PERMISSION');
-    expect(audit[0].email).toBe('bob.traveler@gmail.com');
+    expect(audit[0].email).toBe('demo.bob@example.com');
 
     // Remediate by restoring permission
-    await groupService.grantDriveWriterPermission(groupId, 'bob.traveler@gmail.com');
+    await groupService.grantDriveWriterPermission(groupId, 'demo.bob@example.com');
     audit = await groupService.auditDrivePermissions(groupId);
     expect(audit.length).toBe(0);
 
     // Case 2: Inactive member has write access
-    await groupService.softDeleteMember(groupId, 'bob.traveler@gmail.com');
+    await groupService.softDeleteMember(groupId, 'demo.bob@example.com');
     // Simulate lagging Drive permission where Bob was not removed from sharedWith
-    sheet.sharedWith.push('bob.traveler@gmail.com');
+    sheet.sharedWith.push('demo.bob@example.com');
 
     audit = await groupService.auditDrivePermissions(groupId);
-    expect(audit.some((d) => d.type === 'INACTIVE_HAS_WRITE_ACCESS' && d.email === 'bob.traveler@gmail.com')).toBe(true);
+    expect(audit.some((d) => d.type === 'INACTIVE_HAS_WRITE_ACCESS' && d.email === 'demo.bob@example.com')).toBe(true);
 
     // Remediate by revoking
     const disc = audit.find((d) => d.type === 'INACTIVE_HAS_WRITE_ACCESS')!;
     await groupService.revokeDrivePermission(groupId, disc.permissionId!);
     audit = await groupService.auditDrivePermissions(groupId);
-    expect(audit.filter((d) => d.email === 'bob.traveler@gmail.com').length).toBe(0);
+    expect(audit.filter((d) => d.email === 'demo.bob@example.com').length).toBe(0);
   });
 });

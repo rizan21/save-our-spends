@@ -63,6 +63,23 @@ export function useAuth() {
     return googleAuthService.getClientId();
   }, []);
 
+  const reauthorizeGoogle = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const profile = await googleAuthService.reauthorize('consent');
+      setUser(profile);
+      setIsDemoMode(googleAuthService.getIsDemoMode());
+      return profile;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Re-authorization failed';
+      setError(msg);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const updateUserName = useCallback((newName: string) => {
     const updated = googleAuthService.updateUserName(newName);
     setUser({ ...updated });
@@ -79,9 +96,11 @@ export function useAuth() {
     user,
     isAuthenticated: !!user,
     isDemoMode,
+    hasDriveScope: googleAuthService.hasDriveScope(),
     isLoading,
     error,
     login,
+    reauthorizeGoogle,
     logout,
     updateUserName,
     resetUserNameToGoogle,

@@ -36,17 +36,17 @@ describe('User Profile - Custom Username & Google Profile Picture', () => {
   test('User starts with Google profile picture and Google account name', () => {
     const user = googleAuthService.getCurrentUser();
     expect(user).not.toBeNull();
-    expect(user?.email).toBe('alice.dev@gmail.com');
+    expect(user?.email).toBe('demo.alice@example.com');
     expect(user?.picture).toBeDefined();
     expect(user?.picture).toContain('https://images.unsplash.com');
-    expect(user?.googleName).toBe('Alice Dev (Demo Owner)');
-    expect(user?.name).toBe('Alice Dev (Demo Owner)');
+    expect(user?.googleName).toBe('Demo Alice (Owner)');
+    expect(user?.name).toBe('Demo Alice (Owner)');
   });
 
   test('User can edit their user name and retain Google profile picture', () => {
     const updated = googleAuthService.updateUserName('Alice In Wonderland');
     expect(updated.name).toBe('Alice In Wonderland');
-    expect(updated.googleName).toBe('Alice Dev (Demo Owner)');
+    expect(updated.googleName).toBe('Demo Alice (Owner)');
     // Profile picture MUST remain set to Google account picture
     expect(updated.picture).toContain('https://images.unsplash.com');
 
@@ -56,7 +56,7 @@ describe('User Profile - Custom Username & Google Profile Picture', () => {
     expect(current?.picture).toBe(updated.picture);
 
     // Persisted in localStorage
-    expect(localStorage.getItem('spread_spends_user_name_alice.dev@gmail.com')).toBe('Alice In Wonderland');
+    expect(localStorage.getItem('spread_spends_user_name_demo.alice@example.com')).toBe('Alice In Wonderland');
   });
 
   test('updateUserName rejects empty or whitespace-only names', () => {
@@ -69,30 +69,30 @@ describe('User Profile - Custom Username & Google Profile Picture', () => {
     expect(googleAuthService.getCurrentUser()?.name).toBe('Alice Hacker');
 
     const reset = googleAuthService.resetUserNameToGoogle();
-    expect(reset.name).toBe('Alice Dev (Demo Owner)');
+    expect(reset.name).toBe('Demo Alice (Owner)');
     expect(reset.picture).toBeDefined();
-    expect(localStorage.getItem('spread_spends_user_name_alice.dev@gmail.com')).toBeNull();
+    expect(localStorage.getItem('spread_spends_user_name_demo.alice@example.com')).toBeNull();
   });
 
   test('Creating group sets owner member picture to Google account picture', async () => {
-    const groupId = await groupService.createGroup('Alps Hike 2026', 'EUR', ['bob@test.com']);
+    const groupId = await groupService.createGroup('Alps Hike 2026', 'EUR', ['bob@example.com']);
     const data = await groupService.loadGroup(groupId);
 
-    const ownerMember = data.group.members.find((m) => m.email === 'alice.dev@gmail.com');
+    const ownerMember = data.group.members.find((m) => m.email === 'demo.alice@example.com');
     expect(ownerMember).toBeDefined();
     expect(ownerMember?.picture).toBeDefined();
     expect(ownerMember?.picture).toContain('https://images.unsplash.com');
   });
 
   test('updateMemberName updates member display name in group spreadsheet', async () => {
-    const groups = await groupService.listGroups('alice.dev@gmail.com');
+    const groups = await groupService.listGroups('demo.alice@example.com');
     const groupId = groups[0].id;
 
     // Update Alice's name in the group
-    await groupService.updateMemberName(groupId, 'alice.dev@gmail.com', 'Alice Superstar');
+    await groupService.updateMemberName(groupId, 'demo.alice@example.com', 'Alice Superstar');
 
     const data = await groupService.loadGroup(groupId);
-    const aliceMember = data.group.members.find((m) => m.email === 'alice.dev@gmail.com');
+    const aliceMember = data.group.members.find((m) => m.email === 'demo.alice@example.com');
     expect(aliceMember?.name).toBe('Alice Superstar');
   });
 
@@ -132,9 +132,9 @@ describe('User Profile - Custom Username & Google Profile Picture', () => {
 
     expect(members.length).toBeGreaterThanOrEqual(3);
 
-    const alice = members.find((m) => m.email === 'alice.dev@gmail.com');
-    const bob = members.find((m) => m.email === 'bob.traveler@gmail.com');
-    const charlie = members.find((m) => m.email === 'charlie.foodie@gmail.com');
+    const alice = members.find((m) => m.email === 'demo.alice@example.com');
+    const bob = members.find((m) => m.email === 'demo.bob@example.com');
+    const charlie = members.find((m) => m.email === 'demo.charlie@example.com');
 
     expect(alice?.picture).toBeDefined();
     expect(bob?.picture).toBeDefined();
@@ -150,9 +150,9 @@ describe('User Profile - Custom Username & Google Profile Picture', () => {
     const groupId = 'mock-sheet-goa-2026';
 
     // 1. Add direct member
-    await mockGoogleService.addDirectMember(groupId, 'david.photographer@gmail.com', 'alice.dev@gmail.com');
+    await mockGoogleService.addDirectMember(groupId, 'demo.david@example.com', 'demo.alice@example.com');
     let data = await groupService.loadGroup(groupId);
-    const david = data.group.members.find((m) => m.email === 'david.photographer@gmail.com');
+    const david = data.group.members.find((m) => m.email === 'demo.david@example.com');
     expect(david).toBeDefined();
     expect(david?.picture).toBeDefined();
     expect(david?.picture).toContain('https://images.unsplash.com');
@@ -160,16 +160,16 @@ describe('User Profile - Custom Username & Google Profile Picture', () => {
     // 2. Propose & approve invite
     await groupService.proposeInvite(groupId, {
       id: 'inv-eva-99',
-      invitedEmail: 'eva.explorer@gmail.com',
-      invitedByEmail: 'alice.dev@gmail.com',
-      invitedByName: 'Alice Dev',
+      invitedEmail: 'demo.eva@example.com',
+      invitedByEmail: 'demo.alice@example.com',
+      invitedByName: 'Demo Alice',
       status: 'PENDING',
       requestedAt: new Date().toISOString(),
     });
 
-    await groupService.approveInvite(groupId, 'inv-eva-99', 'alice.dev@gmail.com');
+    await groupService.approveInvite(groupId, 'inv-eva-99', 'demo.alice@example.com');
     data = await groupService.loadGroup(groupId);
-    const eva = data.group.members.find((m) => m.email === 'eva.explorer@gmail.com');
+    const eva = data.group.members.find((m) => m.email === 'demo.eva@example.com');
     expect(eva).toBeDefined();
     expect(eva?.picture).toBeDefined();
     expect(eva?.picture).toContain('dicebear.com');

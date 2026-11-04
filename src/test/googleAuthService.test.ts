@@ -27,7 +27,7 @@ describe('googleAuthService - OAuth Lifecycle, Token Expiry & Storage Sync', () 
 
     auth.setDemoMode(true);
     expect(auth.getIsDemoMode()).toBe(true);
-    expect(auth.getCurrentUser()?.email).toBe('alice.dev@gmail.com');
+    expect(auth.getCurrentUser()?.email).toBe('demo.alice@example.com');
     expect(auth.getAccessToken()).toBe('mock_access_token_demo');
 
     // Toggling off resets user
@@ -107,12 +107,12 @@ describe('googleAuthService - OAuth Lifecycle, Token Expiry & Storage Sync', () 
 
     const updated = auth.updateUserName('Alice The Explorer');
     expect(updated.name).toBe('Alice The Explorer');
-    expect(updated.googleName).toBe('Alice Dev (Demo Owner)');
-    expect(auth.getSavedCustomName('alice.dev@gmail.com')).toBe('Alice The Explorer');
+    expect(updated.googleName).toBe('Demo Alice (Owner)');
+    expect(auth.getSavedCustomName('demo.alice@example.com')).toBe('Alice The Explorer');
 
     // Setting same name as googleName cleans up custom name key
-    auth.updateUserName('Alice Dev (Demo Owner)');
-    expect(auth.getSavedCustomName('alice.dev@gmail.com')).toBeNull();
+    auth.updateUserName('Demo Alice (Owner)');
+    expect(auth.getSavedCustomName('demo.alice@example.com')).toBeNull();
 
     // Empty name throws error
     expect(() => auth.updateUserName('   ')).toThrow('cannot be empty');
@@ -125,8 +125,51 @@ describe('googleAuthService - OAuth Lifecycle, Token Expiry & Storage Sync', () 
     expect(auth.getCurrentUser()?.name).toBe('Custom Alias');
 
     auth.resetUserNameToGoogle();
-    expect(auth.getCurrentUser()?.name).toBe('Alice Dev (Demo Owner)');
-    expect(auth.getSavedCustomName('alice.dev@gmail.com')).toBeNull();
+    expect(auth.getCurrentUser()?.name).toBe('Demo Alice (Owner)');
+    expect(auth.getSavedCustomName('demo.alice@example.com')).toBeNull();
+  });
+
+  test('hasDriveScope returns true in demo mode or when scope includes drive.file', () => {
+    const auth = new GoogleAuthService();
+    // In demo mode, drive scope is always considered active
+    auth.setDemoMode(true);
+    expect(auth.hasDriveScope()).toBe(true);
+
+    auth.setDemoMode(false);
+    expect(auth.hasDriveScope()).toBe(false);
+
+    // Token without drive scope
+    (auth as any).token = {
+      accessToken: 'token-no-drive',
+      expiresIn: 3600,
+      tokenType: 'Bearer',
+      scope: 'https://www.googleapis.com/auth/userinfo.email',
+      issuedAt: Date.now(),
+    };
+    expect(auth.hasDriveScope()).toBe(false);
+
+    // Token with drive.file scope
+    (auth as any).token = {
+      accessToken: 'token-with-drive',
+      expiresIn: 3600,
+      tokenType: 'Bearer',
+      scope: 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/drive.file',
+      issuedAt: Date.now(),
+    };
+    expect(auth.hasDriveScope()).toBe(true);
+  });
+
+  test('reauthorize calls requestLogin with prompt consent', async () => {
+    const auth = new GoogleAuthService();
+    let promptPassed = '';
+    auth.requestLogin = async (options?: { prompt?: string }) => {
+      promptPassed = options?.prompt ?? '';
+      return { email: 'reauth@example.com', name: 'Reauth User' };
+    };
+
+    const user = await auth.reauthorize('consent');
+    expect(promptPassed).toBe('consent');
+    expect(user.email).toBe('reauth@example.com');
   });
 
   test('logout completely clears in-memory state and storage keys', () => {

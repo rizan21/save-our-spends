@@ -12,7 +12,7 @@ describe('Home Page Active Settlements & Balances aggregation', () => {
   });
 
   test('Goa Vacation 2026 active settlements correctly compute for Alice (demo owner)', async () => {
-    const userEmail = 'alice.dev@gmail.com';
+    const userEmail = 'demo.alice@example.com';
     const groups = await groupService.listGroups(userEmail);
     expect(groups.length).toBeGreaterThanOrEqual(1);
 
@@ -34,8 +34,8 @@ describe('Home Page Active Settlements & Balances aggregation', () => {
     expect(activeForAlice.length).toBe(2);
     expect(activeForAlice.every((d) => d.toEmail === userEmail)).toBe(true);
 
-    const bobDebt = activeForAlice.find((d) => d.fromEmail === 'bob.traveler@gmail.com');
-    const charlieDebt = activeForAlice.find((d) => d.fromEmail === 'charlie.foodie@gmail.com');
+    const bobDebt = activeForAlice.find((d) => d.fromEmail === 'demo.bob@example.com');
+    const charlieDebt = activeForAlice.find((d) => d.fromEmail === 'demo.charlie@example.com');
 
     expect(bobDebt).toBeDefined();
     expect(bobDebt?.amount).toBe(1300);
@@ -49,7 +49,7 @@ describe('Home Page Active Settlements & Balances aggregation', () => {
   });
 
   test('settling an active debt reduces active settlements on the home page', async () => {
-    const userEmail = 'alice.dev@gmail.com';
+    const userEmail = 'demo.alice@example.com';
     const groups = await groupService.listGroups(userEmail);
     const groupId = groups[0].id;
 
@@ -57,14 +57,14 @@ describe('Home Page Active Settlements & Balances aggregation', () => {
     await groupService.addSettlement(groupId, {
       id: 'set-bob-full-settle',
       date: '2026-09-27',
-      payerEmail: 'bob.traveler@gmail.com',
-      payerName: 'Bob Traveler',
+      payerEmail: 'demo.bob@example.com',
+      payerName: 'Demo Bob',
       payeeEmail: userEmail,
-      payeeName: 'Alice Dev (Owner)',
+      payeeName: 'Demo Alice (Owner)',
       amount: 1300,
       currency: 'INR',
       paymentMethod: 'UPI',
-      recordedBy: 'bob.traveler@gmail.com',
+      recordedBy: 'demo.bob@example.com',
       createdAt: new Date().toISOString(),
       status: 'ACTIVE',
     });
@@ -83,15 +83,15 @@ describe('Home Page Active Settlements & Balances aggregation', () => {
 
     // Now only Charlie owes Alice (4,800); Bob is completely settled up!
     expect(activeForAlice.length).toBe(1);
-    expect(activeForAlice[0].fromEmail).toBe('charlie.foodie@gmail.com');
+    expect(activeForAlice[0].fromEmail).toBe('demo.charlie@example.com');
     expect(activeForAlice[0].amount).toBe(4800);
 
     // Bob's balance in the group is now exactly 0
-    expect(summary.balances['bob.traveler@gmail.com'].netBalance).toBe(0);
+    expect(summary.balances['demo.bob@example.com'].netBalance).toBe(0);
   });
 
   test('Member spending and consumption sums conserve total group spending', async () => {
-    const userEmail = 'alice.dev@gmail.com';
+    const userEmail = 'demo.alice@example.com';
     const groups = await groupService.listGroups(userEmail);
     const data = await groupService.loadGroup(groups[0].id);
 

@@ -95,7 +95,7 @@ export function InviteMemberModal({
           </label>
           <input
             type="email"
-            placeholder="colleague@gmail.com"
+            placeholder="friend@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full px-3.5 py-2.5 text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 rounded-xl focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500"

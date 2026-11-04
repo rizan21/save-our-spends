@@ -83,6 +83,19 @@ describe('groupService - Real Google API Execution Path (Non-Demo)', () => {
     expect(groupService.createGroup('Fail Trip', 'USD')).rejects.toThrow('User must be logged in');
   });
 
+  test('createGroup throws clear drive.file error when user lacks Drive permission', async () => {
+    (googleAuthService as any).token = {
+      accessToken: 'token-no-drive',
+      expiresIn: 3600,
+      tokenType: 'Bearer',
+      scope: 'https://www.googleapis.com/auth/userinfo.email',
+      issuedAt: Date.now(),
+    };
+    expect(groupService.createGroup('Blocked Trip', 'USD')).rejects.toThrow(
+      /Google Drive permission missing.*drive\.file/
+    );
+  });
+
   test('loadGroup loads config, members, invites, settlements, and member expenses', async () => {
     const origRead = googleSheetsService.readTab;
     const origBatch = googleSheetsService.batchReadTabs;
