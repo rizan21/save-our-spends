@@ -45,6 +45,26 @@ describe('Google OAuth Branding and Legal Compliance Infrastructure', () => {
     expect(fs.existsSync(oauthLogoPath)).toBe(true);
   });
 
+  test('Web App PWA logos (192x192, 512x512, maskable) are generated and match official brand assets', () => {
+    const pwa192Path = path.join(publicDir, 'pwa-192x192.png');
+    expect(fs.existsSync(pwa192Path)).toBe(true);
+    const buf192 = fs.readFileSync(pwa192Path);
+    expect(buf192.readUInt32BE(16)).toBe(192);
+    expect(buf192.readUInt32BE(20)).toBe(192);
+
+    const pwa512Path = path.join(publicDir, 'pwa-512x512.png');
+    expect(fs.existsSync(pwa512Path)).toBe(true);
+    const buf512 = fs.readFileSync(pwa512Path);
+    expect(buf512.readUInt32BE(16)).toBe(512);
+    expect(buf512.readUInt32BE(20)).toBe(512);
+
+    const maskablePath = path.join(publicDir, 'pwa-maskable-512x512.png');
+    expect(fs.existsSync(maskablePath)).toBe(true);
+    const bufMaskable = fs.readFileSync(maskablePath);
+    expect(bufMaskable.readUInt32BE(16)).toBe(512);
+    expect(bufMaskable.readUInt32BE(20)).toBe(512);
+  });
+
   test('public/privacy.html complies with Google API Services User Data Policy and discloses scopes', () => {
     const privacyPath = path.join(publicDir, 'privacy.html');
     expect(fs.existsSync(privacyPath)).toBe(true);

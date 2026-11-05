@@ -1,12 +1,17 @@
-const CACHE_NAME = 'spread-spends-v3';
+const CACHE_NAME = 'save-our-spends-v4';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
   '/manifest.webmanifest',
+  '/favicon.ico',
   '/favicon.svg',
+  '/favicon-32x32.png',
+  '/favicon-16x16.png',
   '/apple-touch-icon.png',
   '/pwa-192x192.png',
   '/pwa-512x512.png',
+  '/pwa-maskable-512x512.png',
+  '/logo.svg',
 ];
 
 self.addEventListener('install', (event) => {

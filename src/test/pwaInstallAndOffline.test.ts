@@ -39,10 +39,41 @@ describe('PWA Install and Offline Viewing Infrastructure', () => {
     }
   });
 
-  test('Apple Touch Icon exists and is non-empty for iOS home screen', () => {
+  test('Apple Touch Icon exists, is 180x180 PNG, and is non-empty for iOS home screen', () => {
     const appleIconPath = path.join(publicDir, 'apple-touch-icon.png');
     expect(fs.existsSync(appleIconPath)).toBe(true);
-    expect(fs.statSync(appleIconPath).size).toBeGreaterThan(0);
+    const buffer = fs.readFileSync(appleIconPath);
+    expect(buffer.length).toBeGreaterThan(0);
+    // Parse IHDR chunk
+    const width = buffer.readUInt32BE(16);
+    const height = buffer.readUInt32BE(20);
+    expect(width).toBe(180);
+    expect(height).toBe(180);
+  });
+
+  test('Favicon assets (ICO, PNG 32x32, 16x16, SVG) exist for cross-browser title bar and tab display', () => {
+    const icoPath = path.join(publicDir, 'favicon.ico');
+    expect(fs.existsSync(icoPath)).toBe(true);
+    const icoBuf = fs.readFileSync(icoPath);
+    // Verify ICO signature: bytes 0-3 are 0x00 0x00 0x01 0x00
+    expect(icoBuf.readUInt16LE(0)).toBe(0);
+    expect(icoBuf.readUInt16LE(2)).toBe(1);
+    expect(icoBuf.readUInt16LE(4)).toBeGreaterThanOrEqual(1);
+
+    const fav32Path = path.join(publicDir, 'favicon-32x32.png');
+    expect(fs.existsSync(fav32Path)).toBe(true);
+    const fav32Buf = fs.readFileSync(fav32Path);
+    expect(fav32Buf.readUInt32BE(16)).toBe(32);
+    expect(fav32Buf.readUInt32BE(20)).toBe(32);
+
+    const fav16Path = path.join(publicDir, 'favicon-16x16.png');
+    expect(fs.existsSync(fav16Path)).toBe(true);
+    const fav16Buf = fs.readFileSync(fav16Path);
+    expect(fav16Buf.readUInt32BE(16)).toBe(16);
+    expect(fav16Buf.readUInt32BE(20)).toBe(16);
+
+    const favSvgPath = path.join(publicDir, 'favicon.svg');
+    expect(fs.existsSync(favSvgPath)).toBe(true);
   });
 
   test('Service Worker file sw.js exists and implements caching strategies for offline viewing', () => {
@@ -50,10 +81,15 @@ describe('PWA Install and Offline Viewing Infrastructure', () => {
     expect(fs.existsSync(swPath)).toBe(true);
 
     const swContent = fs.readFileSync(swPath, 'utf-8');
+    // Cache name versioning
+    expect(swContent).toContain('save-our-spends-v4');
     // Precache assets
     expect(swContent).toContain('caches.open');
     expect(swContent).toContain('/index.html');
     expect(swContent).toContain('/manifest.webmanifest');
+    expect(swContent).toContain('/favicon.ico');
+    expect(swContent).toContain('/favicon.svg');
+    expect(swContent).toContain('/favicon-32x32.png');
     // SPA navigation offline fallback
     expect(swContent).toContain('navigate');
     expect(swContent).toContain('skipWaiting');

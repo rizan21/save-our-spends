@@ -5,15 +5,18 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "bun scripts/generate-logos.ts && tsc -b && vite build",
     "typecheck": "tsc -b",
     "test": "bun test",
     "lint": "oxlint",
     "generate:logo": "bun scripts/generate-logos.ts",
     "preview": "vite preview --host",
-    "deploy": "bun run build && wrangler deploy"
+    "deploy": "bun run build && wrangler deploy",
+    "remote": "bash scripts/run-remote.sh",
+    "remote:build": "bash scripts/run-remote.sh -b -r"
   },
   "dependencies": {
+    "@tanstack/query-core": "^5.104.0",
     "@tanstack/react-query": "^5.104.0",
     "lucide-react": "^1.48.0",
     "react": "^19.2.8",
